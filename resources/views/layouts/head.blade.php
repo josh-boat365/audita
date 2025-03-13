@@ -11,6 +11,14 @@
     <!-- App favicon -->
     <link rel="shortcut icon" href="{{ asset('bpsl_imgs/Audita-short-favicon.png') }}">
 
+    <!-- bootstrap-datepicker css -->
+    <link href="{{ asset('assets/libs/bootstrap-datepicker/css/bootstrap-datepicker.min.css') }}" rel="stylesheet">
+
+    <!-- Plugins css -->
+    <link href="{{ asset('assets/libs/dropzone/dropzone.css') }}" rel="stylesheet" type="text/css" />
+
+    <link href="{{ asset('assets/libs/select2/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
+
     <!-- Bootstrap Css -->
     <link href="{{ asset('/assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
     <!-- Icons Css -->
@@ -30,7 +38,10 @@
 
     <!-- App js -->
     <script src="{{ asset('/assets/js/plugin.js') }}"></script>
-    <link href="{{ asset('assets/libs/select2/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
+
+    <!-- Plugins css -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
 
 

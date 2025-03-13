@@ -3,14 +3,14 @@
         <div class="d-flex">
             <!-- LOGO -->
             <div class="navbar-brand-box">
-                <a href="{{ route('dashboard.index') }}" class="logo logo-light">
+                <a href="{{ route('dashboard') }}" class="logo logo-light">
                     <span class="logo-sm">
-                        <img src="{{ asset('bpsl_imgs/performa-short-2.png') }}" alt="Perfoma Logo"
+                        <img src="{{ asset('bpsl_imgs/audita-2.png') }}" alt="Audita Logo"
                             style="width: 2.5rem; height: 2.5rem">
                     </span>
                     <span class="logo-lg">
-                        <img src="{{ asset('bpsl_imgs/performa-full-3.png') }}" alt="Perfoma Logo"
-                            style="width: 15rem; height: 4rem">
+                        <img src="{{ asset('bpsl_imgs/audita-1.png') }}" alt="Audita Logo"
+                            style="width: 11rem; height: 3rem">
                     </span>
 
                 </a>
