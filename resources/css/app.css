@@ -1,3 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+.btn-bpsl{
+    background-color: #710188 !important;
+    border: none !important;
+}

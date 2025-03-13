@@ -3,7 +3,7 @@
 
     <div class="container">
         <div class="row justify-content-center">
-            {{--  @if ($errors->any())
+            @if ($errors->any())
                 <div class="alert alert-danger">
                     <ul>
                         @foreach ($errors->all() as $error)
@@ -11,7 +11,7 @@
                         @endforeach
                     </ul>
                 </div>
-            @endif  --}}
+            @endif
             <div class="col-md-8 col-lg-6 col-xl-5">
                 <div class="card overflow-hidden">
                     <div class="" style="background-color: #c655e640 !important">
@@ -19,7 +19,7 @@
                             <div class="col-7">
                                 <div class="text-primary p-4">
                                     <h5 class="" style="color: #64336F">Welcome Back !</h5>
-                                    <p style="color: #64336F">Sign in to continue to Audita.</p>
+                                    <p style="color: #64336F">Sign up to continue to Audita.</p>
                                 </div>
                             </div>
                             <div class="col-5 align-self-end">
@@ -30,16 +30,27 @@
                     <div class="card-body pt-0">
 
                         <div class="p-2">
-                            <form class="form-horizontal" action="{{ route('login.post') }}" method="POST">
+                            <form class="form-horizontal" action="{{ route('register.post') }}" method="POST">
                                 @csrf
 
                                 <div class="mb-3 mt-5 ">
-                                    <label for="username" class="form-label">Username</label>
-                                    <input type="text" name="username"
-                                        class="form-control @error('username') is-invalid @enderror" id="username"
-                                        placeholder="Enter username" value="{{ old('username') }}">
+                                    <label for="fullname" class="form-label">Fullname</label>
+                                    <input type="text" name="fullname"
+                                        class="form-control @error('fullname') is-invalid @enderror" id="fullname"
+                                        placeholder="Enter fullname" value="{{ old('username') }}">
 
-                                    @error('username')
+                                    @error('fullname')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3 ">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="text" name="email"
+                                        class="form-control @error('email') is-invalid @enderror" id="email"
+                                        placeholder="Enter email" value="{{ old('email') }}">
+
+                                    @error('email')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -60,14 +71,10 @@
                                     </div>
                                 </div>
 
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="remember-check" name="remember">
-                                    <label class="form-check-label" for="remember-check">Remember me</label>
-                                </div>
 
-                                <div class="mt-3 d-grid">
-                                    <button type="submit" class="btn btn-primary btn-bpsl waves-effect waves-light">Log
-                                        In</button>
+                                <div class= "d-grid">
+                                    <button type="submit" class="mt-3 btn btn-primary waves-effect waves-light">Sign
+                                        Up</button>
                                 </div>
 
                             </form>

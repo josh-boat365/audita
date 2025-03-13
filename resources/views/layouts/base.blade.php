@@ -41,10 +41,10 @@
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-sm-6">
-                            2024 -
+                            2025 -
                             <script>
                                 document.write(new Date().getFullYear())
-                            </script> © Perfoma | BPSL - IT Support.
+                            </script> © Audita | BPSL - IT Support.
                         </div>
                         <div class="col-sm-6">
                             <div class="text-sm-end d-none d-sm-block">

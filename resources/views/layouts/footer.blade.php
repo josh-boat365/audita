@@ -1,4 +1,4 @@
-@push('scripts')
+{{--  @push('scripts')  --}}
     <!-- JAVASCRIPT -->
     <script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
@@ -19,10 +19,6 @@
 
     <!-- apexcharts -->
     <script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
-
-    <!-- apexcharts init -->
-    {{--  <script src="{{ asset('assets/js/pages/apexcharts.init.js') }}"></script>  --}}
-
 
 
     <script src="{{ asset('assets/js/plugin.js') }}"></script>
@@ -66,4 +62,14 @@
 
     <script src="{{ asset('assets/libs/select2/js/select2.min.js') }}"></script>
    
-@endpush
+
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2();
+        });
+    </script>
+
+    <script src="{{ asset('assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"></script>
+    {{--  <script src="{{ asset('assets/libs/dropzone/dropzone-min.js') }}"></script>  --}}
+    {{--  <script src="{{ asset('assets/js/pages/project-create.init.js') }}"></script>  --}}
+{{--  @endpush  --}}

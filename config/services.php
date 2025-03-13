@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'bpsl' => [
+        'auth_url' => env('AUTH_API_URL'),
+
+    ],
+
 ];
