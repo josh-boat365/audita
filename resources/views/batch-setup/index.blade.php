@@ -44,16 +44,16 @@
                             <td>{{ $batch->year }}</td>
 
                             <td>
-                                <span @style(['cursor: pointer'])
+                                <span @style(['cursor: cursor'])
                                     class="dropdown badge rounded-pill {{ $batch->active == true ? 'bg-success' : 'bg-dark' }}"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                     {{ $batch->active == true ? 'Active' : 'Deactivated' }}
-                                    <div class="dropdown-menu">
+                                    {{--  <div class="dropdown-menu">
                                         <a href="" class="dropdown-item" data-bs-toggle="modal"
                                             data-bs-target=".bs-example-modal-lg-" class="m-2">
                                             {{ $batch->active == true ? 'Deactivated' : 'Activate' }}
                                         </a>
-                                    </div>
+                                    </div>  --}}
                                 </span>
                                 <div class="modal fade bs-example-modal-lg-" tabindex="-1" role="dialog"
                                     aria-labelledby="myLargeModalLabel" aria-hidden="true">
@@ -82,16 +82,16 @@
                             </td>
                             <td>
 
-                                <span @style(['cursor: pointer'])
+                                <span @style(['cursor: cursor'])
                                     class="dropdown badge rounded-pill {{ $batch->status == 'OPEN' ? 'bg-warning' : 'bg-dark' }}"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                     {{ $batch->status == 'OPEN' ? 'OPEN' : 'CLOSED' }}
-                                    <div class="dropdown-menu">
+                                    {{--  <div class="dropdown-menu">
                                         <a href="" class="dropdown-item" data-bs-toggle="modal"
                                             data-bs-target=".bs-example-modal-lg-" class="m-2">
                                             {{ $batch->status == 'OPEN' ? 'CLOSED' : 'OPEN' }}
                                         </a>
-                                    </div>
+                                    </div>  --}}
                                 </span>
 
 
