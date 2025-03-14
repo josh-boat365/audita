@@ -8,7 +8,7 @@
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('exception.list') }}">
-                            ({{ $exception->exception }})</a> > Update Exception
+                            {{ $exception->exception }}</a> > Update Exception
                     </h4>
                 </div>
             </div>
@@ -27,15 +27,14 @@
 
                             {{--  Project Image   --}}
                             <div class="mb-3">
-                                <label for="projectdesc-input" class="form-label">Exception</label>
-                                <textarea class="form-control" rows="3" name="exception" required placeholder="Enter exception details......" required></textarea>
+                                <label class="form-label">Exception</label>
+                                <textarea class="form-control" rows="3" name="exception" placeholder="Enter exception details......" required>{{ $exception->exception }}</textarea>
                                 <div class="invalid-feedback">Please enter an exception.</div>
                             </div>
 
                             <div class="mb-3">
-                                <label for="projectdesc-input" class="form-label">Root Cause</label>
-                                <textarea class="form-control" name="rootCause" required rows="3" placeholder="Enter root cause details......" required>
-                                </textarea>
+                                <label class="form-label">Root Cause</label>
+                                <textarea class="form-control" rows="3" name="rootCause" placeholder="Enter root cause details......" required>{{ $exception->rootCause }}</textarea>
                                 <div class="invalid-feedback">Please enter the root cause.</div>
                             </div>
 
@@ -44,7 +43,8 @@
                                 <select class="form-select select2" name="exceptionBatchId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($batches as $batch)
-                                        <option value="{{ $batch->id }}">{{ $batch->name }}</option>
+                                        <option value="{{ $batch->id }}" @selected($batch->id === $exception->exceptionBatchId)>
+                                            {{ $batch->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -54,7 +54,8 @@
                                 <select class="form-select select2" name="departmentId" required>
                                     <option>Select Unit/Department</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                        <option value="{{ $department->id }}" @selected($department->id === $exception->departmentId)>
+                                            {{ $department->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -86,8 +87,8 @@
                                 <label class="form-label" for="project-status-input">Status</label>
                                 <select class="form-select" name="status" required>
                                     <option selected>Select.....</option>
-                                    <option value="PENDING">Pending</option>
-                                    <option value="RESOLVED">Resolved</option>
+                                    <option value="PENDING" @selected($exception->status === 'PENDING')>Pending</option>
+                                    <option value="RESOLVED" @selected($exception->status === 'RESOLVED')>Resolved</option>
                                 </select>
                                 <div class="invalid-feedback">Please select exception status.</div>
                             </div>
@@ -97,7 +98,8 @@
                                 <select class="form-select select2" name="riskRateId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($riskRates as $riskRate)
-                                        <option value="{{ $riskRate->id }}">{{ $riskRate->name }}</option>
+                                        <option value="{{ $riskRate->id }}" @selected($riskRate->id === $exception->riskRateId)>
+                                            {{ $riskRate->name }}</option>
                                     @endforeach
 
                                 </select>
@@ -108,7 +110,8 @@
                                 <select class="form-select select2" name="processTypeId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($processTypes as $processType)
-                                        <option value="{{ $processType->id }}">{{ $processType->name }}</option>
+                                        <option value="{{ $processType->id }}" @selected($processType->id === $exception->processTypeId)>
+                                            {{ $processType->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -121,28 +124,32 @@
 
                     <div class="card">
                         <div class="card-body">
-                            <h5 class="card-title mb-2">Occurrence Date</h5>
+                            <div class="mb-3">
+                                <label class="form-label">Occurrence Date</label>
+                                <input type="text"  class="form-control"
+                                    placeholder="Select occurrence date" name="occurrenceDate"
+                                    value="{{ $exception->occurrenceDate == null ? '' :  Carbon\Carbon::parse($exception->occurrenceDate)->format('jS F, Y ') }}" data-date-format="dd/mm/yyyy"
+                                    data-provide="datepicker" data-date-autoclose="true" required />
+                                <div class="invalid-feedback">Please select occurrence date.</div>
+                            </div>
 
-                            <input type="text" id="duedate-input" class="form-control"
-                                placeholder="Select occurrence date" name="occurrenceDate" data-date-format="dd M, yyyy"
-                                data-provide="datepicker" data-date-autoclose="true" required />
-                            <div class="invalid-feedback">Please select occurrence date.</div>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title mb-2">Proposed Resolution Date</h5>
+                            <div class="mb-3">
+                                <label class="form-label">Proposed Resolution Date</label>
+                                <input type="text"  class="form-control"
+                                    placeholder="Select due date" name="proposeResolutionDate"
+                                    value="{{ $exception->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exception->proposeResolutionDate)->format('jS F, Y ')}}" data-date-format="dd/mm/yyyy"
+                                    data-provide="datepicker" data-date-autoclose="true" />
+                                <div class="invalid-feedback">Please select proposed resolution date.</div>
+                            </div>
 
-                            <input type="text" id="duedate-input" class="form-control" placeholder="Select due date"
-                                name="proposeResolutionDate" data-date-format="dd M, yyyy" data-provide="datepicker"
-                                data-date-autoclose="true" />
-                            <div class="invalid-feedback">Please select proposed resolution date.</div>
-                        </div>
-                        <div class="card-body">
-                            <h5 class="card-title mb-2">Resolution Date</h5>
-
-                            <input type="text" id="duedate-input" class="form-control" placeholder="Select resolution date"
-                                name="resolutionDate" data-date-format="dd M, yyyy" data-provide="datepicker"
-                                data-date-autoclose="true" />
-                            <div class="invalid-feedback">Please select resolution date.</div>
+                            <div class="mb-3">
+                                <label class="form-label">Resolution Date</label>
+                                <input type="text" class="form-control"
+                                    placeholder="Select resolution date" name="resolutionDate"
+                                    value="{{ $exception->resolutionDate == null ? '' :  Carbon\Carbon::parse($exception->resolutionDate)->format('jS F, Y ')  }}" data-date-format="dd/mm/yyyy"
+                                    data-provide="datepicker" data-date-autoclose="true" />
+                                <div class="invalid-feedback">Please select resolution date.</div>
+                            </div>
                         </div>
                         <!-- end card body -->
                     </div>
