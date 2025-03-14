@@ -65,8 +65,8 @@ class ExceptionController extends Controller
             'rootCause' => $request->input('rootCause'),
             'status' => $request->input('status'),
             'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
-            'proposeResolutionDate' => $request->input('proposeResolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
-            'resolutionDate' => $request->input('resolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
+            'proposeResolutionDate' =>  Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') ?? null,
+            'resolutionDate' =>  Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') ?? null,
             'processTypeId' => $request->input('processTypeId'),
             'riskRateId' => $request->input('riskRateId'),
             'departmentId' => $request->input('departmentId'),
@@ -111,7 +111,7 @@ class ExceptionController extends Controller
 
     public function edit(string $id)
     {
-        $batch = BatchController::getBatches();
+        $batches = BatchController::getBatches();
         $departments = $this->departmentData();
         $processTypes = ProcessTypeController::getProcessTypes();
         $riskRates = RiskRateController::getRiskRates();
@@ -124,7 +124,7 @@ class ExceptionController extends Controller
             if (!empty($response)) {
                 $exception = $response;
 
-                return view('exception-setup.edit', compact('exception, batches, departments, processTypes, riskRates'));
+                return view('exception-setup.edit', compact('exception', 'batches', 'departments', 'processTypes', 'riskRates'));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Exception does not exist');

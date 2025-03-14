@@ -38,7 +38,8 @@
                                 <select class="form-select select2" name="exceptionBatchId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($batches as $batch)
-                                        <option value="{{ $batch->id }}" @selected($batch->id === old('exceptionBatchId'))>{{ $batch->name }}</option>
+                                        <option value="{{ $batch->id }}" @selected($batch->id === old('exceptionBatchId'))>
+                                            {{ $batch->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -48,7 +49,8 @@
                                 <select class="form-select select2" name="departmentId" required>
                                     <option>Select Unit/Department</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}" @selected($department->id === old('departmentId'))>{{ $department->name }}</option>
+                                        <option value="{{ $department->id }}" @selected($department->id === old('departmentId'))>
+                                            {{ $department->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -56,9 +58,9 @@
                             <div class="mb-3">
                                 <label class="form-label">Occurrence Date</label>
                                 <input type="text" id="duedate-input" class="form-control"
-                                    placeholder="Select occurrence date" name="occurrenceDate" value="{{ old('occurrenceDate') }}"
-                                    data-date-format="dd/mm/yyyy" data-provide="datepicker" data-date-autoclose="true"
-                                    required />
+                                    placeholder="Select occurrence date" name="occurrenceDate"
+                                    value="{{ old('occurrenceDate') }}" data-date-format="dd/mm/yyyy"
+                                    data-provide="datepicker" data-date-autoclose="true" required />
                                 <div class="invalid-feedback">Please select occurrence date.</div>
                             </div>
 
@@ -80,7 +82,7 @@
                                 <select class="form-select" name="status" required>
                                     <option selected>Select.....</option>
                                     <option value="PENDING" @selected(old('status') === 'PENDING')>Pending</option>
-                                    <option value="RESOLVED" @selected(old('status' === 'RESOLVED'))>Resolved</option>
+                                    <option value="RESOLVED" @selected(old('status') === 'RESOLVED')>Resolved</option>
                                 </select>
                                 <div class="invalid-feedback">Please select exception status.</div>
                             </div>
@@ -90,7 +92,8 @@
                                 <select class="form-select select2" name="riskRateId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($riskRates as $riskRate)
-                                        <option value="{{ $riskRate->id }}" @selected($riskRate->id === old('riskRateId'))>{{ $riskRate->name }}</option>
+                                        <option value="{{ $riskRate->id }}" @selected($riskRate->id === old('riskRateId'))>
+                                            {{ $riskRate->name }}</option>
                                     @endforeach
 
                                 </select>
@@ -101,7 +104,8 @@
                                 <select class="form-select select2" name="processTypeId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($processTypes as $processType)
-                                        <option value="{{ $processType->id }}" @selected($processType->id === old('processTypeId'))>{{ $processType->name }}</option>
+                                        <option value="{{ $processType->id }}" @selected($processType->id === old('processTypeId'))>
+                                            {{ $processType->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -119,18 +123,18 @@
                             <div class="mb-3">
                                 <label class="form-label">Proposed Resolution Date</label>
                                 <input type="text" id="duedate-input" class="form-control"
-                                    placeholder="Select due date" name="proposeResolutionDate" value="{{ old('proposeResolutionDate') }}"
-                                    data-date-format="dd/mm/yyyy" data-provide="datepicker"
-                                    data-date-autoclose="true" />
+                                    placeholder="Select due date" name="proposeResolutionDate"
+                                    value="{{ old('proposeResolutionDate') }}" data-date-format="dd/mm/yyyy"
+                                    data-provide="datepicker" data-date-autoclose="true" />
                                 <div class="invalid-feedback">Please select proposed resolution date.</div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Resolution Date</label>
                                 <input type="text" id="duedate-input" class="form-control"
-                                    placeholder="Select resolution date" name="resolutionDate" value="{{ old('resolutionDate') }}"
-                                    data-date-format="dd/mm/yyyy" data-provide="datepicker"
-                                    data-date-autoclose="true" />
+                                    placeholder="Select resolution date" name="resolutionDate"
+                                    value="{{ old('resolutionDate') }}" data-date-format="dd/mm/yyyy"
+                                    data-provide="datepicker" data-date-autoclose="true" />
                                 <div class="invalid-feedback">Please select resolution date.</div>
                             </div>
                         </div>
