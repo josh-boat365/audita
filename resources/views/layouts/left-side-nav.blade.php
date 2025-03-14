@@ -39,8 +39,8 @@
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('group') }}" key="default">Group Setup</a></li>
                         <li><a href="{{ route('members') }}" key="">Group Members Assignment</a></li>
-                        <li><a href="{{ route('batch') }}" key="">Batch Setup</a></li>
                         <li><a href="{{ route('unit') }}" key="">Unit Setup</a></li>
+                        <li><a href="{{ route('batch') }}" key="">Batch Setup</a></li>
                         <li><a href="{{ route('process-type') }}" key="">Process Type Setup</a></li>
                         <li><a href="{{ route('risk-rate') }}" key="">Risk Rate Setup</a></li>
                         <li><a href="" key=""></a></li>
