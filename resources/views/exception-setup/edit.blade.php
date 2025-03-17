@@ -87,7 +87,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    {{ dd($exception->occurrenceDate) }}
+                                    
                                     <div class="mb-3">
                                         <label class="form-label">Occurrence Date</label>
                                         <input type="text" class="form-control" placeholder="Select occurrence date"
