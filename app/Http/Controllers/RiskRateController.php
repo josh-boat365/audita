@@ -33,7 +33,7 @@ class RiskRateController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'active' => 'required|integer',
         ]);
 
@@ -103,7 +103,7 @@ class RiskRateController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'active' => 'required|integer',
         ]);
 

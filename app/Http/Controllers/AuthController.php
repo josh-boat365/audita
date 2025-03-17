@@ -28,8 +28,8 @@ class AuthController extends Controller
 
         // Validate request input
         $request->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
+            'username' => 'required|string|max:255',
+            'password' => 'required|string|max:255',
         ]);
 
         // Prepare data for the API request

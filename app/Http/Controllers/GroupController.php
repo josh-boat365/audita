@@ -34,7 +34,7 @@ class GroupController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'branch_id' => 'required|integer',
             'active' => 'required|integer',
         ]);
@@ -107,7 +107,7 @@ class GroupController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'branch_id' => 'required|integer',
             'active' => 'required|integer',
         ]);

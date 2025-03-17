@@ -46,9 +46,9 @@ class ExceptionController extends Controller
     {
         // dd($request->all());
         $request->validate([
-            'exception' => 'required|string',
-            'rootCause' => 'required|string',
-            'status' => 'required|string',
+            'exception' => 'required|string|max:255',
+            'rootCause' => 'required|string|max:255',
+            'status' => 'required|string|max:8',
             'occurrenceDate' => 'required|date_format:d/m/Y',
             'proposeResolutionDate' => 'nullable|date_format:d/m/Y',
             'resolutionDate' => 'nullable|date_format:d/m/Y',
@@ -142,15 +142,16 @@ class ExceptionController extends Controller
     /**
      * Update the specified resource in storage.
      */
+
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'exception' => 'required|string',
-            'rootCause' => 'required|string',
-            'status' => 'required|string',
-            'occurrenceDate' => 'required|date',
-            'proposeResolutionDate' => 'nullable|date',
-            'resolutionDate' => 'nullable|date',
+            'exception' => 'required|string|max:255',
+            'rootCause' => 'required|string|max:255',
+            'status' => 'required|string|max:8',
+            'occurrenceDate' => 'required|date_format:d/m/Y',
+            'proposeResolutionDate' => 'nullable|date_format:d/m/Y',
+            'resolutionDate' => 'nullable|date_format:d/m/Y',
             'processTypeId' => 'required|integer',
             'riskRateId' => 'required|integer',
             'departmentId' => 'required|integer',
@@ -164,21 +165,19 @@ class ExceptionController extends Controller
             'exception' => $request->input('exception'),
             'rootCause' => $request->input('rootCause'),
             'status' => $request->input('status'),
-            'occurrenceDate' => $request->input('occurrenceDate'),
-            'proposeResolutionDate' => $request->input('proposeResolutionDate'),
-            'resolutionDate' => $request->input('resolutionDate'),
+            'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
+            'proposeResolutionDate' => $request->input('proposeResolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
+            'resolutionDate' => $request->input('resolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
             'processTypeId' => $request->input('processTypeId'),
             'riskRateId' => $request->input('riskRateId'),
             'departmentId' => $request->input('departmentId'),
             'exceptionBatchId' => $request->input('exceptionBatchId'),
-
         ];
 
         try {
             $response = Http::withToken($access_token)->put('http://192.168.1.200:5126/Auditor/ExceptionTracker', $data);
 
             if ($response->successful()) {
-
                 return redirect()->route('exception.list')->with('toast_success', 'Exception updated successfully');
             } else {
                 // Log the error response
@@ -196,6 +195,14 @@ class ExceptionController extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
+
+    // public function exceptionFileUpload($id)
+    // {
+    //     $access_token = session('api_token');
+
+    //     try {
+    //         $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionFileUpload');
+    // }
 
     /**
      * Remove the specified resource from storage.
