@@ -14,8 +14,8 @@
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
 
-                        <li><a href="" key="t-default">Overview</a></li>
-                        <li><a href="" key="t-default"></a></li>
+                        <li><a href="{{ route('dashboard') }}" key="t-default">Overview</a></li>
+                        {{--  <li><a href="" key="t-default"></a></li>  --}}
 
 
                         {{--  <li>
@@ -43,7 +43,7 @@
                         <li><a href="{{ route('batch') }}" key="">Batch Setup</a></li>
                         <li><a href="{{ route('process-type') }}" key="">Process Type Setup</a></li>
                         <li><a href="{{ route('risk-rate') }}" key="">Risk Rate Setup</a></li>
-                        <li><a href="" key=""></a></li>
+                        {{--  <li><a href="" key=""></a></li>  --}}
                     </ul>
                 </li>
 

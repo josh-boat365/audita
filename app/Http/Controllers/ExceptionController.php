@@ -120,11 +120,25 @@ class ExceptionController extends Controller
             // Make the GET request to the external API
             $response = $this->getAnException($id);
 
+            //get files for the exception
+            $encryptedFiles = $this->getExceptionFiles($id);
+
+            //decode file data
+            $files = array_map(function ($file) {
+                return [
+                    'id' => $file->id,
+                    'fileName' => $file->fileName,
+                    'fileData' => base64_decode($file->fileData),
+                    'uploadDate' => $file->uploadDate,
+                ];
+            }, $encryptedFiles);
+
+
             // Check the response status and return appropriate response
             if (!empty($response)) {
                 $exception = $response;
 
-                return view('exception-setup.edit', compact('exception', 'batches', 'departments', 'processTypes', 'riskRates'));
+                return view('exception-setup.edit', compact('exception', 'batches', 'departments', 'processTypes', 'riskRates', 'files'));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Exception does not exist');
@@ -196,13 +210,50 @@ class ExceptionController extends Controller
         }
     }
 
-    // public function exceptionFileUpload($id)
-    // {
-    //     $access_token = session('api_token');
+    public function exceptionFileUpload(Request $request, $id)
+    {
+        // dd($request->all());
+        $request->validate([
+            'file' => 'required|mimes:pdf,doc,docx,png,jpeg,jpg,txt|max:5048',
+        ]);
 
-    //     try {
-    //         $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionFileUpload');
-    // }
+        $access_token = session('api_token');
+
+        if ($request->file('file')) {
+            $file = $request->file('file');
+            $fileContent = file_get_contents($file);
+            $base64File = base64_encode($fileContent);
+
+            $data = [
+                'exceptionTrackerId' => $id,
+                'fileName' => $file->getClientOriginalName(),
+                'fileData' => $base64File,
+            ];
+
+            try {
+                $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionFileUpload', $data);
+
+                if ($response->successful()) {
+                    return redirect()->back()->with('toast_success', 'Exception File uploaded successfully');
+                } else {
+                    // Log the error response
+                    Log::error('Failed to upload file', [
+                        'status' => $response->status(),
+                        'response' => $response->body()
+                    ]);
+                    return redirect()->back()->with('toast_error', 'Sorry, failed to upload file');
+                }
+            } catch (\Exception $e) {
+                Log::error('Exception occurred while uploading file', [
+                    'message' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            }
+        }
+
+        return redirect()->back()->with('toast_error', 'No file uploaded');
+    }
 
     /**
      * Remove the specified resource from storage.
@@ -210,7 +261,7 @@ class ExceptionController extends Controller
     public function destroy(Request $request, string $id)
     {
         // Get the access token from the session
-        $accessToken = session('api_token'); // Replace with your actual access token
+        $accessToken = session('api_token');
 
         try {
             // Make the DELETE request to the external API
@@ -263,6 +314,67 @@ class ExceptionController extends Controller
         }
 
         return $departments;
+    }
+
+    public static function getExceptionFiles($exceptionId)
+    {
+        $access_token = session('api_token');
+
+        try {
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionFileUpload');
+
+            if ($response->successful()) {
+                $api_response = $response->object() ?? [];
+
+                // $files = array_filter($api_response, function($file) use ($exceptionId){
+                //     return $file->exceptionTrackerId == $exceptionId;
+                // });
+
+                $files = collect($api_response)->filter(fn($file) => $file->exceptionTrackerId == $exceptionId)->all() ?? [];
+            } elseif ($response->status() == 404) {
+                $files = [];
+                Log::warning('Exception files API returned 404 Not Found');
+                toast('Exception files data not found', 'warning');
+            } else {
+                $files = [];
+                Log::error('Exception files API request failed', ['status' => $response->status()]);
+                toast('Error fetching exception files data', 'error');
+            }
+        } catch (\Exception $e) {
+            Log::error('Error fetching exception files', ['error' => $e->getMessage()]);
+            toast('An error occurred. Please try again later', 'error');
+        }
+
+        return $files;
+    }
+    public static function exceptionFileDelete($exceptionId)
+    {
+        $access_token = session('api_token');
+
+        try {
+            // Make the DELETE request to the external API
+            $response = Http::withToken($access_token)
+                ->delete("http://192.168.1.200:5126/Auditor/ExceptionFileUpload/{$exceptionId}");
+
+            // Check the response status and return appropriate response
+            if ($response->successful()) {
+                return redirect()->back()->with('toast_success', 'Exception File removed successfully');
+            } else {
+                // Log the error response
+                Log::error('Failed to delete Exception File', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception File');
+            }
+        } catch (\Exception $e) {
+            // Log the exception
+            Log::error('Exception occurred while deleting Exception File', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+        }
     }
 
     public static function getExceptions()
