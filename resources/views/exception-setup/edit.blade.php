@@ -43,8 +43,8 @@
         <div class="tab-content p-3 text-muted">
             <div class="tab-pane active" id="exception-creation" role="tabpanel">
 
-                <form action="{{ route('exception.update', $exception->id) }}" method="POST" enctype="multipart/form-data" autocomplete="on"
-                    class="needs-validation">
+                <form action="{{ route('exception.update', $exception->id) }}" method="POST"
+                    enctype="multipart/form-data" autocomplete="on" class="needs-validation">
                     @csrf
                     <div class="row">
                         <div class="col-lg-8">
@@ -87,7 +87,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    
+
                                     <div class="mb-3">
                                         <label class="form-label">Occurrence Date</label>
                                         <input type="text" class="form-control" placeholder="Select occurrence date"
@@ -189,8 +189,12 @@
                 </form>
             </div>
 
+            {{--  FILE UPLOAD  --}}
+
+            {{-- FILE UPLOAD --}}
             <div class="tab-pane" id="file-attachments" role="tabpanel">
-                <form action="" method="POST" enctype="multipart/form-data" autocomplete="on">
+                <form id="file-upload-form" action="{{ route('exception.file.upload', $exception->id) }}"
+                    method="POST" enctype="multipart/form-data" autocomplete="on">
                     @csrf
                     <div>
                         <label class="form-label">Attach Files</label>
@@ -205,22 +209,58 @@
                     </div>
                     <div class="mt-4">
                         <div class="text-end mb-4">
-                            <button type="submit" class="btn btn-primary">Upload File</button>
+                            <button type="button" id="upload-button" class="btn btn-primary">Upload File</button>
                         </div>
                     </div>
                 </form>
 
+                {{--  FILE PREVIEWS  --}}
                 <div class="card">
                     <div class="card-body">
                         <h4>Files</h4>
                         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
+                        <div class="row">
+                            @forelse ($files as $file)
+                                <div class="col-xl-4 mb-3">
+
+                                    @if (in_array(pathinfo($file['fileName'], PATHINFO_EXTENSION), ['png', 'jpg', 'jpeg']))
+                                        <img src="data:image/{{ pathinfo($file['fileName'], PATHINFO_EXTENSION) }};base64,{{ base64_encode($file['fileData']) }}"
+                                            alt="{{ $file['fileName'] }}" class="img-fluid">
+                                    @elseif (pathinfo($file['fileName'], PATHINFO_EXTENSION) == 'pdf')
+                                        <embed
+                                            src="data:application/pdf;base64,{{ base64_encode($file['fileData']) }}"
+                                            type="application/pdf" width="100%" height="600px" />
+                                    @elseif (in_array(pathinfo($file['fileName'], PATHINFO_EXTENSION), ['doc', 'docx']))
+                                        <a href="data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,{{ base64_encode($file['fileData']) }}"
+                                            download="{{ $file['fileName'] }}" class="btn btn-primary">Download</a>
+                                    @else
+                                        <a href="data:application/octet-stream;base64,{{ base64_encode($file['fileData']) }}"
+                                            download="{{ $file['fileName'] }}" class="btn btn-primary">Download</a>
+                                    @endif
+                                    <div class="mt-2 d-flex justify-content-between">
+                                        <p> {{ $file['fileName'] }} -
+                                            {{ \Carbon\Carbon::parse($file['uploadDate'])->format('d/m/Y') }}</p>
+                                        <p>
+                                            <a href="{{ route('exception.file.delete', $file['id']) }}"
+                                                class="badge bg-danger"><i class="fas fa-bin"></i>
+                                                Remove</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            @empty
+                                <p>No files uploaded yet</p>
+                            @endforelse
+
+                        </div>
+
 
                     </div>
                 </div>
 
-
-
             </div>
+
+
+            {{--  CHATS  --}}
 
             <div class="tab-pane" id="chats-comments" role="tabpanel">
                 <div class="w-100 user-chat">
@@ -482,23 +522,46 @@
 
 
         </div>
-        <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-        <script>
-            Dropzone.autoDiscover = false;
-            var myDropzone = new Dropzone("#myId", {
-                url: "/file/post", // Set the url for your upload script
-                paramName: "file", // The name that will be used to transfer the file
-                maxFilesize: 5, // MB
-                addRemoveLinks: true,
-                dictDefaultMessage: "Drop files here or click to upload",
-                init: function() {
-                    this.on("success", function(file, response) {
-                        console.log("File uploaded successfully");
-                    });
-                    this.on("error", function(file, response) {
-                        console.log("File upload failed");
-                    });
-                }
-            });
-        </script>
+        @push('scripts')
+            <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+            <script>
+                Dropzone.autoDiscover = false;
+                var myDropzone = new Dropzone("#myId", {
+                    url: "{{ route('exception.file.upload', $exception->id) }}", // Set the url for your upload script
+                    paramName: "file", // The name that will be used to transfer the file
+                    maxFilesize: 5, // MB
+                    autoProcessQueue: false, // Prevent automatic upload
+                    addRemoveLinks: true,
+                    dictDefaultMessage: "Drop files here or click to upload",
+                    headers: {
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    },
+                    init: function() {
+                        var submitButton = document.querySelector("#upload-button");
+                        var myDropzone = this; // Closure
+
+                        submitButton.addEventListener("click", function() {
+                            // Process the queue when the button is clicked
+                            myDropzone.processQueue();
+                        });
+
+                        this.on("success", function(file, response) {
+                            console.log("File uploaded successfully");
+                            // Handle the response and display a success message
+                            file.previewElement.classList.add("dz-success");
+                            file.previewElement.querySelector("[data-dz-name]").innerHTML = file.name;
+                        });
+
+                        this.on("error", function(file, response) {
+                            console.log("File upload failed");
+                            // Handle the error response and display an error message
+                            file.previewElement.classList.add("dz-error");
+                            var errorMessage = response.message || response;
+                            file.previewElement.querySelector("[data-dz-errormessage]").innerHTML =
+                                errorMessage;
+                        });
+                    }
+                });
+            </script>
+        @endpush
 </x-base-layout>
