@@ -50,10 +50,10 @@ class BatchController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'year' => 'required|integer',
             'active' => 'required|integer',
-            'status' => 'required|string',
+            'status' => 'required|string|max:7',
             'auditorUnitId' => 'required|integer',
             'activityGroupId' => 'required|integer',
         ]);
@@ -140,10 +140,10 @@ class BatchController extends Controller
     public function update(Request $request, string $id)
     {
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:255',
             'year' => 'required|integer',
             'active' => 'required|integer',
-            'status' => 'required|string',
+            'status' => 'required|string|max:7',
             'auditorUnitId' => 'required|integer',
             'activityGroupId' => 'required|integer',
         ]);
