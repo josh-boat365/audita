@@ -226,10 +226,8 @@
                                     @if (in_array(pathinfo($file['fileName'], PATHINFO_EXTENSION), ['png', 'jpg', 'jpeg']))
                                         <img src="data:image/{{ pathinfo($file['fileName'], PATHINFO_EXTENSION) }};base64,{{ base64_encode($file['fileData']) }}"
                                             alt="{{ $file['fileName'] }}" class="img-fluid">
-                                    @elseif (pathinfo($file['fileName'], PATHINFO_EXTENSION) == 'pdf')
-                                        <embed
-                                            src="data:application/pdf;base64,{{ base64_encode($file['fileData']) }}"
-                                            type="application/pdf" width="100%" height="600px" />
+                                        {{--  @elseif (pathinfo($file['fileName'], PATHINFO_EXTENSION) == 'pdf')
+                                            <iframe src="data:application/pdf;base64,{{ $file['fileData'] }}" type="application/pdf" width="100%" height="600px"></iframe>  --}}
                                     @elseif (in_array(pathinfo($file['fileName'], PATHINFO_EXTENSION), ['doc', 'docx']))
                                         <a href="data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,{{ base64_encode($file['fileData']) }}"
                                             download="{{ $file['fileName'] }}" class="btn btn-primary">Download</a>
@@ -238,8 +236,8 @@
                                             download="{{ $file['fileName'] }}" class="btn btn-primary">Download</a>
                                     @endif
                                     <div class="mt-2 d-flex justify-content-between">
-                                        <p> {{ $file['fileName'] }} -
-                                            {{ \Carbon\Carbon::parse($file['uploadDate'])->format('d/m/Y') }}</p>
+                                        <p> <strong>{{ $file['fileName'] }}</strong> -
+                                            {{ \Carbon\Carbon::parse($file['uploadDate'])->format('d/m/Y H:i A') }}</p>
                                         <p>
                                             <a href="{{ route('exception.file.delete', $file['id']) }}"
                                                 class="badge bg-danger"><i class="fas fa-bin"></i>
@@ -250,10 +248,7 @@
                             @empty
                                 <p>No files uploaded yet</p>
                             @endforelse
-
                         </div>
-
-
                     </div>
                 </div>
 
@@ -268,11 +263,11 @@
                         <div class="p-4 border-bottom ">
                             <div class="row">
                                 <div class="col-md-4 col-9">
-                                    <h5 class="font-size-15 mb-1">Steven Franklin</h5>
+                                    <h5 class="font-size-15 mb-1">{{ session('user_name') }}</h5>
                                     <p class="text-muted mb-0"><i
                                             class="mdi mdi-circle text-success align-middle me-1"></i> Active now</p>
                                 </div>
-                                <div class="col-md-8 col-3">
+                                {{--  <div class="col-md-8 col-3">
                                     <ul class="list-inline user-chat-nav text-end mb-0">
                                         <li class="list-inline-item d-none d-sm-inline-block">
                                             <div class="dropdown">
@@ -330,7 +325,7 @@
                                         </li>
 
                                     </ul>
-                                </div>
+                                </div>  --}}
                             </div>
                         </div>
 
@@ -338,181 +333,117 @@
                         <div>
                             <div class="chat-conversation p-3">
                                 <ul class="list-unstyled mb-0" data-simplebar style="max-height: 486px;">
-                                    <li>
-                                        <div class="chat-day-title">
-                                            <span class="title">Today</span>
-                                        </div>
-                                    </li>
-                                    <li>
-                                        <div class="conversation-list">
-                                            <div class="dropdown">
 
-                                                <a class="dropdown-toggle" href="#" role="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-dots-vertical-rounded"></i>
-                                                </a>
-                                                <div class="dropdown-menu">
-                                                    <a class="dropdown-item" href="#">Copy</a>
-                                                    <a class="dropdown-item" href="#">Save</a>
-                                                    <a class="dropdown-item" href="#">Forward</a>
-                                                    <a class="dropdown-item" href="#">Delete</a>
+                                    @forelse ($comments as $comment)
+                                        @if ($comment->createdBy != $exception->auditorName)
+                                            {{--  COMMENT FROM OTHER USERS  --}}
+                                            <li class="left">
+                                                <div class="conversation-list">
+                                                    <div class="dropdown">
+
+                                                        <a class="dropdown-toggle" href="#" role="button"
+                                                            data-bs-toggle="dropdown" aria-haspopup="true"
+                                                            aria-expanded="false">
+                                                            <i class="bx bx-dots-vertical-rounded"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu">
+                                                            <a class="dropdown-item" href="#">Copy</a>
+                                                            <a class="dropdown-item" href="#">Save</a>
+                                                            <a class="dropdown-item" href="#">Forward</a>
+                                                            <a class="dropdown-item" href="#">Delete</a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="ctext-wrap">
+                                                        <div class="conversation-name">{{ $comment->createdBy }}</div>
+                                                        <p>{{ $comment->comment }}</p>
+                                                        <p class="chat-time mb-0"><i
+                                                                class="bx bx-time-five align-middle me-1"></i>
+                                                            {{ Carbon\Carbon::parse($comment->createdAt)->format('d/m/Y H:i A') }}
+                                                        </p>
+                                                    </div>
+
                                                 </div>
-                                            </div>
-                                            <div class="ctext-wrap">
-                                                <div class="conversation-name">Steven Franklin</div>
-                                                <p>
-                                                    Hello!
-                                                </p>
-                                                <p class="chat-time mb-0"><i
-                                                        class="bx bx-time-five align-middle me-1"></i> 10:00</p>
-                                            </div>
+                                            </li>
+                                            {{--  x- END OF COMMENT FROM OTHER USERS  --}}
+                                        @elseif($comment->createdBy == $exception->auditorName)
+                                            {{--  USER COMMENT  --}}
+                                            <li class=" right">
+                                                <div class="conversation-list">
+                                                    <div class="dropdown">
 
-                                        </div>
-                                    </li>
+                                                        <a class="dropdown-toggle" href="#" role="button"
+                                                            data-bs-toggle="dropdown" aria-haspopup="true"
+                                                            aria-expanded="false">
+                                                            <i class="bx bx-dots-vertical-rounded"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu">
+                                                            <a class="dropdown-item" href="#">Copy</a>
+                                                            <a class="dropdown-item" href="#">Save</a>
+                                                            <a class="dropdown-item" href="#">Forward</a>
+                                                            <a class="dropdown-item" href="#">Delete</a>
+                                                        </div>
+                                                    </div>
+                                                    <div class="ctext-wrap">
+                                                        <div class="conversation-name">{{ $comment->createdBy }}</div>
+                                                        <p>
+                                                            {{ $comment->comment }}
+                                                        </p>
 
-                                    <li class="right">
-                                        <div class="conversation-list">
-                                            <div class="dropdown">
-
-                                                <a class="dropdown-toggle" href="#" role="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-dots-vertical-rounded"></i>
-                                                </a>
-                                                <div class="dropdown-menu">
-                                                    <a class="dropdown-item" href="#">Copy</a>
-                                                    <a class="dropdown-item" href="#">Save</a>
-                                                    <a class="dropdown-item" href="#">Forward</a>
-                                                    <a class="dropdown-item" href="#">Delete</a>
+                                                        <p class="chat-time mb-0"><i
+                                                                class="bx bx-time-five align-middle me-1"></i>
+                                                            {{ Carbon\Carbon::parse($comment->createdAt)->format('d/m/Y H:i A') }}
+                                                        </p>
+                                                    </div>
                                                 </div>
+                                            </li>
+                                            {{--  x- END OF USER COMMENT   --}}
+                                        @endif
+
+                                    @empty
+                                        <li>
+                                            <div class="chat-day-title">
+                                                <span class="title">No New Comments Yet</span>
                                             </div>
-                                            <div class="ctext-wrap">
-                                                <div class="conversation-name">Henry Wells</div>
-                                                <p>
-                                                    Hi, How are you? What about our next meeting?
-                                                </p>
+                                        </li>
+                                    @endforelse
 
-                                                <p class="chat-time mb-0"><i
-                                                        class="bx bx-time-five align-middle me-1"></i> 10:02</p>
-                                            </div>
-                                        </div>
-                                    </li>
-
-                                    <li>
-                                        <div class="conversation-list">
-                                            <div class="dropdown">
-
-                                                <a class="dropdown-toggle" href="#" role="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-dots-vertical-rounded"></i>
-                                                </a>
-                                                <div class="dropdown-menu">
-                                                    <a class="dropdown-item" href="#">Copy</a>
-                                                    <a class="dropdown-item" href="#">Save</a>
-                                                    <a class="dropdown-item" href="#">Forward</a>
-                                                    <a class="dropdown-item" href="#">Delete</a>
-                                                </div>
-                                            </div>
-                                            <div class="ctext-wrap">
-                                                <div class="conversation-name">Steven Franklin</div>
-                                                <p>
-                                                    Yeah everything is fine
-                                                </p>
-
-                                                <p class="chat-time mb-0"><i
-                                                        class="bx bx-time-five align-middle me-1"></i> 10:06</p>
-                                            </div>
-
-                                        </div>
-                                    </li>
-
-                                    <li class="last-chat">
-                                        <div class="conversation-list">
-                                            <div class="dropdown">
-
-                                                <a class="dropdown-toggle" href="#" role="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-dots-vertical-rounded"></i>
-                                                </a>
-                                                <div class="dropdown-menu">
-                                                    <a class="dropdown-item" href="#">Copy</a>
-                                                    <a class="dropdown-item" href="#">Save</a>
-                                                    <a class="dropdown-item" href="#">Forward</a>
-                                                    <a class="dropdown-item" href="#">Delete</a>
-                                                </div>
-                                            </div>
-                                            <div class="ctext-wrap">
-                                                <div class="conversation-name">Steven Franklin</div>
-                                                <p>& Next meeting tomorrow 10.00AM</p>
-                                                <p class="chat-time mb-0"><i
-                                                        class="bx bx-time-five align-middle me-1"></i> 10:06</p>
-                                            </div>
-
-                                        </div>
-                                    </li>
-
-                                    <li class=" right">
-                                        <div class="conversation-list">
-                                            <div class="dropdown">
-
-                                                <a class="dropdown-toggle" href="#" role="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-dots-vertical-rounded"></i>
-                                                </a>
-                                                <div class="dropdown-menu">
-                                                    <a class="dropdown-item" href="#">Copy</a>
-                                                    <a class="dropdown-item" href="#">Save</a>
-                                                    <a class="dropdown-item" href="#">Forward</a>
-                                                    <a class="dropdown-item" href="#">Delete</a>
-                                                </div>
-                                            </div>
-                                            <div class="ctext-wrap">
-                                                <div class="conversation-name">Henry Wells</div>
-                                                <p>
-                                                    Wow thats great
-                                                </p>
-
-                                                <p class="chat-time mb-0"><i
-                                                        class="bx bx-time-five align-middle me-1"></i> 10:07</p>
-                                            </div>
-                                        </div>
-                                    </li>
 
 
                                 </ul>
                             </div>
                             <div class="p-3 chat-input-section">
-                                <div class="row">
-                                    <div class="col">
-                                        <div class="position-relative">
-                                            <input type="text" class="form-control chat-input"
-                                                placeholder="Enter Message...">
-                                            <div class="chat-input-links" id="tooltip-container">
-                                                <ul class="list-inline mb-0">
-                                                    <li class="list-inline-item"><a href="javascript: void(0);"
-                                                            title="Emoji"><i
-                                                                class="mdi mdi-emoticon-happy-outline"></i></a></li>
-                                                    <li class="list-inline-item"><a href="javascript: void(0);"
-                                                            title="Images"><i
-                                                                class="mdi mdi-file-image-outline"></i></a></li>
-                                                    <li class="list-inline-item"><a href="javascript: void(0);"
-                                                            title="Add Files"><i
-                                                                class="mdi mdi-file-document-outline"></i></a></li>
-                                                </ul>
+                                <form action="{{ route('exception.comment.post', $exception->id) }}" method="POST">
+                                    @csrf
+                                    <div class="row">
+                                        <div class="col">
+                                            <div class="position-relative">
+                                                <input type="text" name="comment" class="form-control chat-input"
+                                                    placeholder="Enter Message...">
+                                                {{--  <div class="chat-input-links" id="tooltip-container">
+                                                    <ul class="list-inline mb-0">
+                                                        <li class="list-inline-item"><a href="javascript: void(0);"
+                                                                title="Emoji"><i
+                                                                    class="mdi mdi-emoticon-happy-outline"></i></a>
+                                                        </li>
+                                                        <li class="list-inline-item"><a href="javascript: void(0);"
+                                                                title="Images"><i
+                                                                    class="mdi mdi-file-image-outline"></i></a></li>
+                                                        <li class="list-inline-item"><a href="javascript: void(0);"
+                                                                title="Add Files"><i
+                                                                    class="mdi mdi-file-document-outline"></i></a></li>
+                                                    </ul>
+                                                </div>  --}}
                                             </div>
                                         </div>
+                                        <div class="col-auto">
+                                            <button type="submit"
+                                                class="btn btn-primary btn-rounded chat-send w-md waves-effect waves-light"><span
+                                                    class="d-none d-sm-inline-block me-2">Send</span> <i
+                                                    class="mdi mdi-send"></i></button>
+                                        </div>
                                     </div>
-                                    <div class="col-auto">
-                                        <button type="submit"
-                                            class="btn btn-primary btn-rounded chat-send w-md waves-effect waves-light"><span
-                                                class="d-none d-sm-inline-block me-2">Send</span> <i
-                                                class="mdi mdi-send"></i></button>
-                                    </div>
-                                </div>
+
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -529,7 +460,7 @@
                 var myDropzone = new Dropzone("#myId", {
                     url: "{{ route('exception.file.upload', $exception->id) }}", // Set the url for your upload script
                     paramName: "file", // The name that will be used to transfer the file
-                    maxFilesize: 5, // MB
+                    maxFilesize: 2, // MB
                     autoProcessQueue: false, // Prevent automatic upload
                     addRemoveLinks: true,
                     dictDefaultMessage: "Drop files here or click to upload",

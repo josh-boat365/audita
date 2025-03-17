@@ -85,10 +85,14 @@ Route::get('/create-exception', [ExceptionController::class, 'create'])->name('e
 Route::post('/create-exception', [ExceptionController::class, 'store'])->name('exception.post');
 Route::get('/exception/{id}/open', [ExceptionController::class, 'edit'])->name('exception.edit');
 Route::post('/exception/{id}/update', [ExceptionController::class, 'update'])->name('exception.update');
-Route::get('/exception/{id}/delete', [ExceptionController::class, 'destroy'])->name('exception.delete');
+Route::post('/exception/{id}/delete', [ExceptionController::class, 'destroy'])->name('exception.delete');
 Route::post('/exception/{id}/file-upload', [ExceptionController::class, 'exceptionFileUpload'])->name('exception.file.upload');
 // Route::get('/exception/{id}/file-download', [ExceptionController::class, 'exceptionFileDownload'])->name('exception.file.download');
 Route::get('/exception/{id}/file-delete', [ExceptionController::class, 'exceptionFileDelete'])->name('exception.file.delete');
+
+//EXCEPTION COMMENTS
+Route::post('/exception/{id}/comment', [ExceptionController::class, 'storeComment'])->name('exception.comment.post');
+Route::post('/exception/{id}/comment-delete', [ExceptionController::class, 'destroyComment'])->name('exception.comment.delete');
 
 
 

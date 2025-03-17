@@ -133,12 +133,18 @@ class ExceptionController extends Controller
                 ];
             }, $encryptedFiles);
 
+            //get exception comments
+            $comments = $this->getExceptionComments($id);
+
 
             // Check the response status and return appropriate response
             if (!empty($response)) {
                 $exception = $response;
 
-                return view('exception-setup.edit', compact('exception', 'batches', 'departments', 'processTypes', 'riskRates', 'files'));
+                return view('exception-setup.edit', compact(
+                    'exception', 'batches', 'departments', 'processTypes', 'riskRates', 'files'
+                    , 'comments'
+                ));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Exception does not exist');
@@ -289,6 +295,69 @@ class ExceptionController extends Controller
         }
     }
 
+    public function storeComment(Request $request,$id){
+        $request->validate([
+            'comment' => 'required|string|max:255',
+        ]);
+
+        $access_token = session('api_token');
+
+        $data = [
+            'exceptionTrackerId' => $id,
+            'comment' => $request->input('comment'),
+        ];
+
+        try {
+            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionComment', $data);
+
+            if($response->successful()) {
+                return redirect()->back()->with('toast_success', 'Comment added successfully');
+            } else {
+                // Log the error response
+                Log::error('Failed to add comment', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to add comment');
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception occurred while adding comment', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+        }
+    }
+
+    public static function getExceptionComments($exceptionId)
+    {
+        $access_token = session('api_token');
+
+        try {
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionComment');
+
+            if($response->successful()) {
+
+                $api_response = $response->object() ?? [];
+                $comments = collect($api_response)->filter(fn($comment) => $comment->exceptionTrackerId == $exceptionId)->all() ?? [];
+
+            } elseif($response->status() == 404) {
+                $comments = [];
+                Log::warning('Exception comments API returned 404 Not Found');
+                toast('Exception comments data not found', 'warning');
+            } else {
+                $comments = [];
+                Log::error('Exception comments API request failed', ['status' => $response->status()]);
+                toast('Error fetching exception comments data', 'error');
+            }
+
+        }catch (\Exception $e) {
+            $comments = [];
+            Log::error('Error fetching exception comments', ['error' => $e->getMessage()]);
+            toast('An error occurred. Please try again later', 'error');
+        }
+        return $comments;
+    }
     public static function departmentData()
     {
         $access_token = session('api_token');
@@ -326,11 +395,8 @@ class ExceptionController extends Controller
             if ($response->successful()) {
                 $api_response = $response->object() ?? [];
 
-                // $files = array_filter($api_response, function($file) use ($exceptionId){
-                //     return $file->exceptionTrackerId == $exceptionId;
-                // });
-
                 $files = collect($api_response)->filter(fn($file) => $file->exceptionTrackerId == $exceptionId)->all() ?? [];
+
             } elseif ($response->status() == 404) {
                 $files = [];
                 Log::warning('Exception files API returned 404 Not Found');
