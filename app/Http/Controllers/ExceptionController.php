@@ -65,8 +65,10 @@ class ExceptionController extends Controller
             'rootCause' => $request->input('rootCause'),
             'status' => $request->input('status'),
             'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
-            'proposeResolutionDate' =>  Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') ?? null,
-            'resolutionDate' =>  Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') ?? null,
+            'proposeResolutionDate' => $request->input('proposeResolutionDate') ?
+                Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
+            'resolutionDate' => $request->input('resolutionDate') ?
+                Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
             'processTypeId' => $request->input('processTypeId'),
             'riskRateId' => $request->input('riskRateId'),
             'departmentId' => $request->input('departmentId'),
@@ -142,8 +144,13 @@ class ExceptionController extends Controller
                 $exception = $response;
 
                 return view('exception-setup.edit', compact(
-                    'exception', 'batches', 'departments', 'processTypes', 'riskRates', 'files'
-                    , 'comments'
+                    'exception',
+                    'batches',
+                    'departments',
+                    'processTypes',
+                    'riskRates',
+                    'files',
+                    'comments'
                 ));
             } else {
 
@@ -295,7 +302,8 @@ class ExceptionController extends Controller
         }
     }
 
-    public function storeComment(Request $request,$id){
+    public function storeComment(Request $request, $id)
+    {
         $request->validate([
             'comment' => 'required|string|max:255',
         ]);
@@ -310,7 +318,7 @@ class ExceptionController extends Controller
         try {
             $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionComment', $data);
 
-            if($response->successful()) {
+            if ($response->successful()) {
                 return redirect()->back()->with('toast_success', 'Comment added successfully');
             } else {
                 // Log the error response
@@ -336,12 +344,11 @@ class ExceptionController extends Controller
         try {
             $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionComment');
 
-            if($response->successful()) {
+            if ($response->successful()) {
 
                 $api_response = $response->object() ?? [];
                 $comments = collect($api_response)->filter(fn($comment) => $comment->exceptionTrackerId == $exceptionId)->all() ?? [];
-
-            } elseif($response->status() == 404) {
+            } elseif ($response->status() == 404) {
                 $comments = [];
                 Log::warning('Exception comments API returned 404 Not Found');
                 toast('Exception comments data not found', 'warning');
@@ -350,8 +357,7 @@ class ExceptionController extends Controller
                 Log::error('Exception comments API request failed', ['status' => $response->status()]);
                 toast('Error fetching exception comments data', 'error');
             }
-
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             $comments = [];
             Log::error('Error fetching exception comments', ['error' => $e->getMessage()]);
             toast('An error occurred. Please try again later', 'error');
@@ -396,7 +402,6 @@ class ExceptionController extends Controller
                 $api_response = $response->object() ?? [];
 
                 $files = collect($api_response)->filter(fn($file) => $file->exceptionTrackerId == $exceptionId)->all() ?? [];
-
             } elseif ($response->status() == 404) {
                 $files = [];
                 Log::warning('Exception files API returned 404 Not Found');
