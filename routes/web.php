@@ -10,7 +10,7 @@ use App\Http\Controllers\RiskRateController;
 use App\Http\Controllers\ExceptionController;
 use App\Http\Controllers\ProcessTypeController;
 use App\Http\Controllers\GroupMembersController;
-
+use App\Http\Controllers\ReportsController;
 
 // Route::middleware(['guest'])->group(
 // function () {
@@ -93,6 +93,10 @@ Route::get('/exception/{id}/file-delete', [ExceptionController::class, 'exceptio
 //EXCEPTION COMMENTS
 Route::post('/exception/{id}/comment', [ExceptionController::class, 'storeComment'])->name('exception.comment.post');
 Route::post('/exception/{id}/comment-delete', [ExceptionController::class, 'destroyComment'])->name('exception.comment.delete');
+
+//REPORTS
+Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
+Route::get('/reports/{id}/download', [ReportsController::class, 'download'])->name('reports.download');
 
 
 
