@@ -81,15 +81,15 @@
                 </li>  --}}
 
 
-                {{--  <li>
+                <li>
                     <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
                         <i class="bx bx-file"></i>
                         <span key="t-dashboards">Reports</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        <li><a href="">Overview</a></li>
+                        <li><a href="{{ route('reports') }}">Overview</a></li>
                     </ul>
-                </li>  --}}
+                </li>
 
 
                 {{--  <hr style="margin: 25vh auto 1rem auto; width: 14rem;">  --}}

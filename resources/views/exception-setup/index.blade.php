@@ -11,6 +11,9 @@
         </div>
         <!-- end page title -->
 
+        <a href="{{ route('exception.create') }}" class="btn btn-success btn-rounded waves-effect waves-light "><i
+                class="bx bxs-plus"></i>Create</a>
+
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
 
 

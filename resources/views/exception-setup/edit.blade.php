@@ -481,6 +481,11 @@
                             // Handle the response and display a success message
                             file.previewElement.classList.add("dz-success");
                             file.previewElement.querySelector("[data-dz-name]").innerHTML = file.name;
+                            //auto refresh the page in 2seconds
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 2000);
+                            
                         });
 
                         this.on("error", function(file, response) {
@@ -491,6 +496,25 @@
                             file.previewElement.querySelector("[data-dz-errormessage]").innerHTML =
                                 errorMessage;
                         });
+                    }
+                });
+
+                // Save the active tab state to local storage
+                document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(tab) {
+                    tab.addEventListener('shown.bs.tab', function(e) {
+                        localStorage.setItem('activeTab', e.target.getAttribute('href'));
+                    });
+                });
+
+                // Restore the active tab state from local storage
+                document.addEventListener('DOMContentLoaded', function() {
+                    var activeTab = localStorage.getItem('activeTab');
+                    if (activeTab) {
+                        var tabElement = document.querySelector('a[href="' + activeTab + '"]');
+                        if (tabElement) {
+                            var tab = new bootstrap.Tab(tabElement);
+                            tab.show();
+                        }
                     }
                 });
             </script>
