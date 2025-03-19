@@ -4,7 +4,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18">Overview of Appraisal Reports</h4>
+                    <h4 class="mb-sm-0 font-size-18">Overview of Exceptions Reports</h4>
                 </div>
             </div>
         </div>
@@ -19,12 +19,12 @@
                             <div class="row align-items-center g-2">
                                 <!-- Batch Filter -->
                                 <div class="col-md-3">
-                                    <label for="batchFilter" class="form-label">Batch</label>
+                                    <label for="batchFilter" class="form-label">Exception</label>
                                     <select id="batchFilter" class="select2 form-control" name="batchId"
                                         data-placeholder="Choose ...">
-                                        <option value="">Select batch....</option>
+                                        <option value="">Select ....</option>
                                         {{--  @foreach ($batches as $batch)  --}}
-                                            <option value="">Batch Name</option>
+                                        <option value="">Batch Name</option>
                                         {{--  @endforeach  --}}
                                     </select>
                                 </div>
@@ -33,33 +33,33 @@
                                     <label for="departmentFilter" class="form-label">Department</label>
                                     <select id="departmentFilter" class="select2 form-control" name="departmentId"
                                         data-placeholder="Choose ...">
-                                        <option value="">Select department....</option>
+                                        <option value="">Select ....</option>
                                         {{--  @foreach ($departments as $department)  --}}
-                                            <option value="">
-                                                department name</option>
+                                        <option value="">
+                                            department name</option>
                                         {{--  @endforeach  --}}
                                     </select>
                                 </div>
                                 <!-- KPI Filter -->
                                 <div class="col-md-3">
-                                    <label for="kpiFilter" class="form-label">KPI</label>
+                                    <label for="kpiFilter" class="form-label">Group</label>
                                     <select id="kpiFilter" class="select2 form-control" name="kpiId"
                                         data-placeholder="Choose ...">
-                                        <option value="">Select KPI....</option>
+                                        <option value="">Select ....</option>
                                         {{--  @foreach ($kpis as $kpi)  --}}
-                                            <option value="">kpi name</option>
+                                        <option value="">kpi name</option>
                                         {{--  @endforeach  --}}
                                     </select>
                                 </div>
                                 <!-- Employee Filter -->
                                 <div class="col-md-3">
-                                    <label for="employeeFilter" class="form-label">Employee</label>
+                                    <label for="employeeFilter" class="form-label">Auditor</label>
                                     <select id="employeeFilter" class="select2 form-control" name="employeeId"
                                         data-placeholder="Choose ...">
-                                        <option value="">Select employees....</option>
+                                        <option value="">Select ....</option>
                                         {{--  @foreach ($employees as $employee)  --}}
-                                            <option value="">
-                                                employee name</option>
+                                        <option value="">
+                                            employee name</option>
                                         {{--  @endforeach  --}}
                                     </select>
                                 </div>
@@ -89,76 +89,54 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title mb-4">Appraisal Reports Table</h4>
+                    <h4 class="card-title mb-4">Exceptions Reports Table</h4>
 
                     <div class="table-responsive">
                         <table id="datatable-buttons"
                             class="reportsTable table table-bordered table-striped table-hover dt-responsive nowrap">
                             <thead>
                                 <tr>
-                                    <th>Batch</th>
-                                    <th>Employee Full Name</th>
-                                    <th>Grade</th>
-                                    <th>Score</th>
-                                    <th>Remark</th>
-                                    <th>Status</th>
+
+                                    <th>Exception</th>
+                                    <th>Root Cause</th>
+                                    <th>Participants</th>
+                                    <th>Process Type</th>
+                                    <th>Risk Rate</th>
+                                    <th>Branch</th>
                                     <th>Department</th>
-                                    <th>Role</th>
-                                    <th>Supervisor Name</th>
-                                    <th>Probe Name</th>
+                                    <th>Status</th>
+                                    <th>Occurrence Date</th>
+                                    <th>Resolution Date</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="reportsTableBody">
-                                {{--  @if ($reports && $reports->isNotEmpty())
-                                    @forelse ($reports as $report)
-                                        @foreach ($report->employees as $employee)
-                                            @php
-                                                // Collect all supervisorName and probeName, then get unique values
-                                                $supervisorName = collect($employee->scores)
-                                                    ->pluck('supervisorName')
-                                                    ->unique()
-                                                    ->filter()
-                                                    ->implode(' ');
+                                {{--  {{ dd($reports->data) }}  --}}
+                                @forelse ($reports->data as $report)
+                                    <tr>
 
-                                                $probeName = collect($employee->scores)
-                                                    ->pluck('probName')
-                                                    ->unique()
-                                                    ->filter()
-                                                    ->implode(' ');
+                                        <td>{{ $report->exception ?? 'N/A' }}</td>
+                                        <td>{{ $report->rootCause ?? 'N/A' }}</td>
+                                        <td>{{ $report->auditorName ?? 'N/A' }},
+                                            {{ $report->auditeeName ?? 'No Auditee' }}</td>
+                                        <td>{{ $report->processType ?? 'N/A' }}</td>
+                                        <td>{{ $report->riskRate ?? 'N/A' }}</td>
+                                        <td>Branch Here!</td>
+                                        <td>{{ $report->department ?? 'N/A' }}</td>
+                                        <td>{{ $report->status ?? 'N/A' }}</td>
+                                        <td>{{ $report->occurrenceDate ?? 'N/A' }}</td>
+                                        <td>{{ $report->resolutionDate ?? 'N/A' }}</td>
+                                        <td><a href=""><span
+                                                    class="badge rounded-pill bg-primary">View</span></a>
+                                        </td>
+                                    </tr>
 
-                                                $status = collect($employee->scores)
-                                                    ->pluck('status')
-                                                    ->unique()
-                                                    ->filter()
-                                                    ->implode(' ');
-                                            @endphp  --}}
-                                            <tr>
-                                                <td> qwhj</td>
-                                                <td>sdfsd</td>
-                                                <td>dfddf</td>
-                                                <td>vgfgf</td>
-                                                <td>yyyy</td>
-                                                <td>hjhj</td>
-                                                <td>sdsdsd</td>
-                                                <td>uiuiuiuiui</td>
-                                                <td>yyuyyuyuyuy</td>
-                                                <td>uuuuuuu</td>
-                                                <td><a
-                                                        href=""><span
-                                                            class="badge rounded-pill bg-primary">View</span></a></td>
-                                            </tr>
-                                        {{--  @endforeach  --}}
-                                    {{--  @empty  --}}
-                                        <tr>
-                                            <td colspan="10" class="text-center">No data available</td>
-                                        </tr>
-                                    {{--  @endforelse  --}}
-                                {{--  @else  --}}
+                                @empty
                                     <tr>
                                         <td colspan="10" class="text-center">No data available</td>
                                     </tr>
-                                {{--  @endif  --}}
+                                @endforelse
+
                             </tbody>
                         </table>
                     </div>

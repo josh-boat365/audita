@@ -29,13 +29,14 @@
                                     id="example-text-input">
                             </div>
                         </div>
+
                         <div class="row mb-3">
                             <label for="example-text-input" class="">Select Branch</label>
                             <div class="col-md-12">
                                 <select name="branch_id" class="form-select">
                                     <option>Select branch</option>
                                     @foreach ($branches as $branch)
-                                        <option value="{{ $branch->id }}" @selected($branch->id === $group_data->id)>{{ $branch->name }}</option>
+                                        <option value="{{ $branch->id }}" @selected($branch->id == $group_data->branchId)>{{ $branch->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
