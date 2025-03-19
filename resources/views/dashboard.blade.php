@@ -20,7 +20,7 @@
                             <div class="card-body">
                                 <div class="d-flex">
                                     <div class="flex-grow-1">
-                                        <p class="text-muted fw-medium">Orders</p>
+                                        <p class="text-muted fw-medium">High Risks</p>
                                         <h4 class="mb-0">1,235</h4>
                                     </div>
 
@@ -40,8 +40,8 @@
                             <div class="card-body">
                                 <div class="d-flex">
                                     <div class="flex-grow-1">
-                                        <p class="text-muted fw-medium">Revenue</p>
-                                        <h4 class="mb-0">$35, 723</h4>
+                                        <p class="text-muted fw-medium">Low Risks</p>
+                                        <h4 class="mb-0">35, 723</h4>
                                     </div>
 
                                     <div class="flex-shrink-0 align-self-center ">
@@ -60,8 +60,8 @@
                             <div class="card-body">
                                 <div class="d-flex">
                                     <div class="flex-grow-1">
-                                        <p class="text-muted fw-medium">Average Price</p>
-                                        <h4 class="mb-0">$16.2</h4>
+                                        <p class="text-muted fw-medium">Medium Risks</p>
+                                        <h4 class="mb-0">16</h4>
                                     </div>
 
                                     <div class="flex-shrink-0 align-self-center">
@@ -86,7 +86,7 @@
 
         <!-- end row -->
 
-        <div class="row">
+        {{--  <div class="row">
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
@@ -305,7 +305,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div>  --}}
         <!-- end row -->
     </div>
 </x-base-layout>

@@ -112,7 +112,7 @@
                             </thead>
                             <tbody id="reportsTableBody">
                                 {{--  {{ dd($reports->data) }}  --}}
-                                @forelse ($reports->data as $report)
+                                @forelse ($reports as $report)
                                     <tr>
 
                                         <td>{{ $report->exception ?? 'N/A' }}</td>
