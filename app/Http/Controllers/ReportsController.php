@@ -22,7 +22,7 @@ class ReportsController extends Controller
         $access_token = session('api_token');
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionReport/ExceptionReport');
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker');
 
             if ($response->successful()) {
 
