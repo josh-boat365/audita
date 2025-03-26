@@ -21,9 +21,11 @@ class ExceptionController extends Controller
             return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
         }
 
-        $exceptions = $this->getExceptions();
+        $employeeId = $this->getLoggedInUserInformation()->id;
+        $exceptions = $this->getFilteredExceptions($employeeId);
 
-        return view('exception-setup.index', compact('exceptions'));
+
+        return view('exception-setup.index', compact('exceptions', 'employeeId'));
     }
 
     /**
@@ -111,53 +113,27 @@ class ExceptionController extends Controller
      * Show the form for editing the specified resource.
      */
 
-    public function edit(string $id)
+    public function edit2($id)
     {
-        $batches = BatchController::getBatches();
-        $departments = $this->departmentData();
-        $processTypes = ProcessTypeController::getProcessTypes();
-        $riskRates = RiskRateController::getRiskRates();
-
+        $access_token = session('api_token');
         try {
-            // Make the GET request to the external API
-            $response = $this->getAnException($id);
 
-            //get files for the exception
-            $encryptedFiles = $this->getExceptionFiles($id);
+            $batches = BatchController::getBatches();
+            $departments = $this->departmentData();
+            $processTypes = ProcessTypeController::getProcessTypes();
+            $riskRates = RiskRateController::getRiskRates();
+            $exception = $this->getAnException($id);
+            $employeeId = $this->getLoggedInUserInformation()->id;
 
-            //decode file data
-            $files = array_map(function ($file) {
-                return [
-                    'id' => $file->id,
-                    'fileName' => $file->fileName,
-                    'fileData' => base64_decode($file->fileData),
-                    'uploadDate' => $file->uploadDate,
-                ];
-            }, $encryptedFiles);
-
-            //get exception comments
-            $comments = $this->getExceptionComments($id);
-
-
-            // Check the response status and return appropriate response
-            if (!empty($response)) {
-                $exception = $response;
-
-                return view('exception-setup.edit', compact(
-                    'exception',
-                    'batches',
-                    'departments',
-                    'processTypes',
-                    'riskRates',
-                    'files',
-                    'comments'
-                ));
-            } else {
-
-                return redirect()->back()->with('toast_error', 'Exception does not exist');
-            }
+            return view('exception-setup.edit', compact(
+                'exception',
+                'batches',
+                'departments',
+                'processTypes',
+                'riskRates',
+                'employeeId'
+            ));
         } catch (\Exception $e) {
-            // Log the exception
             Log::error('Exception occurred while fetching exception', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -223,54 +199,13 @@ class ExceptionController extends Controller
         }
     }
 
-    public function exceptionFileUpload(Request $request, $id)
-    {
-        // dd($request->all());
-        $request->validate([
-            'file' => 'required|mimes:pdf,doc,docx,png,jpeg,jpg,txt|max:5048',
-        ]);
-
-        $access_token = session('api_token');
-
-        if ($request->file('file')) {
-            $file = $request->file('file');
-            $fileContent = file_get_contents($file);
-            $base64File = base64_encode($fileContent);
-
-            $data = [
-                'exceptionTrackerId' => $id,
-                'fileName' => $file->getClientOriginalName(),
-                'fileData' => $base64File,
-            ];
-
-            try {
-                $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionFileUpload', $data);
-
-                if ($response->successful()) {
-                    return redirect()->back()->with('toast_success', 'Exception File uploaded successfully');
-                } else {
-                    // Log the error response
-                    Log::error('Failed to upload file', [
-                        'status' => $response->status(),
-                        'response' => $response->body()
-                    ]);
-                    return redirect()->back()->with('toast_error', 'Sorry, failed to upload file');
-                }
-            } catch (\Exception $e) {
-                Log::error('Exception occurred while uploading file', [
-                    'message' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
-            }
-        }
-
-        return redirect()->back()->with('toast_error', 'No file uploaded');
-    }
 
     /**
      * Remove the specified resource from storage.
      */
+
+
+
     public function destroy(Request $request, string $id)
     {
         // Get the access token from the session
@@ -290,7 +225,7 @@ class ExceptionController extends Controller
                     'status' => $response->status(),
                     'response' => $response->body()
                 ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception');
+                return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception: ' . $response->body());
             }
         } catch (\Exception $e) {
             // Log the exception
@@ -301,6 +236,37 @@ class ExceptionController extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
+    public function closeException(Request $request, string $id)
+    {
+        // Get the access token from the session
+        $accessToken = session('api_token');
+
+        try {
+            // Make the DELETE request to the external API
+            $response = Http::withToken($accessToken)
+                ->put("http://192.168.1.200:5126/Auditor/ExceptionTracker/close-exception/{$id}");
+
+            // Check the response status and return appropriate response
+            if ($response->successful()) {
+                return redirect()->route('exception.list')->with('toast_success', 'Exception closed successfully');
+            } else {
+                // Log the error response
+                Log::error('Failed to close Exception', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to close Exception: ' . $response->body());
+            }
+        } catch (\Exception $e) {
+            // Log the exception
+            Log::error('Exception occurred while closing Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+        }
+    }
+
 
     public function storeComment(Request $request, $id)
     {
@@ -364,60 +330,97 @@ class ExceptionController extends Controller
         }
         return $comments;
     }
-    public static function departmentData()
+
+
+    public function exceptionFileUpload(Request $request, $id)
     {
-        $access_token = session('api_token');
+        $validated = $request->validate([
+            'files' => 'nullable|array',
+            'files.*' => 'file|max:5120|mimes:png,jpg,jpeg,txt,pdf,doc,docx',
+        ]);
 
-        try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5124/HRMS/Department');
-
-            if ($response->successful()) {
-                $departments = $response->object() ?? [];
-            } elseif ($response->status() == 404) {
-                $departments = [];
-                Log::warning('Department API returned 404 Not Found');
-                toast('Department data not found', 'warning');
-            } else {
-                $departments = [];
-                Log::error('Department API request failed', ['status' => $response->status()]);
-                toast('Error fetching department data', 'error');
-            }
-        } catch (\Exception $e) {
-            $departments = [];
-            Log::error('Error fetching department data', ['error' => $e->getMessage()]);
-            toast('An error occurred. Please try again later', 'error');
+        $files = $request->file('files') ?? [];
+        if (empty($files)) {
+            return response()->json(['status' => 'error', 'message' => 'No file uploaded'], 400);
         }
 
-        return $departments;
-    }
-
-    public static function getExceptionFiles($exceptionId)
-    {
-        $access_token = session('api_token');
-
-        try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionFileUpload');
-
-            if ($response->successful()) {
-                $api_response = $response->object() ?? [];
-
-                $files = collect($api_response)->filter(fn($file) => $file->exceptionTrackerId == $exceptionId)->all() ?? [];
-            } elseif ($response->status() == 404) {
-                $files = [];
-                Log::warning('Exception files API returned 404 Not Found');
-                toast('Exception files data not found', 'warning');
-            } else {
-                $files = [];
-                Log::error('Exception files API request failed', ['status' => $response->status()]);
-                toast('Error fetching exception files data', 'error');
-            }
-        } catch (\Exception $e) {
-            Log::error('Error fetching exception files', ['error' => $e->getMessage()]);
-            toast('An error occurred. Please try again later', 'error');
+        $accessToken = session('api_token');
+        if (!$accessToken) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized: Missing API token'], 401);
         }
 
-        return $files;
+        $apiUrl = 'http://192.168.1.200:5126/Auditor/ExceptionFileUpload';
+        $uploadedFiles = [];
+
+        try {
+            foreach ($files as $file) {
+                $base64File = base64_encode(file_get_contents($file->getRealPath()));
+
+                $payload = [
+                    'exceptionTrackerId' => $id,
+                    'fileName' => $file->getClientOriginalName(),
+                    'fileData' => $base64File,
+                ];
+
+                $response = Http::withToken($accessToken)->post($apiUrl, $payload);
+
+                if ($response->successful()) {
+                    $uploadedFiles[] = [
+                        'id' => uniqid(),
+                        'fileName' => $file->getClientOriginalName(),
+                        'uploadDate' => now()->toDateTimeString(),
+                        'fileData' => $base64File,
+                    ];
+                }
+            }
+
+            if (!empty($uploadedFiles)) {
+                return response()->json(['status' => 'success', 'message' => 'All files uploaded successfully', 'files' => $uploadedFiles], 200);
+            }
+
+            return response()->json(['status' => 'error', 'message' => 'File upload failed'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => 'Something went wrong, check your internet and try again'], 500);
+        }
     }
+
+
+    public function getExceptionFiles($id)
+    {
+        try {
+            $accessToken = session('api_token');
+            if (!$accessToken) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized: Missing API token'
+                ], 401);
+            }
+
+            $apiUrl = "http://192.168.1.200:5126/Auditor/ExceptionFileUpload?exceptionTrackerId={$id}";
+            $response = Http::withToken($accessToken)->get($apiUrl);
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Failed to fetch files'
+                ], 500);
+            }
+
+            return response()->json($response->json()); // Return JSON response for AJAX
+        } catch (\Exception $e) {
+            Log::error('Error fetching files', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Something went wrong, please try again'
+            ], 500);
+        }
+    }
+
+
     public static function exceptionFileDelete($exceptionId)
     {
         $access_token = session('api_token');
@@ -501,5 +504,103 @@ class ExceptionController extends Controller
         }
 
         return $exception;
+    }
+
+    public static function departmentData()
+    {
+        $access_token = session('api_token');
+
+        try {
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5124/HRMS/Department');
+
+            if ($response->successful()) {
+                $departments = $response->object() ?? [];
+            } elseif ($response->status() == 404) {
+                $departments = [];
+                Log::warning('Department API returned 404 Not Found');
+                toast('Department data not found', 'warning');
+            } else {
+                $departments = [];
+                Log::error('Department API request failed', ['status' => $response->status()]);
+                toast('Error fetching department data', 'error');
+            }
+        } catch (\Exception $e) {
+            $departments = [];
+            Log::error('Error fetching department data', ['error' => $e->getMessage()]);
+            toast('An error occurred. Please try again later', 'error');
+        }
+
+        return $departments;
+    }
+
+    public function getFilteredExceptions($employeeId)
+    {
+        // Fetch data from APIs
+        $exceptions = $this->getExceptions();
+        $batches = BatchController::getBatches();
+        $groups = GroupController::getActivityGroups();
+        $groupMembers = GroupMembersController::getGroupMembers();
+
+        // Filter active batches with status 'OPEN' and map them by ID
+        $validBatches = collect($batches)
+            ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+            ->keyBy('id');
+
+        // Filter active groups and map them by ID
+        $validGroups = collect($groups)
+            ->filter(fn($group) => $group->active)
+            ->keyBy('id');
+
+        // Get groups where the specified employee belongs
+        $employeeGroups = collect($groupMembers)
+            ->where('employeeId', $employeeId)
+            ->pluck('activityGroupId')
+            ->unique();
+
+        // dd($employeeGroups);
+
+        // Map batch IDs to their corresponding activity group IDs
+        $batchGroupMap = collect($batches)
+            ->pluck('activityGroupId', 'id');
+
+        // Filter exceptions
+        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
+            $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
+            return $validBatches->has($exception->exceptionBatchId) &&
+                $validGroups->has($groupId) &&
+                $employeeGroups->contains($groupId);
+        });
+
+        // dd($filteredExceptions->values()->all());
+
+        return $filteredExceptions->values()->all();
+    }
+
+    public static function getLoggedInUserInformation()
+    {
+
+        $access_token = session('api_token');
+
+        try {
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5124/HRMS/Employee/GetEmployeeInformation');
+
+            if ($response->successful()) {
+                $employee = $response->object() ?? [];
+            } elseif ($response->status() == 404) {
+                $employee = [];
+                Log::warning('Employee Information  API returned 404 Not Found');
+                toast('Employee Information  data not found', 'warning');
+            } else {
+                $employee = [];
+                Log::error('Employee Information  API request failed', ['status' => $response->status()]);
+                toast('Error fetching Employee Information  data', 'error');
+            }
+        } catch (\Exception $e) {
+            $employee = [];
+            Log::error('Error fetching Employee Information  data', ['error' => $e->getMessage()]);
+            toast('Error fetching Employee Information data', 'error');
+        }
+
+        return $employee;
     }
 }
