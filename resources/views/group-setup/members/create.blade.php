@@ -6,7 +6,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('members') }}">Add</a> >
+                    <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('members') }}">Group Member Setup</a> >
                         Group Member to Group
                     </h4>
                 </div>
@@ -26,9 +26,9 @@
                         <div class="mb-3">
                             <label class="form-label">Select Group Member</label>
                             <div>
-                                <select class="select2 form-control"
-                                    id="customSelect" name="employeeId">
-                                    <option selected> Select member......</option>
+                                <select class="select2 form-control select2-multiple" data-toggle="select2"
+                                    multiple="multiple" data-placeholder="Select member........"  id="customSelect" name="employeeId[]">
+                                    {{--  <option> Select member......</option>  --}}
                                     @foreach ($employees as $employee)
                                         <option value="{{ $employee->id }}">{{ $employee->firstName }},
                                             {{ $employee->surname }} - {{ $employee->empRoleName }}</option>
