@@ -236,6 +236,45 @@ class ExceptionController extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
+    public function recommendExceptionForResolution(Request $request, string $id)
+    {
+        $request->validate([
+            'resolution' => 'required|string'
+        ]);
+
+        $data = [
+            'id' => $id,
+            'recommendedStatus' => $request->input('resolution')
+        ];
+
+        // Get the access token from the session
+        $accessToken = session('api_token');
+
+        try {
+            // Make the DELETE request to the external API
+            $response = Http::withToken($accessToken)
+                ->put("http://192.168.1.200:5126/Auditor/ExceptionTracker/auditee-update/", $data);
+
+            // Check the response status and return appropriate response
+            if ($response->successful()) {
+                return redirect()->route('exception.list')->with('toast_success', 'Exception recommended for resolution successfully');
+            } else {
+                // Log the error response
+                Log::error('Failed to recommended for resolution Exception', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to recommended for resolution Exception: ' . $response->body());
+            }
+        } catch (\Exception $e) {
+            // Log the exception
+            Log::error('Exception occurred while recommending for resolution Exception', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+        }
+    }
     public function closeException(Request $request, string $id)
     {
         // Get the access token from the session
