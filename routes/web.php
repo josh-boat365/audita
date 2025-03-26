@@ -86,10 +86,11 @@ Route::post('/create-exception', [ExceptionController::class, 'store'])->name('e
 Route::get('/exception/{id}/open', [ExceptionController::class, 'edit2'])->name('exception.edit');
 Route::post('/exception/{id}/update', [ExceptionController::class, 'update'])->name('exception.update');
 Route::post('/exception/{id}/delete', [ExceptionController::class, 'destroy'])->name('exception.delete');
-Route::post('/exception/{id}/close', [ExceptionController::class, 'closeException'])->name('exception.close');
 Route::post('/exception/{id}/file-upload', [ExceptionController::class, 'exceptionFileUpload'])->name('exception.file.upload');
 Route::get('/exception/{id}/get-files', [ExceptionController::class, 'getExceptionFiles'])->name('exception.get.files');
 Route::get('/exception/{id}/file-delete', [ExceptionController::class, 'exceptionFileDelete'])->name('exception.file.delete');
+Route::post('/exception/{id}/close', [ExceptionController::class, 'closeException'])->name('exception.close');
+Route::get('/exception/{id}/auditee-resolution', [ExceptionController::class, 'recommendExceptionForResolution'])->name('exception.resolution');
 
 //EXCEPTION COMMENTS
 Route::post('/exception/{id}/comment', [ExceptionController::class, 'storeComment'])->name('exception.comment.post');
