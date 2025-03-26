@@ -23,8 +23,11 @@ class GroupController extends Controller
         $branches = $this->getBranchData();
 
         $groups = $this->getActivityGroups();
+        $employeeData = ExceptionController::getLoggedInUserInformation();
 
-        return view('group-setup.index', compact('branches', 'groups'));
+        $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+
+        return view('group-setup.index', compact('branches', 'groups', 'employeeFullName'));
     }
 
 

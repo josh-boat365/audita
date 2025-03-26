@@ -84,6 +84,8 @@
                                         <span class="badge rounded-pill bg-primary fonte-size-13"><i
                                                 class="bx bxs-pencil"></i>edit</span>
                                     </a>
+                                    @if($group->createdBy == $employeeFullName)
+
                                     {{--  DELETE BUTTON  --}}
                                     <a href="#" data-bs-toggle="modal" data-bs-target=".bs-delete-modal-lg-{{ $group->id }}">
                                         <span class="badge rounded-pill bg-danger fonte-size-13"><i
@@ -119,6 +121,9 @@
                                             </div>
                                         </div>
                                     </div>
+                                    @else
+                                    <a href=""></a>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

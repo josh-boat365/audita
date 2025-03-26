@@ -31,9 +31,14 @@ class BatchController extends Controller
 
         $batchData = self::getBatches();
 
+        $employeeData = ExceptionController::getLoggedInUserInformation();
+
+        $employeeFullName = $employeeData->firstName .' '. $employeeData->surname;
+
+        // dd($employeeFullName);
 
 
-        return view('batch-setup.index', compact('activeGroups', 'units', 'batchData'));
+        return view('batch-setup.index', compact('activeGroups', 'units', 'batchData', 'employeeFullName'));
     }
 
     /**

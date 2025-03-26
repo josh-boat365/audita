@@ -38,7 +38,7 @@
                                 <select class="form-select select2" name="exceptionBatchId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($batches as $batch)
-                                        <option value="{{ $batch->id }}" @selected($batch->id === old('exceptionBatchId'))>
+                                        <option value="{{ $batch->id }}" {{ $batch->id === old('exceptionBatchId') ? 'selected' : '' }}>
                                             {{ $batch->name }}</option>
                                     @endforeach
                                 </select>
@@ -49,7 +49,7 @@
                                 <select class="form-select select2" name="departmentId" required>
                                     <option>Select Unit/Department</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}" @selected($department->id === old('departmentId'))>
+                                        <option value="{{ $department->id }}" {{ $department->id === old('departmentId') ? 'selected' : '' }}>
                                             {{ $department->name }}</option>
                                     @endforeach
                                 </select>
@@ -77,7 +77,7 @@
                         <div class="card-body">
                             <h5 class="card-title mb-3">Actions</h5>
 
-                            <div class="mb-3">
+                            {{--  <div class="mb-3">
                                 <label class="form-label" for="project-status-input">Status</label>
                                 <select class="form-select" name="status" required>
                                     <option selected>Select.....</option>
@@ -85,14 +85,16 @@
                                     <option value="RESOLVED" @selected(old('status') === 'RESOLVED')>Resolved</option>
                                 </select>
                                 <div class="invalid-feedback">Please select exception status.</div>
-                            </div>
+                            </div>  --}}
+
+                            <input type="hidden" name="status" value="PENDING">
 
                             <div class="mb-3">
                                 <label class="form-label" for="project-visibility-input">Risk Rate</label>
                                 <select class="form-select select2" name="riskRateId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($riskRates as $riskRate)
-                                        <option value="{{ $riskRate->id }}" @selected($riskRate->id === old('riskRateId'))>
+                                        <option value="{{ $riskRate->id }}" {{ $riskRate->id === old('riskRateId') ? 'selected' : '' }}>
                                             {{ $riskRate->name }}</option>
                                     @endforeach
 
@@ -104,7 +106,7 @@
                                 <select class="form-select select2" name="processTypeId" required>
                                     <option selected>Select.....</option>
                                     @foreach ($processTypes as $processType)
-                                        <option value="{{ $processType->id }}" @selected($processType->id === old('processTypeId'))>
+                                        <option value="{{ $processType->id }}" {{ $processType->id === old('processTypeId') ? 'selected' : '' }}>
                                             {{ $processType->name }}</option>
                                     @endforeach
                                 </select>

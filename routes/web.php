@@ -83,11 +83,12 @@ Route::post('/risk-rate/{id}/delete', [RiskRateController::class, 'destroy'])->n
 Route::get('/list-exception', [ExceptionController::class, 'index'])->name('exception.list');
 Route::get('/create-exception', [ExceptionController::class, 'create'])->name('exception.create');
 Route::post('/create-exception', [ExceptionController::class, 'store'])->name('exception.post');
-Route::get('/exception/{id}/open', [ExceptionController::class, 'edit'])->name('exception.edit');
+Route::get('/exception/{id}/open', [ExceptionController::class, 'edit2'])->name('exception.edit');
 Route::post('/exception/{id}/update', [ExceptionController::class, 'update'])->name('exception.update');
 Route::post('/exception/{id}/delete', [ExceptionController::class, 'destroy'])->name('exception.delete');
+Route::post('/exception/{id}/close', [ExceptionController::class, 'closeException'])->name('exception.close');
 Route::post('/exception/{id}/file-upload', [ExceptionController::class, 'exceptionFileUpload'])->name('exception.file.upload');
-// Route::get('/exception/{id}/file-download', [ExceptionController::class, 'exceptionFileDownload'])->name('exception.file.download');
+Route::get('/exception/{id}/get-files', [ExceptionController::class, 'getExceptionFiles'])->name('exception.get.files');
 Route::get('/exception/{id}/file-delete', [ExceptionController::class, 'exceptionFileDelete'])->name('exception.file.delete');
 
 //EXCEPTION COMMENTS
