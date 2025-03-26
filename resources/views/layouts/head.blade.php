@@ -42,6 +42,14 @@
     <!-- Plugins css -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    {{--  Custom Styles  --}}
+    <style>
+        .required {
+            color: orangered !important;
+            font-weight: 700;
+        }
+    </style>
+
 
 
 
