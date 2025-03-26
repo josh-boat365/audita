@@ -39,8 +39,12 @@
                         <tr>
                             <th scope="row"><a href="#">{{ $batch->name }}</a></th>
                             <td>{{ $batch->code }}</td>
-                            <td><span class="dropdown badge rounded-pill bg-primary">{{ $batch->activityGroupName }}</span></td>
-                            <td><span class="dropdown badge rounded-pill bg-secondary">{{ $batch->auditorUnitName }}</span></td>
+                            <td><span
+                                    class="dropdown badge rounded-pill bg-primary">{{ $batch->activityGroupName }}</span>
+                            </td>
+                            <td><span
+                                    class="dropdown badge rounded-pill bg-secondary">{{ $batch->auditorUnitName }}</span>
+                            </td>
                             <td>{{ $batch->year }}</td>
 
                             <td>
@@ -48,37 +52,9 @@
                                     class="dropdown badge rounded-pill {{ $batch->active == true ? 'bg-success' : 'bg-dark' }}"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                     {{ $batch->active == true ? 'Active' : 'Deactivated' }}
-                                    {{--  <div class="dropdown-menu">
-                                        <a href="" class="dropdown-item" data-bs-toggle="modal"
-                                            data-bs-target=".bs-example-modal-lg-" class="m-2">
-                                            {{ $batch->active == true ? 'Deactivated' : 'Activate' }}
-                                        </a>
-                                    </div>  --}}
+
                                 </span>
-                                <div class="modal fade bs-example-modal-lg-" tabindex="-1" role="dialog"
-                                    aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog modal-sm modal-dialog-centered ">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="myLargeModalLabel">Confirm Batch State
-                                                    Update</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <h4 class="text-center mb-4"> Are you sure, you want to
-                                                    ?</h4>
-                                                <form action="" method="POST">
-                                                    @csrf
-                                                    <input type="hidden" name="active" value="">
-                                                    <div class="d-grid">
-                                                        <button type="submit" class="btn btn-success">Yes</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+
                             </td>
                             <td>
 
@@ -86,40 +62,7 @@
                                     class="dropdown badge rounded-pill {{ $batch->status == 'OPEN' ? 'bg-warning' : 'bg-dark' }}"
                                     data-bs-toggle="dropdown" aria-expanded="false">
                                     {{ $batch->status == 'OPEN' ? 'OPEN' : 'CLOSED' }}
-                                    {{--  <div class="dropdown-menu">
-                                        <a href="" class="dropdown-item" data-bs-toggle="modal"
-                                            data-bs-target=".bs-example-modal-lg-" class="m-2">
-                                            {{ $batch->status == 'OPEN' ? 'CLOSED' : 'OPEN' }}
-                                        </a>
-                                    </div>  --}}
                                 </span>
-
-
-                                <!-- Modal for Confirmation -->
-                                <div class="modal fade bs-status-modal-status-" tabindex="-1" role="dialog"
-                                    aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog modal-sm modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="myLargeModalLabel">Confirm Batch Status
-                                                    Update</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-
-
-                                                <form action="" method="POST">
-                                                    @csrf
-                                                    <input type="hidden" name="status" value="">
-                                                    <div class="d-grid">
-                                                        <button type="submit" class="btn btn-success">Yes</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </td>
 
                             <td>
@@ -129,40 +72,48 @@
                                                 class="bx bxs-pencil"></i>edit</span>
                                     </a>
                                     {{--  DELETE BUTTON  --}}
-                                    <a href="" data-bs-toggle="modal" data-bs-target=".bs-delete-modal-lg-{{ $batch->id }}">
-                                        <span class="badge rounded-pill bg-danger fonte-size-13"><i
-                                                class="bx bxs-trash"></i> delete</span>
-                                    </a>
+                                    @if ($batch->createdBy === $employeeFullName)
+                                        <a href="" data-bs-toggle="modal"
+                                            data-bs-target=".bs-delete-modal-lg-{{ $batch->id }}">
+                                            <span class="badge rounded-pill bg-danger fonte-size-13"><i
+                                                    class="bx bxs-trash"></i> delete</span>
+                                        </a>
 
-                                    <!-- Modal for Delete Confirmation -->
-                                    <div class="modal fade bs-delete-modal-lg-{{ $batch->id }}" tabindex="-1" role="dialog"
-                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="myLargeModalLabel">Confirm Batch
-                                                        Deletion</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <h4 class="text-center mb-4">Are you sure you want to delete this
-                                                        batch?</h4>
-                                                    <p class="text-center">Deleting a <b>batch</b> means removing it
-                                                        from the <b>system entirely</b> and you cannot <b>recover</b> it
-                                                        again</p>
-                                                    <form action="{{ route('batch.delete', $batch->id) }}" method="POST">
-                                                        @csrf
+                                        <!-- Modal for Delete Confirmation -->
+                                        <div class="modal fade bs-delete-modal-lg-{{ $batch->id }}" tabindex="-1"
+                                            role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="myLargeModalLabel">Confirm Batch
+                                                            Deletion</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h4 class="text-center mb-4">Are you sure you want to delete
+                                                            this
+                                                            batch?</h4>
+                                                        <p class="text-center">Deleting a <b>batch</b> means removing it
+                                                            from the <b>system entirely</b> and you cannot
+                                                            <b>recover</b> it
+                                                            again</p>
+                                                        <form action="{{ route('batch.delete', $batch->id) }}"
+                                                            method="POST">
+                                                            @csrf
 
-                                                        <div class="d-grid">
-                                                            <button type="submit" class="btn btn-danger">Yes,
-                                                                Delete</button>
-                                                        </div>
-                                                    </form>
+                                                            <div class="d-grid">
+                                                                <button type="submit" class="btn btn-danger">Yes,
+                                                                    Delete</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @else
+                                        <a href=""></a>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -183,8 +134,7 @@
 
 
         <!-- right offcanvas -->
-        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight"
-            aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
             <div class="offcanvas-header">
                 <h5 id="offcanvasRightLabel">Batch Setup</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"
