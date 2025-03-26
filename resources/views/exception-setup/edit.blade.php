@@ -560,7 +560,7 @@
             @if ($exception->auditorId != $employeeId)
                 <div class="tab-pane" id="recommend-resolution" role="tabpanel">
 
-                    <form action="{{ route('exception.update', $exception->id) }}" method="POST"
+                    <form action="{{ route('exception.resolution', $exception->id) }}" method="POST"
                         enctype="multipart/form-data" autocomplete="on" class="needs-validation">
                         @csrf
 
@@ -570,7 +570,7 @@
                                     <label class="form-label" for="project-status-input">Push to
                                         <strong>{{ $exception->auditorName }}</strong> your Auditor for
                                         Resolution</label>
-                                    <select class="form-select" name="status" required>
+                                    <select class="form-select" name="resolution" required>
                                         <option selected>Select.....</option>
                                         <option value="RESOLVED">Recommended Resolution</option>
                                     </select>
@@ -648,7 +648,6 @@
 
     </div>
     @push('scripts')
-
         <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -726,26 +725,29 @@
                             fileListContainer.innerHTML = ""; // Clear old files
 
                             response.forEach(file => {
-                                let fileSrc = `${file.header},${file.fileData}`; // Use the provided header
+                                let fileSrc = `${file.fileData}`; // Use the provided header
                                 let fileHtml = `
                         <div class="col-xl-4 mb-3" id="file-${file.id}">
                             <div class="file-info p-3 border rounded">
+
                                 <p><strong>${file.fileName}</strong></p>
                                 <p class="text-muted">${new Date(file.uploadDate).toLocaleString()}</p>
 
-                                <!-- Image Preview -->
-                                ${file.header.includes('image') ? `<img src="${fileSrc}" alt="${file.fileName}" class="img-fluid rounded mb-2" style="max-width: 100px;">` : ''}
 
-                                <!-- Download Button -->
-                                <a href="${fileSrc}"
-                                    download="${file.fileName}" class="btn btn-primary">
-                                    <i class="fas fa-download"></i> Download
-                                </a>
+                                {{--  <!-- Image Preview -->
+                                ${file.header.includes('image') ? `<img src="${fileSrc}" alt="${file.fileName}" class="img-fluid rounded mb-2" style="max-width: 100px;">` : ''}  --}}
+                                <div class="d-flex justify-content-between">
+                                    <!-- Download Button -->
+                                    <a href="data:application/octet-stream;base64,${fileSrc}"
+                                        download="${file.fileName}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-download"></i> Download
+                                    </a>
 
-                                <!-- Delete Button -->
-                                <button onclick="deleteFile('${file.id}')" class="btn btn-danger btn-sm">
-                                    <i class="fas fa-trash"></i> Remove
-                                </button>
+                                    <!-- Delete Button -->
+                                    <button onclick="deleteFile('${file.id}')" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-trash"></i> Remove
+                                    </button>
+                                </div>
                             </div>
                         </div>`;
 
