@@ -1,6 +1,10 @@
 <x-base-layout>
 
+    <!-- FilePond CSS -->
+    <link href="https://unpkg.com/filepond@^4/dist/filepond.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
+
+    </style>
     <div class="container-fluid">
 
         <!-- start page title -->
@@ -37,6 +41,21 @@
                     <span class="d-none d-sm-block">Chats & Comments</span>
                 </a>
             </li>
+            @if ($exception->auditorId != $employeeId)
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#recommend-resolution" role="tab">
+                        <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
+                        <span class="d-none d-sm-block">Recommend Resolution</span>
+                    </a>
+                </li>
+            @else
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#close-exception" role="tab">
+                        <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
+                        <span class="d-none d-sm-block">Close Exception</span>
+                    </a>
+                </li>
+            @endif
 
         </ul>
 
@@ -53,22 +72,23 @@
 
                                     {{--  Project Image   --}}
                                     <div class="mb-3">
-                                        <label class="form-label">Exception</label>
-                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter exception details......" required>
-                                            {{ $exception->exception }}
-                                        </textarea>
+                                        <label class="form-label">Exception<span class="required">*</span></label>
+                                        <textarea {{ $exception->auditorId == $employeeId ? 'disabled' : '' }} class="form-control" rows="3"
+                                            name="exception" placeholder="Enter exception details......" required>{{ $exception->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Root Cause</label>
-                                        <textarea class="form-control" rows="3" name="rootCause" placeholder="Enter root cause details......" required>{{ $exception->rootCause }}</textarea>
+                                        <label class="form-label">Root Cause<span class="required">*</span></label>
+                                        <textarea @disabled($exception->auditorId == $employeeId) class="form-control" rows="3" name="rootCause"
+                                            placeholder="Enter root cause details......" required>{{ $exception->rootCause }}</textarea>
                                         <div class="invalid-feedback">Please enter the root cause.</div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Batch</label>
-                                        <select class="form-select select2" name="exceptionBatchId" required>
+                                        <label class="form-label">Batch<span class="required">*</span></label>
+                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                            name="exceptionBatchId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($batches as $batch)
                                                 <option value="{{ $batch->id }}" @selected($batch->id === $exception->exceptionBatchId)>
@@ -78,8 +98,9 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Unit/Dept</label>
-                                        <select class="form-select select2" name="departmentId" required>
+                                        <label class="form-label">Unit/Dept<span class="required">*</span></label>
+                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                            name="departmentId" required>
                                             <option>Select Unit/Department</option>
                                             @foreach ($departments as $department)
                                                 <option value="{{ $department->id }}" @selected($department->id === $exception->departmentId)>
@@ -89,9 +110,9 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Occurrence Date</label>
-                                        <input type="text" class="form-control" placeholder="Select occurrence date"
-                                            name="occurrenceDate"
+                                        <label class="form-label">Occurrence Date<span class="required">*</span></label>
+                                        <input @disabled($exception->auditorId == $employeeId) type="text" class="form-control"
+                                            placeholder="Select occurrence date" name="occurrenceDate"
                                             value="{{ $exception->occurrenceDate == null ? '' : Carbon\Carbon::parse($exception->occurrenceDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/yy" data-provide="datepicker"
                                             data-date-autoclose="true" required />
@@ -111,7 +132,8 @@
 
                                     <div class="mb-3">
                                         <label class="form-label" for="project-status-input">Status</label>
-                                        <select class="form-select" name="status" required>
+                                        <select @disabled($exception->auditorId == $employeeId) class="form-select" name="status"
+                                            required>
                                             <option selected>Select.....</option>
                                             <option value="PENDING" @selected($exception->status === 'PENDING')>Pending</option>
                                             <option value="RESOLVED" @selected($exception->status === 'RESOLVED')>Resolved</option>
@@ -120,8 +142,10 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label" for="project-visibility-input">Risk Rate</label>
-                                        <select class="form-select select2" name="riskRateId" required>
+                                        <label class="form-label" for="project-visibility-input">Risk Rate<span
+                                                class="required">*</span></label>
+                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                            name="riskRateId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($riskRates as $riskRate)
                                                 <option value="{{ $riskRate->id }}" @selected($riskRate->id === $exception->riskRateId)>
@@ -133,8 +157,9 @@
 
                                     <div>
                                         <label class="form-label" for="project-visibility-input">Process
-                                            Type/Scope</label>
-                                        <select class="form-select select2" name="processTypeId" required>
+                                            Type/Scope<span class="required">*</span></label>
+                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                            name="processTypeId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($processTypes as $processType)
                                                 <option value="{{ $processType->id }}" @selected($processType->id === $exception->processTypeId)>
@@ -155,8 +180,9 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Proposed Resolution Date</label>
-                                        <input type="text" class="form-control" placeholder="Select due date"
-                                            name="proposeResolutionDate"
+                                        <small>(optional)</small>
+                                        <input @disabled($exception->auditorId == $employeeId) type="text" class="form-control"
+                                            placeholder="Select due date" name="proposeResolutionDate"
                                             value="{{ $exception->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exception->proposeResolutionDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/Y" data-provide="datepicker"
                                             data-date-autoclose="true" />
@@ -165,7 +191,8 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Resolution Date</label>
-                                        <input type="text" class="form-control"
+                                        <small>(optional)</small>
+                                        <input @disabled($exception->auditorId == $employeeId) type="text" class="form-control"
                                             placeholder="Select resolution date" name="resolutionDate"
                                             value="{{ $exception->resolutionDate == null ? '' : Carbon\Carbon::parse($exception->resolutionDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/Y" data-provide="datepicker"
@@ -189,70 +216,43 @@
                 </form>
             </div>
 
-            {{--  FILE UPLOAD  --}}
-
             {{-- FILE UPLOAD --}}
             <div class="tab-pane" id="file-attachments" role="tabpanel">
-                <form id="file-upload-form" action="{{ route('exception.file.upload', $exception->id) }}"
-                    method="POST" enctype="multipart/form-data" autocomplete="on">
-                    @csrf
-                    <div>
-                        <label class="form-label">Attach Files</label>
-                        <div class="dropzone" id="myId">
-                            <div class="dz-message needsclick">
-                                <div class="mb-3">
-                                    <i class="display-4 text-muted bx bxs-cloud-upload"></i>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="file-upload-form" action="{{ route('exception.file.upload', $exception->id) }}"
+                            method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <label class="form-label">Attach Files</label>
+                            <div class="dropzone" id="myId">
+                                <div class="dz-message needsclick">
+                                    <div class="mb-3">
+                                        <i class="display-4 text-muted bx bxs-cloud-upload"></i>
+                                    </div>
+                                    <h4>Drop files here or click to upload.</h4>
                                 </div>
-                                <h4>Drop files here or click to upload.</h4>
                             </div>
-                        </div>
+                            <div class="mt-4 text-end">
+                                <button type="button" id="upload-button" class="btn btn-primary">Upload
+                                    File</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="mt-4">
-                        <div class="text-end mb-4">
-                            <button type="button" id="upload-button" class="btn btn-primary">Upload File</button>
-                        </div>
-                    </div>
-                </form>
+                </div>
 
-                {{--  FILE PREVIEWS  --}}
+                {{-- FILE PREVIEWS --}}
                 <div class="card">
                     <div class="card-body">
                         <h4>Files</h4>
                         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
-                        <div class="row">
-                            @forelse ($files as $file)
-                                <div class="col-xl-4 mb-3">
-
-                                    @if (in_array(pathinfo($file['fileName'], PATHINFO_EXTENSION), ['png', 'jpg', 'jpeg']))
-                                        <img src="data:image/{{ pathinfo($file['fileName'], PATHINFO_EXTENSION) }};base64,{{ base64_encode($file['fileData']) }}"
-                                            alt="{{ $file['fileName'] }}" class="img-fluid">
-                                        {{--  @elseif (pathinfo($file['fileName'], PATHINFO_EXTENSION) == 'pdf')
-                                            <iframe src="data:application/pdf;base64,{{ $file['fileData'] }}" type="application/pdf" width="100%" height="600px"></iframe>  --}}
-                                    @elseif (in_array(pathinfo($file['fileName'], PATHINFO_EXTENSION), ['doc', 'docx']))
-                                        <a href="data:application/vnd.openxmlformats-officedocument.wordprocessingml.document;base64,{{ base64_encode($file['fileData']) }}"
-                                            download="{{ $file['fileName'] }}" class="btn btn-primary">Download</a>
-                                    @else
-                                        <a href="data:application/octet-stream;base64,{{ base64_encode($file['fileData']) }}"
-                                            download="{{ $file['fileName'] }}" class="btn btn-primary">Download</a>
-                                    @endif
-                                    <div class="mt-2 d-flex justify-content-between">
-                                        <p> <strong>{{ $file['fileName'] }}</strong> -
-                                            {{ \Carbon\Carbon::parse($file['uploadDate'])->format('d/m/Y H:i A') }}</p>
-                                        <p>
-                                            <a href="{{ route('exception.file.delete', $file['id']) }}"
-                                                class="badge bg-danger"><i class="fas fa-bin"></i>
-                                                Remove</a>
-                                        </p>
-                                    </div>
-                                </div>
-                            @empty
-                                <p>No files uploaded yet</p>
-                            @endforelse
+                        <div class="row" id="file-list">
+                            <!-- Files will be dynamically inserted here -->
                         </div>
                     </div>
                 </div>
-
             </div>
+
+
 
 
             {{--  CHATS  --}}
@@ -267,65 +267,6 @@
                                     <p class="text-muted mb-0"><i
                                             class="mdi mdi-circle text-success align-middle me-1"></i> Active now</p>
                                 </div>
-                                {{--  <div class="col-md-8 col-3">
-                                    <ul class="list-inline user-chat-nav text-end mb-0">
-                                        <li class="list-inline-item d-none d-sm-inline-block">
-                                            <div class="dropdown">
-                                                <button class="btn nav-btn dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-search-alt-2"></i>
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-end dropdown-menu-md">
-                                                    <form class="p-3">
-                                                        <div class="form-group m-0">
-                                                            <div class="input-group">
-                                                                <input type="text" class="form-control"
-                                                                    placeholder="Search ..."
-                                                                    aria-label="Recipient's username">
-
-                                                                <button class="btn btn-primary" type="submit"><i
-                                                                        class="mdi mdi-magnify"></i></button>
-
-                                                            </div>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </li>
-                                        <li class="list-inline-item  d-none d-sm-inline-block">
-                                            <div class="dropdown">
-                                                <button class="btn nav-btn dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-cog"></i>
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-end">
-                                                    <a class="dropdown-item" href="#">View Profile</a>
-                                                    <a class="dropdown-item" href="#">Clear chat</a>
-                                                    <a class="dropdown-item" href="#">Muted</a>
-                                                    <a class="dropdown-item" href="#">Delete</a>
-                                                </div>
-                                            </div>
-                                        </li>
-
-                                        <li class="list-inline-item">
-                                            <div class="dropdown">
-                                                <button class="btn nav-btn dropdown-toggle" type="button"
-                                                    data-bs-toggle="dropdown" aria-haspopup="true"
-                                                    aria-expanded="false">
-                                                    <i class="bx bx-dots-horizontal-rounded"></i>
-                                                </button>
-                                                <div class="dropdown-menu dropdown-menu-end">
-                                                    <a class="dropdown-item" href="#">Action</a>
-                                                    <a class="dropdown-item" href="#">Another action</a>
-                                                    <a class="dropdown-item" href="#">Something else</a>
-                                                </div>
-                                            </div>
-                                        </li>
-
-                                    </ul>
-                                </div>  --}}
                             </div>
                         </div>
 
@@ -334,7 +275,7 @@
                             <div class="chat-conversation p-3">
                                 <ul class="list-unstyled mb-0" data-simplebar style="max-height: 486px;">
 
-                                    @forelse ($comments as $comment)
+                                    @forelse ($exception->comment as $comment)
                                         @if ($comment->createdBy != $exception->auditorName)
                                             {{--  COMMENT FROM OTHER USERS  --}}
                                             <li class="left">
@@ -347,12 +288,101 @@
                                                             <i class="bx bx-dots-vertical-rounded"></i>
                                                         </a>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="#">Copy</a>
-                                                            <a class="dropdown-item" href="#">Save</a>
-                                                            <a class="dropdown-item" href="#">Forward</a>
-                                                            <a class="dropdown-item" href="#">Delete</a>
+                                                            <a class="dropdown-item" href=""
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target=".bs-edit-left-modal-lg-{{ $comment->id }}">Edit</a>
+                                                            <a class="dropdown-item" href=""
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target=".bs-delete-left-modal-lg-{{ $comment->id }}">Delete</a>
                                                         </div>
                                                     </div>
+
+                                                    {{--  EDITING COMMENT MODAL  --}}
+                                                    <!-- Modal for editing comment -->
+                                                    <div class="modal fade bs-edit-left-modal-lg-{{ $comment->id }}"
+                                                        tabindex="-1" role="dialog"
+                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                                                        Edit Your Comment
+                                                                    </h5>
+                                                                    <button type="button" class="btn-close"
+                                                                        data-bs-dismiss="modal"
+                                                                        aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+
+                                                                    <form
+                                                                        action="{{ route('batch.delete', $batch->id) }}"
+                                                                        method="POST">
+                                                                        @csrf
+
+                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
+                                                                        <div class="invalid-feedback">Please
+                                                                            enter a comment.</div>
+
+                                                                        <div class="d-grid">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary">Edit
+                                                                                Comment</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {{--  DELETING COMMENT MODAL  --}}
+                                                    <!-- Modal for deleting comment -->
+                                                    <div class="modal fade bs-delete-left-modal-lg-{{ $comment->id }}"
+                                                        tabindex="-1" role="dialog"
+                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                                                        Confirm Comment
+                                                                        Deletion
+                                                                    </h5>
+                                                                    <button type="button" class="btn-close"
+                                                                        data-bs-dismiss="modal"
+                                                                        aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <h4 class="text-center mb-4">Are you sure you
+                                                                        want to delete
+                                                                        this
+                                                                        comment?</h4>
+                                                                    <p class="text-center">Deleting a
+                                                                        <b>comment</b>
+                                                                        means removing it
+                                                                        from the <b>system entirely</b> and you
+                                                                        cannot
+                                                                        <b>recover</b> it
+                                                                        again
+                                                                    </p>
+                                                                    <form
+                                                                        action="{{ route('batch.delete', $batch->id) }}"
+                                                                        method="POST">
+                                                                        @csrf
+
+                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
+                                                                        <div class="invalid-feedback">Please
+                                                                            enter a comment.</div>
+
+                                                                        <div class="d-grid">
+                                                                            <button type="submit"
+                                                                                class="btn btn-danger">Delete
+                                                                                Comment</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                     <div class="ctext-wrap">
                                                         <div class="conversation-name">{{ $comment->createdBy }}</div>
                                                         <p>{{ $comment->comment }}</p>
@@ -377,12 +407,100 @@
                                                             <i class="bx bx-dots-vertical-rounded"></i>
                                                         </a>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="#">Copy</a>
-                                                            <a class="dropdown-item" href="#">Save</a>
-                                                            <a class="dropdown-item" href="#">Forward</a>
-                                                            <a class="dropdown-item" href="#">Delete</a>
+                                                            <a class="dropdown-item" href=""
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target=".bs-edit-right-modal-lg-{{ $comment->id }}">Edit</a>
+                                                            <a class="dropdown-item" href=""
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target=".bs-delete-right-modal-lg-{{ $comment->id }}">Delete</a>
                                                         </div>
                                                     </div>
+                                                    {{--  EDITING COMMENT MODAL  --}}
+                                                    <!-- Modal for editing comment -->
+                                                    <div class="modal fade bs-edit-right-modal-lg-{{ $comment->id }}"
+                                                        tabindex="-1" role="dialog"
+                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                                                        Edit Your Comment
+                                                                    </h5>
+                                                                    <button type="button" class="btn-close"
+                                                                        data-bs-dismiss="modal"
+                                                                        aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+
+                                                                    <form
+                                                                        action="{{ route('batch.delete', $batch->id) }}"
+                                                                        method="POST">
+                                                                        @csrf
+
+                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
+                                                                        <div class="invalid-feedback">Please
+                                                                            enter a comment.</div>
+
+                                                                        <div class="d-grid">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary">Edit
+                                                                                Comment</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {{--  DELETING COMMENT MODAL  --}}
+                                                    <!-- Modal for deleting comment -->
+                                                    <div class="modal fade bs-delete-right-modal-lg-{{ $comment->id }}"
+                                                        tabindex="-1" role="dialog"
+                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                                                        Confirm Comment
+                                                                        Deletion
+                                                                    </h5>
+                                                                    <button type="button" class="btn-close"
+                                                                        data-bs-dismiss="modal"
+                                                                        aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <h4 class="text-center mb-4">Are you sure you
+                                                                        want to delete
+                                                                        this
+                                                                        comment?</h4>
+                                                                    <p class="text-center">Deleting a
+                                                                        <b>comment</b>
+                                                                        means removing it
+                                                                        from the <b>system entirely</b> and you
+                                                                        cannot
+                                                                        <b>recover</b> it
+                                                                        again
+                                                                    </p>
+                                                                    <form
+                                                                        action="{{ route('batch.delete', $batch->id) }}"
+                                                                        method="POST">
+                                                                        @csrf
+
+                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
+                                                                        <div class="invalid-feedback">Please
+                                                                            enter a comment.</div>
+
+                                                                        <div class="d-grid">
+                                                                            <button type="submit"
+                                                                                class="btn btn-danger">Delete
+                                                                                Comment</button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                     <div class="ctext-wrap">
                                                         <div class="conversation-name">{{ $comment->createdBy }}</div>
                                                         <p>
@@ -419,20 +537,6 @@
                                             <div class="position-relative">
                                                 <input type="text" name="comment" class="form-control chat-input"
                                                     placeholder="Enter Message...">
-                                                {{--  <div class="chat-input-links" id="tooltip-container">
-                                                    <ul class="list-inline mb-0">
-                                                        <li class="list-inline-item"><a href="javascript: void(0);"
-                                                                title="Emoji"><i
-                                                                    class="mdi mdi-emoticon-happy-outline"></i></a>
-                                                        </li>
-                                                        <li class="list-inline-item"><a href="javascript: void(0);"
-                                                                title="Images"><i
-                                                                    class="mdi mdi-file-image-outline"></i></a></li>
-                                                        <li class="list-inline-item"><a href="javascript: void(0);"
-                                                                title="Add Files"><i
-                                                                    class="mdi mdi-file-document-outline"></i></a></li>
-                                                    </ul>
-                                                </div>  --}}
                                             </div>
                                         </div>
                                         <div class="col-auto">
@@ -452,71 +556,281 @@
             </div>
 
 
+            {{--  RECOMMEND RESOLUTION - USER  --}}
+            @if ($exception->auditorId != $employeeId)
+                <div class="tab-pane" id="recommend-resolution" role="tabpanel">
+
+                    <form action="{{ route('exception.update', $exception->id) }}" method="POST"
+                        enctype="multipart/form-data" autocomplete="on" class="needs-validation">
+                        @csrf
+
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label" for="project-status-input">Push to
+                                        <strong>{{ $exception->auditorName }}</strong> your Auditor for
+                                        Resolution</label>
+                                    <select class="form-select" name="status" required>
+                                        <option selected>Select.....</option>
+                                        <option value="RESOLVED">Recommended Resolution</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select exception status.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                        </div>
+
+                    </form>
+                </div>
+            @else
+                {{--  CLOSE EXCEPTION - AUDITOR  --}}
+
+                <div class="tab-pane" id="close-exception" role="tabpanel">
+
+                    <div class="card">
+                        <div class="card-body">
+                            <h4>Close This Exception</h4>
+                            <small>(By closing this exception (<strong>{{ $exception->exception }}</strong>) means
+                                the exception has been resolved with respect to all /any other outstanding
+                                issues)</small>
+
+                            <div class="d-grid mt-2">
+                                <button type="button" class="btn btn-dark" data-bs-toggle="modal"
+                                    data-bs-target=".bs-close-exception-modal-lg-{{ $exception->id }}">Close
+                                    Exception</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal for Delete Confirmation -->
+                    <div class="modal fade bs-close-exception-modal-lg-{{ $exception->id }}" tabindex="-1"
+                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="myLargeModalLabel">Confirm Exception Closure</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <h4 class="text-center mb-4">Are you sure you want to close
+                                        this
+                                        exception ({{ $exception->exception }})?</h4>
+                                    <p class="text-center">Closing an <b>exception
+                                            (<span class="required">{{ $exception->exception }}</span>)</b> means all
+                                        related issues with regards
+                                        to the exception has been resolved.
+                                        Once closed, cannot be <strong>undone</strong>
+                                    </p>
+                                    <form action="{{ route('exception.close', $exception->id) }}" method="POST">
+                                        @csrf
+
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-success">Yes,
+                                                Close</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- end col -->
+
+
+                </div>
+                <!-- end row -->
         </div>
-        @push('scripts')
-            <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-            <script>
-                Dropzone.autoDiscover = false;
-                var myDropzone = new Dropzone("#myId", {
-                    url: "{{ route('exception.file.upload', $exception->id) }}", // Set the url for your upload script
-                    paramName: "file", // The name that will be used to transfer the file
-                    maxFilesize: 2, // MB
-                    autoProcessQueue: false, // Prevent automatic upload
-                    addRemoveLinks: true,
-                    dictDefaultMessage: "Drop files here or click to upload",
-                    headers: {
-                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
-                    },
-                    init: function() {
-                        var submitButton = document.querySelector("#upload-button");
-                        var myDropzone = this; // Closure
+        @endif
 
-                        submitButton.addEventListener("click", function() {
-                            // Process the queue when the button is clicked
-                            myDropzone.processQueue();
-                        });
 
-                        this.on("success", function(file, response) {
-                            console.log("File uploaded successfully");
-                            // Handle the response and display a success message
-                            file.previewElement.classList.add("dz-success");
-                            file.previewElement.querySelector("[data-dz-name]").innerHTML = file.name;
-                            //auto refresh the page in 2seconds
-                            setTimeout(function() {
-                                window.location.reload();
-                            }, 2000);
-                            
-                        });
+    </div>
+    @push('scripts')
 
-                        this.on("error", function(file, response) {
-                            console.log("File upload failed");
-                            // Handle the error response and display an error message
-                            file.previewElement.classList.add("dz-error");
-                            var errorMessage = response.message || response;
-                            file.previewElement.querySelector("[data-dz-errormessage]").innerHTML =
-                                errorMessage;
-                        });
-                    }
-                });
+        <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-                // Save the active tab state to local storage
-                document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(tab) {
-                    tab.addEventListener('shown.bs.tab', function(e) {
-                        localStorage.setItem('activeTab', e.target.getAttribute('href'));
+        <script>
+            Dropzone.autoDiscover = false;
+            var myDropzone = new Dropzone("#myId", {
+                url: "{{ route('exception.file.upload', $exception->id) }}",
+                paramName: "files[]",
+                maxFilesize: 5,
+                autoProcessQueue: false,
+                addRemoveLinks: true,
+                dictDefaultMessage: "Drop files here or click to upload",
+                headers: {
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                },
+                init: function() {
+                    var submitButton = document.querySelector("#upload-button");
+                    var myDropzone = this;
+
+                    submitButton.addEventListener("click", function() {
+                        myDropzone.processQueue();
                     });
-                });
 
-                // Restore the active tab state from local storage
-                document.addEventListener('DOMContentLoaded', function() {
-                    var activeTab = localStorage.getItem('activeTab');
-                    if (activeTab) {
-                        var tabElement = document.querySelector('a[href="' + activeTab + '"]');
-                        if (tabElement) {
-                            var tab = new bootstrap.Tab(tabElement);
-                            tab.show();
+                    this.on("success", function(file, response) {
+                        if (response.status === "success") {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Success",
+                                text: response.message,
+                                toast: true,
+                                position: "top-end",
+                                showConfirmButton: false,
+                                timer: 3000
+                            });
+
+                            fetchExceptionFiles(); // Reload files dynamically
+                            myDropzone.removeFile(file);
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: response.message,
+                                toast: true,
+                                position: "top-end",
+                                showConfirmButton: false,
+                                timer: 3000
+                            });
                         }
+                    });
+
+                    this.on("error", function(file, response) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Upload Failed",
+                            text: response.message || "An error occurred",
+                            toast: true,
+                            position: "top-end",
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
+
+                        file.previewElement.classList.add("dz-error");
+                    });
+                }
+            });
+
+            // Fetch and update files dynamically
+            function fetchExceptionFiles() {
+                $.ajax({
+                    url: "{{ route('exception.get.files', $exception->id) }}",
+                    method: "GET",
+                    success: function(response) {
+                        if (Array.isArray(response)) {
+                            let fileListContainer = document.querySelector("#file-list");
+                            fileListContainer.innerHTML = ""; // Clear old files
+
+                            response.forEach(file => {
+                                let fileSrc = `${file.header},${file.fileData}`; // Use the provided header
+                                let fileHtml = `
+                        <div class="col-xl-4 mb-3" id="file-${file.id}">
+                            <div class="file-info p-3 border rounded">
+                                <p><strong>${file.fileName}</strong></p>
+                                <p class="text-muted">${new Date(file.uploadDate).toLocaleString()}</p>
+
+                                <!-- Image Preview -->
+                                ${file.header.includes('image') ? `<img src="${fileSrc}" alt="${file.fileName}" class="img-fluid rounded mb-2" style="max-width: 100px;">` : ''}
+
+                                <!-- Download Button -->
+                                <a href="${fileSrc}"
+                                    download="${file.fileName}" class="btn btn-primary">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+
+                                <!-- Delete Button -->
+                                <button onclick="deleteFile('${file.id}')" class="btn btn-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Remove
+                                </button>
+                            </div>
+                        </div>`;
+
+                                fileListContainer.insertAdjacentHTML("beforeend", fileHtml);
+                            });
+                        }
+                    },
+                    error: function() {
+                        console.error("Failed to fetch files");
                     }
                 });
-            </script>
-        @endpush
+            }
+
+            //Delete exception files
+            function deleteFile(fileId) {
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "This file will be permanently deleted!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Yes, delete it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: "{{ route('exception.file.delete', ':id') }}".replace(':id', fileId),
+                            method: "GET",
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Deleted!",
+                                    text: "File removed successfully.",
+                                    toast: true,
+                                    position: "top-end",
+                                    showConfirmButton: false,
+                                    timer: 3000
+                                });
+
+                                // Remove file from the page dynamically
+                                document.querySelector(`#file-${fileId}`).remove();
+                            },
+                            error: function() {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Error",
+                                    text: "Failed to delete file. Please try again.",
+                                    toast: true,
+                                    position: "top-end",
+                                    showConfirmButton: false,
+                                    timer: 3000
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+
+
+
+            // Fetch files on page load
+            document.addEventListener("DOMContentLoaded", fetchExceptionFiles);
+        </script>
+
+
+
+        <script>
+            // Save the active tab state to local storage
+            document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(tab) {
+                tab.addEventListener('shown.bs.tab', function(e) {
+                    localStorage.setItem('activeTab', e.target.getAttribute('href'));
+                });
+            });
+
+            // Restore the active tab state from local storage
+            document.addEventListener('DOMContentLoaded', function() {
+                var activeTab = localStorage.getItem('activeTab');
+                if (activeTab) {
+                    var tabElement = document.querySelector('a[href="' + activeTab + '"]');
+                    if (tabElement) {
+                        var tab = new bootstrap.Tab(tabElement);
+                        tab.show();
+                    }
+                }
+            });
+        </script>
+    @endpush
 </x-base-layout>
