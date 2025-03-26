@@ -46,36 +46,58 @@ class GroupMembersController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
+
     public function store(Request $request)
     {
         $request->validate([
             'activityGroupId' => 'required|integer',
-            'employeeId' => 'required|integer',
+            'employeeId' => 'required|array',
+            'employeeId.*' => 'required|integer',
         ]);
 
         $access_token = session('api_token');
 
-        $data = [
-            'activityGroupId' => $request->input('activityGroupId'),
-            'employeeId' => $request->input('employeeId'),
-        ];
-
         try {
-            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/GroupMember', $data);
+            $employeeIds = $request->input('employeeId');
+            $activityGroupId = $request->input('activityGroupId');
 
-            if ($response->successful()) {
+            // Prepare the data for individual requests
+            $data = array_map(function ($employeeId) use ($activityGroupId) {
+                return [
+                    'activityGroupId' => $activityGroupId,
+                    'employeeId' => $employeeId,
+                ];
+            }, $employeeIds);
 
-                return redirect()->route('members')->with('toast_success', 'Group Member added to Group successfully');
+            // Make individual requests to the API
+            $responses = [];
+            foreach ($data as $member) {
+                $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/GroupMember', $member);
+                $responses[] = $response;
+            }
+
+            // Check if all requests were successful
+            $allSuccessful = collect($responses)->every(function ($response) {
+                return $response->successful();
+            });
+
+            if ($allSuccessful) {
+                return redirect()->route('members')->with('toast_success', 'Group Members added to Group successfully');
             } else {
-                // Log the error response
-                Log::error('Failed to added Group Member to group', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to added Group Member to group');
+                // Log the error responses
+                foreach ($responses as $response) {
+                    if (!$response->successful()) {
+                        Log::error('Failed to add Group Member to group', [
+                            'status' => $response->status(),
+                            'response' => $response->body()
+                        ]);
+                    }
+                }
+                return redirect()->back()->with('toast_error', 'Sorry, failed to add some Group Members to group');
             }
         } catch (\Exception $e) {
-            Log::error('Exception occurred while adding Group Member to group', [
+            Log::error('Exception occurred while adding Group Members to group', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -198,7 +220,7 @@ class GroupMembersController extends Controller
     /**
      * Fetch branch data from the API
      */
-    public function getEmployeeData()
+    public static function getEmployeeData()
     {
         $access_token = session('api_token');
 
