@@ -55,6 +55,7 @@
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('exception.list') }}" key="list">List</a></li>
                         <li><a href="{{ route('exception.create') }}" key="create">Create</a></li>
+                        <li><a href="{{ route('exception.create') }}" key="create">Pending <span class="badge rounded-full bg-danger">3</span></a></li>
 
                         {{--  <li><a href="" key="">Batch Assignment</a></li>  --}}
                         <li><a href="" key=""></a></li>
