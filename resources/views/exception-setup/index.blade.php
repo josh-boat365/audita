@@ -34,6 +34,7 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {{--  {{ dd($exceptions) }}  --}}
                     @forelse ($exceptions as $exception)
                         <tr>
                             <th scope="row"><a href="#">{{ $exception->exception }}</a></th>
@@ -46,8 +47,11 @@
                                 </span>
                             </td>
                             <td>
+
                                 <span
+
                                     class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : 'bg-success') }}">
+
                                     {{ $exception->riskRate }}
                                 </span>
 
