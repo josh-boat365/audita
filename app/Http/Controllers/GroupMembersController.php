@@ -62,30 +62,45 @@ class GroupMembersController extends Controller
             $employeeIds = $request->input('employeeId');
             $activityGroupId = $request->input('activityGroupId');
 
-            // Prepare the data for individual requests
-            $data = array_map(function ($employeeId) use ($activityGroupId) {
-                return [
-                    'activityGroupId' => $activityGroupId,
-                    'employeeId' => $employeeId,
-                ];
-            }, $employeeIds);
+            // Fetch existing group members
+            $groupMembers = $this->getGroupMembers();
+            $existingMembers = collect($groupMembers)->where('activityGroupId', $activityGroupId);
 
-            // Make individual requests to the API
+            $newMembers = [];
+            $skippedMembers = [];
+
+            foreach ($employeeIds as $employeeId) {
+                $existingMember = $existingMembers->firstWhere('employeeId', $employeeId);
+
+                if ($existingMember) {
+                    // Employee is already in the group, store for message feedback
+                    $skippedMembers[] = $existingMember->employeeName;
+                } else {
+                    // Employee can be added to the group
+                    $newMembers[] = [
+                        'activityGroupId' => $activityGroupId,
+                        'employeeId' => $employeeId,
+                    ];
+                }
+            }
+
+            // Add only new members to the group
             $responses = [];
-            foreach ($data as $member) {
+            foreach ($newMembers as $member) {
                 $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/GroupMember', $member);
                 $responses[] = $response;
             }
 
             // Check if all requests were successful
-            $allSuccessful = collect($responses)->every(function ($response) {
-                return $response->successful();
-            });
+            $allSuccessful = collect($responses)->every(fn($response) => $response->successful());
 
             if ($allSuccessful) {
-                return redirect()->route('members')->with('toast_success', 'Group Members added to Group successfully');
+                $message = 'Group Members added successfully';
+                if (!empty($skippedMembers)) {
+                    $message .= ', but the following members were already in the group: ' . implode(', ', $skippedMembers);
+                }
+                return redirect()->route('members')->with('toast_success', $message);
             } else {
-                // Log the error responses
                 foreach ($responses as $response) {
                     if (!$response->successful()) {
                         Log::error('Failed to add Group Member to group', [
@@ -104,6 +119,7 @@ class GroupMembersController extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
+
 
     /**
      * Display the specified resource.
@@ -145,20 +161,29 @@ class GroupMembersController extends Controller
         $request->validate([
             'activityGroupId' => 'required|integer',
             'employeeId' => 'required|integer',
-
         ]);
 
         $access_token = session('api_token');
-
-        $data = [
-            'id' => $id,
-            'activityGroupId' => $request->input('activityGroupId'),
-            'employeeId' => $request->input('employeeId'),
-        ];
-
-        // dd($data);
+        $activityGroupId = $request->input('activityGroupId');
+        $employeeId = $request->input('employeeId');
 
         try {
+            // Fetch existing group members
+            $groupMembers = $this->getGroupMembers();
+            $existingMember = collect($groupMembers)->firstWhere(function ($member) use ($activityGroupId, $employeeId) {
+                return $member->activityGroupId == $activityGroupId && $member->employeeId == $employeeId;
+            });
+
+            if ($existingMember) {
+                return redirect()->back()->with('toast_error', "{$existingMember->employeeName} is already in the group and cannot be added again.");
+            }
+
+            $data = [
+                'id' => $id,
+                'activityGroupId' => $activityGroupId,
+                'employeeId' => $employeeId,
+            ];
+
             $response = Http::withToken($access_token)->put(
                 'http://192.168.1.200:5126/Auditor/GroupMember/',
                 $data
@@ -167,7 +192,6 @@ class GroupMembersController extends Controller
             if ($response->successful()) {
                 return redirect()->route('members')->with('toast_success', 'Group Member updated successfully');
             } else {
-                // Log the error response
                 Log::error('Failed to update group member', [
                     'status' => $response->status(),
                     'response' => $response->body()
@@ -182,6 +206,7 @@ class GroupMembersController extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
