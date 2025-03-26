@@ -38,11 +38,11 @@
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('group') }}" key="default">Group Setup</a></li>
-                        <li><a href="{{ route('members') }}" key="">Group Members Assignment</a></li>
-                        <li><a href="{{ route('unit') }}" key="">Unit Setup</a></li>
-                        <li><a href="{{ route('batch') }}" key="">Batch Setup</a></li>
-                        <li><a href="{{ route('process-type') }}" key="">Process Type Setup</a></li>
-                        <li><a href="{{ route('risk-rate') }}" key="">Risk Rate Setup</a></li>
+                        <li><a href="{{ route('members') }}" key="group-assignment">Group Members Assignment</a></li>
+                        <li><a href="{{ route('unit') }}" key="unit-setup">Unit Setup</a></li>
+                        <li><a href="{{ route('batch') }}" key="batch-setup">Batch Setup</a></li>
+                        <li><a href="{{ route('process-type') }}" key="process-type-setup">Process Type Setup</a></li>
+                        <li><a href="{{ route('risk-rate') }}" key="risk-rate-setup">Risk Rate Setup</a></li>
                         {{--  <li><a href="" key=""></a></li>  --}}
                     </ul>
                 </li>
@@ -53,8 +53,8 @@
                         <span key="setup">Exception Setup</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        <li><a href="{{ route('exception.list') }}" key="default">List</a></li>
-                        <li><a href="{{ route('exception.create') }}" key="default">Create</a></li>
+                        <li><a href="{{ route('exception.list') }}" key="list">List</a></li>
+                        <li><a href="{{ route('exception.create') }}" key="create">Create</a></li>
 
                         {{--  <li><a href="" key="">Batch Assignment</a></li>  --}}
                         <li><a href="" key=""></a></li>
