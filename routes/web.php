@@ -6,11 +6,12 @@ use App\Http\Controllers\UnitController;
 use RealRashid\SweetAlert\Facades\Alert;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RiskRateController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExceptionController;
 use App\Http\Controllers\ProcessTypeController;
 use App\Http\Controllers\GroupMembersController;
-use App\Http\Controllers\ReportsController;
 
 // Route::middleware(['guest'])->group(
 // function () {
@@ -29,10 +30,7 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 
 
 // Route::middleware(['auth'])->group(function () {
-Route::get('/dashboard', function () {
-
-    return view('dashboard');
-})->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 // BATCH SETUP
 Route::get('/batch', [BatchController::class, 'index'])->name('batch');

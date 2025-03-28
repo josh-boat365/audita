@@ -42,6 +42,7 @@ class ExceptionController extends Controller
         }
 
         $employeeId = $this->getLoggedInUserInformation()->id;
+        // dd($employeeId);
         $pendingExceptions = $this->getPendingExceptions($employeeId);
         $sortDescending = collect($pendingExceptions)->sortByDesc('createdAt');
 
@@ -150,6 +151,11 @@ class ExceptionController extends Controller
             $riskRates = RiskRateController::getRiskRates();
             $exception = $this->getAnException($id);
             $employeeId = $this->getLoggedInUserInformation()->id;
+            // $employeeData = [
+            //     'id' => $employee->id,
+            //     'departmentId' => $employee->departmentId
+            // ];
+            // dd($employeeId);
 
             return view('exception-setup.edit', compact(
                 'exception',
@@ -159,6 +165,12 @@ class ExceptionController extends Controller
                 'riskRates',
                 'employeeId'
             ));
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception edit  API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             Log::error('Exception occurred while fetching exception', [
                 'message' => $e->getMessage(),
@@ -363,6 +375,12 @@ class ExceptionController extends Controller
                 ]);
                 return redirect()->back()->with('toast_error', 'Sorry, failed to add comment');
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception comment API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             Log::error('Exception occurred while adding comment', [
                 'message' => $e->getMessage(),
@@ -392,6 +410,12 @@ class ExceptionController extends Controller
                 Log::error('Exception comments API request failed', ['status' => $response->status()]);
                 toast('Error fetching exception comments data', 'error');
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception comment API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             $comments = [];
             Log::error('Error fetching exception comments', ['error' => $e->getMessage()]);
@@ -456,6 +480,12 @@ class ExceptionController extends Controller
             }
 
             return response()->json(['status' => 'error', 'message' => 'File upload failed'], 500);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception file upload API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => 'Something went wrong, check your internet and try again'], 500);
         }
@@ -493,7 +523,7 @@ class ExceptionController extends Controller
 
             $fileData = $response->json();
 
-            $files = explode(',',$fileData['fileData'], 2);
+            $files = explode(',', $fileData['fileData'], 2);
             $base64Data = $files[1];
 
             return response()->json([
@@ -501,6 +531,12 @@ class ExceptionController extends Controller
                 'fileName' => $fileData['fileName'],
                 'fileData' => $base64Data, // This includes the file header!
             ]);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception file download API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             Log::error('Error downloading file', [
                 'message' => $e->getMessage(),
@@ -537,6 +573,12 @@ class ExceptionController extends Controller
                 ]);
                 return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception File');
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception file delete API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             // Log the exception
             Log::error('Exception occurred while deleting Exception File', [
@@ -613,6 +655,12 @@ class ExceptionController extends Controller
                 Log::error('Exception API request failed', ['status' => $response->status()]);
                 toast('Error fetching exception  data', 'error');
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception Tracker API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             $exceptions = [];
             Log::error('Error fetching exception data', ['error' => $e->getMessage()]);
@@ -641,6 +689,12 @@ class ExceptionController extends Controller
                 Log::error('The Exception  API request failed', ['status' => $response->status()]);
                 toast('Error fetching exception  data', 'error');
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception tracker API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             $exception = [];
             Log::error('Error fetching The Exception  data', ['error' => $e->getMessage()]);
@@ -668,10 +722,19 @@ class ExceptionController extends Controller
                 Log::error('Department API request failed', ['status' => $response->status()]);
                 toast('Error fetching department data', 'error');
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Department API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
         } catch (\Exception $e) {
             $departments = [];
             Log::error('Error fetching department data', ['error' => $e->getMessage()]);
-            toast('An error occurred. Please try again later', 'error');
+            toast(
+                'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>',
+                'error'
+            );
         }
 
         return $departments;
@@ -711,7 +774,7 @@ class ExceptionController extends Controller
         $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && $exception->status == 'PENDING' &&
+                $validGroups->has($groupId) && $exception->status == 'PENDING' && $exception->recommendedStatus == null &&
                 $employeeGroups->contains($groupId);
         });
 
@@ -755,7 +818,7 @@ class ExceptionController extends Controller
         $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && $exception->recommendedStatus == 'RESOLVED' &&
+                $validGroups->has($groupId) && $exception->recommendedStatus == 'RESOLVED' && $exception->status == 'PENDING' &&
                 $employeeGroups->contains($groupId);
         });
 
@@ -766,31 +829,39 @@ class ExceptionController extends Controller
 
     public static function getLoggedInUserInformation()
     {
-
         $access_token = session('api_token');
 
         try {
             $response = Http::withToken($access_token)->get('http://192.168.1.200:5124/HRMS/Employee/GetEmployeeInformation');
 
             if ($response->successful()) {
-                $employee = $response->object() ?? [];
+                return $response->object() ?? [];
             } elseif ($response->status() == 404) {
-                $employee = [];
-                Log::warning('Employee Information  API returned 404 Not Found');
-                toast('Employee Information  data not found', 'warning');
-            } else {
-                $employee = [];
-                Log::error('Employee Information  API request failed', ['status' => $response->status()]);
-                toast('Error fetching Employee Information  data', 'error');
-            }
-        } catch (\Exception $e) {
-            $employee = [];
-            Log::error('Error fetching Employee Information  data', ['error' => $e->getMessage()]);
-            toast('Error fetching Employee Information data', 'error');
-        }
+                Log::warning('Employee Information API returned 404 Not Found');
 
-        return $employee;
+                toast('Employee Information not found', 'warning');
+                return [];
+            } else {
+                Log::error('Employee Information API request failed', ['status' => $response->status()]);
+
+                toast('Error fetching Employee Information data', 'error');
+                return [];
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Employee Information API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
+        } catch (\Exception $e) {
+            // Handle general exceptions
+            Log::error('Error fetching Employee Information data', ['error' => $e->getMessage()]);
+
+            toast('Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>', 'error');
+            return [];
+        }
     }
+
 
     public static function paginate(array|Collection $items, int $perPage, Request $request): LengthAwarePaginator
     {

@@ -41,11 +41,11 @@
                     <span class="d-none d-sm-block">Chats & Comments</span>
                 </a>
             </li>
-            @if ($exception->auditorId == $employeeId)
+            @if ($exception->auditorId !== $employeeId)
                 <li class="nav-item">
                     <a class="nav-link" data-bs-toggle="tab" href="#recommend-resolution" role="tab">
                         <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
-                        <span class="d-none d-sm-block">Recommend Resolution</span>
+                        <span class="d-none d-sm-block">Auditee Exception Closure</span>
                     </a>
                 </li>
             @else
@@ -586,7 +586,7 @@
 
 
             {{--  RECOMMEND RESOLUTION - USER  --}}
-            @if ($exception->auditorId == $employeeId)
+            @if ($exception->auditorId !== $employeeId)
                 <div class="tab-pane" id="recommend-resolution" role="tabpanel">
 
                     <form action="{{ route('exception.resolution', $exception->id) }}" method="POST"
@@ -601,7 +601,7 @@
                                         Resolution</label>
                                     <select class="form-select" name="resolution" required>
                                         <option selected>Select.....</option>
-                                        <option value="RESOLVED">Recommended Resolution</option>
+                                        <option value="RESOLVED">Close Exception</option>
                                     </select>
                                     <div class="invalid-feedback">Please select exception status.</div>
                                 </div>
@@ -712,7 +712,11 @@
                                 timer: 3000
                             });
 
-                            fetchExceptionFiles(); // Reload files dynamically
+                            //refresh page manually
+                            window.location.reload();
+
+
+                            {{--  fetchExceptionFiles(); // Reload files dynamically  --}}
                             myDropzone.removeFile(file);
                         } else {
                             Swal.fire({

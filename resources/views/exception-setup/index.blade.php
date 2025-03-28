@@ -74,7 +74,9 @@
                                                 class="bx bxs-pencil"></i>open</span>
                                     </a>
                                     {{--  DELETE BUTTON  --}}
-                                    @if ($exception->auditorId === $employeeId)
+                                    @if (
+                                        ($exception->auditorId === $employeeId && (empty($exception->fileAttached) && empty($exception->comment))) ||
+                                            ($exception->auditorId !== $employeeId && (empty($exception->fileAttached) && empty($exception->comment))))
                                         <a href="" data-bs-toggle="modal"
                                             data-bs-target=".bs-delete-modal-lg-{{ $exception->id }}">
                                             <span class="badge rounded-pill bg-danger fonte-size-13"><i
