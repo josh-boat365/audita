@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 
 class RiskRateController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $access_token = session('api_token');
 
@@ -16,7 +16,11 @@ class RiskRateController extends Controller
             return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
         }
 
-        $riskRates = $this->getRiskRates();
+        $riskRatesData = $this->getRiskRates();
+
+        $sortedRiskRates = collect($riskRatesData)->sortByDesc('createdAt');
+
+        $riskRates = ExceptionController::paginate($sortedRiskRates, 15, $request);
 
         return view('risk-rate-setup.index', compact('riskRates'));
     }

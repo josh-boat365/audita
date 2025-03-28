@@ -97,7 +97,7 @@
                             <thead>
                                 <tr>
 
-                                    <th>Exception</th>
+                                    <th class="col-4">Exception</th>
                                     <th>Root Cause</th>
                                     <th>Participants</th>
                                     <th>Process Type</th>
@@ -115,8 +115,8 @@
                                 @forelse ($reports as $report)
                                     <tr>
 
-                                        <td>{{ $report->exception ?? 'N/A' }}</td>
-                                        <td>{{ $report->rootCause ?? 'N/A' }}</td>
+                                        <td class="col-4">{{ $report->exception ?? 'N/A' }}</td>
+                                        <td class="col-4">{{ $report->rootCause ?? 'N/A' }}</td>
                                         <td>{{ $report->auditorName ?? 'N/A' }},
                                             {{ $report->auditeeName ?? 'No Auditee' }}</td>
                                         <td>{{ $report->processType ?? 'N/A' }}</td>
