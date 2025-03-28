@@ -6,7 +6,8 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('process-type') }}">{{ $processType->name }}</a> > Update Process Type Details
+                    <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('process-type') }}">Process types</a> > Update Process Type Details
+                        > <a href="#">{{ $processType->name }}</a>
                     </h4>
                 </div>
             </div>

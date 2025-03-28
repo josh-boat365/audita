@@ -129,7 +129,7 @@
                 </tbody>
             </table>
             <nav aria-label="Page navigation example" class="mt-3">
-
+                {{ $processTypes->links('pagination::bootstrap-5') }}
             </nav>
         </div>
 

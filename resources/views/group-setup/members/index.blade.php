@@ -85,14 +85,15 @@
                                                 class="bx bxs-pencil"></i>edit</span>
                                     </a>
                                     {{--  DELETE BUTTON  --}}
-                                    <a href="#" data-bs-toggle="modal" data-bs-target=".bs-delete-modal-lg-{{ $groupMember->id }}">
+                                    <a href="#" data-bs-toggle="modal"
+                                        data-bs-target=".bs-delete-modal-lg-{{ $groupMember->id }}">
                                         <span class="badge rounded-pill bg-danger fonte-size-13"><i
                                                 class="bx bxs-trash"></i> delete</span>
                                     </a>
 
                                     <!-- Modal for Delete Confirmation -->
-                                    <div class="modal fade bs-delete-modal-lg-{{ $groupMember->id }}" tabindex="-1" role="dialog"
-                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                    <div class="modal fade bs-delete-modal-lg-{{ $groupMember->id }}" tabindex="-1"
+                                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
                                         <div class="modal-dialog modal-lg modal-dialog-centered">
                                             <div class="modal-content">
                                                 <div class="modal-header">
@@ -133,7 +134,7 @@
                 </tbody>
             </table>
             <nav aria-label="Page navigation example" class="mt-3">
-
+                {{ $groupMembers->links('pagination::bootstrap-5') }}
             </nav>
         </div>
 
