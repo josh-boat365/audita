@@ -11,7 +11,7 @@ class UnitController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $access_token = session('api_token');
 
@@ -19,7 +19,11 @@ class UnitController extends Controller
             return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
         }
 
-        $auditUnits = $this->getAuditUnitData();
+        $auditUnitsData = $this->getAuditUnitData();
+
+        $sortedAuditUnit = collect($auditUnitsData)->sortByDesc('createdAt');
+
+        $auditUnits = ExceptionController::paginate($sortedAuditUnit, 15, $request);
 
         return view('unit-setup.index', compact('auditUnits'));
     }
