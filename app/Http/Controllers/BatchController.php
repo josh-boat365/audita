@@ -13,7 +13,7 @@ class BatchController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $access_token = session('api_token');
 
@@ -29,7 +29,10 @@ class BatchController extends Controller
             return $group->active == true;
         });
 
-        $batchData = self::getBatches();
+        $batches = self::getBatches();
+        $sortedBatches = collect($batches)->sortByDesc('createdAt');
+
+        $batchData = ExceptionController::paginate($sortedBatches, 15, $request);
 
         $employeeData = ExceptionController::getLoggedInUserInformation();
 
