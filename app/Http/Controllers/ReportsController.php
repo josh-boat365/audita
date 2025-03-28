@@ -14,10 +14,14 @@ class ReportsController extends Controller
     public function index()
     {
         $reports = $this->getAllReports();
+        $batches = BatchController::getBatches();
+        $groups = GroupController::getActivityGroups();
+
+        dd($reports);
         return view('reports.index', compact('reports'));
     }
 
-    public function getAllReports()
+    public static function getAllReports()
     {
         $access_token = session('api_token');
 
@@ -40,7 +44,8 @@ class ReportsController extends Controller
         } catch (\Exception $e) {
             $Reports = [];
             Log::error('Error fetching exception Reports', ['error' => $e->getMessage()]);
-            toast('An error occurred. Please try again later', 'error');
+            // toast('An error occurred. Please try again later', 'error');
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
         return $Reports;
     }
