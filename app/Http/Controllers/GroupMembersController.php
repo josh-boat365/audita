@@ -11,7 +11,7 @@ class GroupMembersController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $access_token = session('api_token');
 
@@ -20,7 +20,10 @@ class GroupMembersController extends Controller
         }
 
 
-        $groupMembers = $this->getGroupMembers();
+        $groupMembersData = $this->getGroupMembers();
+        $sortedMembers = collect($groupMembersData)->sortByDesc('createdAt');
+
+        $groupMembers = ExceptionController::paginate($sortedMembers, 15, $request);
         // dd($groupMembers);
         $employees = $this->getEmployeeData();
         $groups = GroupController::getActivityGroups();
