@@ -12,7 +12,7 @@
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('exception.list') }}">
-                            {{ $exception->exception }}</a> > Update Exception
+                            List of Exceptions </a> > Update Exception > <a href="#">{{ $exception->exception }}</a>
                     </h4>
                 </div>
             </div>
@@ -41,7 +41,7 @@
                     <span class="d-none d-sm-block">Chats & Comments</span>
                 </a>
             </li>
-            @if ($exception->auditorId != $employeeId)
+            @if ($exception->auditorId == $employeeId)
                 <li class="nav-item">
                     <a class="nav-link" data-bs-toggle="tab" href="#recommend-resolution" role="tab">
                         <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
@@ -245,11 +245,37 @@
                     <div class="card-body">
                         <h4>Files</h4>
                         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
-                        <div class="row" id="file-list">
-                            <!-- Files will be dynamically inserted here -->
+                        <div class="row">
+                            @forelse ($exception->fileAttached as $file)
+                                <div class="col-xl-4 mb-3" id="file-{{ $file->id }}">
+                                    <div class="file-info p-3 border rounded">
+                                        <p><strong>{{ $file->fileName }}</strong></p>
+                                        <p class="text-muted">{{ $file->uploadDate }}</p>
+                                        <p class="text-muted"><strong>Uploaded By: </strong>{{ $file->uploadedBy }}
+                                        </p>
+
+                                        <div class="d-flex justify-content-between">
+                                            <!-- Download Button -->
+                                            <button onclick="downloadFile('{{ $file->id }}')"
+                                                class="btn btn-sm btn-primary">
+                                                <i class="fas fa-download"></i> Download
+                                            </button>
+
+                                            <!-- Delete Button -->
+                                            <button onclick="deleteFile('{{ $file->id }}')"
+                                                class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p>No files uploaded Yet</p>
+                            @endforelse
                         </div>
                     </div>
                 </div>
+
             </div>
 
 
@@ -274,8 +300,11 @@
                         <div>
                             <div class="chat-conversation p-3">
                                 <ul class="list-unstyled mb-0" data-simplebar style="max-height: 486px;">
+                                    @php
+                                        $sortedComments = collect($exception->comment)->sortByDesc('createdAt');
+                                    @endphp
 
-                                    @forelse ($exception->comment as $comment)
+                                    @forelse ($sortedComments as $comment)
                                         @if ($comment->createdBy != $exception->auditorName)
                                             {{--  COMMENT FROM OTHER USERS  --}}
                                             <li class="left">
@@ -557,7 +586,7 @@
 
 
             {{--  RECOMMEND RESOLUTION - USER  --}}
-            @if ($exception->auditorId != $employeeId)
+            @if ($exception->auditorId == $employeeId)
                 <div class="tab-pane" id="recommend-resolution" role="tabpanel">
 
                     <form action="{{ route('exception.resolution', $exception->id) }}" method="POST"
@@ -714,52 +743,54 @@
                 }
             });
 
-            // Fetch and update files dynamically
-            function fetchExceptionFiles() {
+            // Fetch and download files
+            function downloadFile(fileId) {
                 $.ajax({
-                    url: "{{ route('exception.get.files', $exception->id) }}",
+                    url: "{{ route('exception.file.download', ':id') }}".replace(':id', fileId),
                     method: "GET",
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") // Include CSRF token
+                    },
                     success: function(response) {
-                        if (Array.isArray(response)) {
-                            let fileListContainer = document.querySelector("#file-list");
-                            fileListContainer.innerHTML = ""; // Clear old files
+                        {{--  console.log("Download response:", response); // Debugging  --}}
 
-                            response.forEach(file => {
-                                let fileSrc = `${file.fileData}`; // Use the provided header
-                                let fileHtml = `
-                        <div class="col-xl-4 mb-3" id="file-${file.id}">
-                            <div class="file-info p-3 border rounded">
-
-                                <p><strong>${file.fileName}</strong></p>
-                                <p class="text-muted">${new Date(file.uploadDate).toLocaleString()}</p>
-
-
-                                {{--  <!-- Image Preview -->
-                                ${file.header.includes('image') ? `<img src="${fileSrc}" alt="${file.fileName}" class="img-fluid rounded mb-2" style="max-width: 100px;">` : ''}  --}}
-                                <div class="d-flex justify-content-between">
-                                    <!-- Download Button -->
-                                    <a href="data:application/octet-stream;base64,${fileSrc}"
-                                        download="${file.fileName}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-download"></i> Download
-                                    </a>
-
-                                    <!-- Delete Button -->
-                                    <button onclick="deleteFile('${file.id}')" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-trash"></i> Remove
-                                    </button>
-                                </div>
-                            </div>
-                        </div>`;
-
-                                fileListContainer.insertAdjacentHTML("beforeend", fileHtml);
+                        if (response.status === "success") {
+                            let link = document.createElement("a");
+                            link.href = `data:application/octet-stream;base64,${response.fileData}`;
+                            link.download = response.fileName;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Download Failed",
+                                text: response.message,
+                                toast: true,
+                                position: "top-end",
+                                showConfirmButton: false,
+                                timer: 3000
                             });
                         }
                     },
-                    error: function() {
-                        console.error("Failed to fetch files");
+                    error: function(xhr) {
+                        {{--  console.error("Download Error:", xhr.responseText);  --}}
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: "Failed to download file. Please try again.",
+                            toast: true,
+                            position: "top-end",
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
                     }
                 });
             }
+
+
+
+
 
             //Delete exception files
             function deleteFile(fileId) {
@@ -775,22 +806,41 @@
                     if (result.isConfirmed) {
                         $.ajax({
                             url: "{{ route('exception.file.delete', ':id') }}".replace(':id', fileId),
-                            method: "GET",
-                            success: function(response) {
-                                Swal.fire({
-                                    icon: "success",
-                                    title: "Deleted!",
-                                    text: "File removed successfully.",
-                                    toast: true,
-                                    position: "top-end",
-                                    showConfirmButton: false,
-                                    timer: 3000
-                                });
-
-                                // Remove file from the page dynamically
-                                document.querySelector(`#file-${fileId}`).remove();
+                            method: "DELETE", // Changed to DELETE
+                            headers: {
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}" // CSRF token added
                             },
-                            error: function() {
+                            success: function(response) {
+                                {{--  console.log("Delete Success:", response); // Debugging log  --}}
+
+                                if (response.status === "success") {
+                                    Swal.fire({
+                                        icon: "success",
+                                        title: "Deleted!",
+                                        text: response.message,
+                                        toast: true,
+                                        position: "top-end",
+                                        showConfirmButton: false,
+                                        timer: 3000
+                                    });
+
+                                    // Remove file from UI
+                                    document.querySelector(`#file-${fileId}`).remove();
+                                } else {
+                                    Swal.fire({
+                                        icon: "error",
+                                        title: "Error",
+                                        text: response.message,
+                                        toast: true,
+                                        position: "top-end",
+                                        showConfirmButton: false,
+                                        timer: 3000
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                {{--  console.error("Delete Error:", xhr.responseText); // Log error for debugging  --}}
+
                                 Swal.fire({
                                     icon: "error",
                                     title: "Error",
@@ -806,10 +856,6 @@
                 });
             }
 
-
-
-            // Fetch files on page load
-            document.addEventListener("DOMContentLoaded", fetchExceptionFiles);
         </script>
 
 

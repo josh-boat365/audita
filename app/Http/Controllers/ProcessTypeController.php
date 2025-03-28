@@ -11,7 +11,7 @@ class ProcessTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $access_token = session('api_token');
 
@@ -19,7 +19,10 @@ class ProcessTypeController extends Controller
             return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
         }
 
-        $processTypes = $this->getProcessTypes();
+        $processTypesData = $this->getProcessTypes();
+        $sortedProcessTypes = collect($processTypesData)->sortByDesc('createdAt');
+
+        $processTypes = ExceptionController::paginate($sortedProcessTypes, 15, $request);
 
         return view('process-type-setup.index', compact('processTypes'));
     }

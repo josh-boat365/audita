@@ -12,7 +12,7 @@ class GroupController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $access_token = session('api_token');
 
@@ -22,7 +22,12 @@ class GroupController extends Controller
 
         $branches = $this->getBranchData();
 
-        $groups = $this->getActivityGroups();
+        $groupsData = $this->getActivityGroups();
+        $sortedGroups = collect($groupsData)->sortByDesc('createdAt');
+
+        $groups = ExceptionController::paginate($sortedGroups, 15, $request);
+
+
         $employeeData = ExceptionController::getLoggedInUserInformation();
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;

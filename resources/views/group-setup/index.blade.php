@@ -52,8 +52,8 @@
                                         </a>
                                     </div>
                                 </span>
-                                <div class="modal fade bs-example-modal-lg-{{ $group->id }}" tabindex="-1" role="dialog"
-                                    aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                <div class="modal fade bs-example-modal-lg-{{ $group->id }}" tabindex="-1"
+                                    role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
                                     <div class="modal-dialog modal-sm modal-dialog-centered ">
                                         <div class="modal-content">
                                             <div class="modal-header">
@@ -84,45 +84,48 @@
                                         <span class="badge rounded-pill bg-primary fonte-size-13"><i
                                                 class="bx bxs-pencil"></i>edit</span>
                                     </a>
-                                    @if($group->createdBy == $employeeFullName)
+                                    @if ($group->createdBy == $employeeFullName)
+                                        {{--  DELETE BUTTON  --}}
+                                        <a href="#" data-bs-toggle="modal"
+                                            data-bs-target=".bs-delete-modal-lg-{{ $group->id }}">
+                                            <span class="badge rounded-pill bg-danger fonte-size-13"><i
+                                                    class="bx bxs-trash"></i> delete</span>
+                                        </a>
 
-                                    {{--  DELETE BUTTON  --}}
-                                    <a href="#" data-bs-toggle="modal" data-bs-target=".bs-delete-modal-lg-{{ $group->id }}">
-                                        <span class="badge rounded-pill bg-danger fonte-size-13"><i
-                                                class="bx bxs-trash"></i> delete</span>
-                                    </a>
+                                        <!-- Modal for Delete Confirmation -->
+                                        <div class="modal fade bs-delete-modal-lg-{{ $group->id }}" tabindex="-1"
+                                            role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="myLargeModalLabel">Confirm Group
+                                                            Deletion</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h4 class="text-center mb-4">Are you sure you want to delete
+                                                            this
+                                                            group?</h4>
+                                                        <p class="text-center">Deleting a <b>group</b> means removing it
+                                                            from the <b>system entirely</b> and you cannot
+                                                            <b>recover</b> it
+                                                            again</p>
+                                                        <form action="{{ route('group.delete', $group->id) }}"
+                                                            method="POST">
+                                                            @csrf
 
-                                    <!-- Modal for Delete Confirmation -->
-                                    <div class="modal fade bs-delete-modal-lg-{{ $group->id }}" tabindex="-1" role="dialog"
-                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="myLargeModalLabel">Confirm Group
-                                                        Deletion</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <h4 class="text-center mb-4">Are you sure you want to delete this
-                                                        group?</h4>
-                                                    <p class="text-center">Deleting a <b>group</b> means removing it
-                                                        from the <b>system entirely</b> and you cannot <b>recover</b> it
-                                                        again</p>
-                                                    <form action="{{ route('group.delete', $group->id) }}" method="POST">
-                                                        @csrf
-
-                                                        <div class="d-grid">
-                                                            <button type="submit" class="btn btn-danger">Yes,
-                                                                Delete</button>
-                                                        </div>
-                                                    </form>
+                                                            <div class="d-grid">
+                                                                <button type="submit" class="btn btn-danger">Yes,
+                                                                    Delete</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
                                     @else
-                                    <a href=""></a>
+                                        <a href=""></a>
                                     @endif
                                 </div>
                             </td>
@@ -137,7 +140,7 @@
                 </tbody>
             </table>
             <nav aria-label="Page navigation example" class="mt-3">
-
+                {{ $groups->links('pagination::bootstrap-5') }}
             </nav>
         </div>
 
