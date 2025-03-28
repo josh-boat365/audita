@@ -42,6 +42,7 @@ class ExceptionController extends Controller
         }
 
         $employeeId = $this->getLoggedInUserInformation()->id;
+        // dd($employeeId);
         $pendingExceptions = $this->getPendingExceptions($employeeId);
         $sortDescending = collect($pendingExceptions)->sortByDesc('createdAt');
 
@@ -150,6 +151,11 @@ class ExceptionController extends Controller
             $riskRates = RiskRateController::getRiskRates();
             $exception = $this->getAnException($id);
             $employeeId = $this->getLoggedInUserInformation()->id;
+            // $employeeData = [
+            //     'id' => $employee->id,
+            //     'departmentId' => $employee->departmentId
+            // ];
+            // dd($employeeId);
 
             return view('exception-setup.edit', compact(
                 'exception',
@@ -671,7 +677,8 @@ class ExceptionController extends Controller
         } catch (\Exception $e) {
             $departments = [];
             Log::error('Error fetching department data', ['error' => $e->getMessage()]);
-            toast('An error occurred. Please try again later', 'error');
+            toast(
+                'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>', 'error');
         }
 
         return $departments;
@@ -711,7 +718,7 @@ class ExceptionController extends Controller
         $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && $exception->status == 'PENDING' &&
+                $validGroups->has($groupId) && $exception->status == 'PENDING' && $exception->recommendedStatus == null &&
                 $employeeGroups->contains($groupId);
         });
 
@@ -755,7 +762,7 @@ class ExceptionController extends Controller
         $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && $exception->recommendedStatus == 'RESOLVED' &&
+                $validGroups->has($groupId) && $exception->recommendedStatus == 'RESOLVED' && $exception->status == 'PENDING' &&
                 $employeeGroups->contains($groupId);
         });
 
@@ -786,7 +793,7 @@ class ExceptionController extends Controller
         } catch (\Exception $e) {
             $employee = [];
             Log::error('Error fetching Employee Information  data', ['error' => $e->getMessage()]);
-            toast('Error fetching Employee Information data', 'error');
+            toast('Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>', 'error');
         }
 
         return $employee;

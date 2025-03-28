@@ -10,7 +10,7 @@
         </div>
         <!-- end page title -->
         {{--  {{ dd($reports) }}  --}}
-        <div class="row">
+        {{--  <div class="row">
             <div class="col-12">
                 <form id="filterForm" method="POST" action="">
                     @csrf
@@ -23,9 +23,9 @@
                                     <select id="batchFilter" class="select2 form-control" name="batchId"
                                         data-placeholder="Choose ...">
                                         <option value="">Select ....</option>
-                                        {{--  @foreach ($batches as $batch)  --}}
+
                                         <option value="">Batch Name</option>
-                                        {{--  @endforeach  --}}
+
                                     </select>
                                 </div>
                                 <!-- Department Filter -->
@@ -34,10 +34,10 @@
                                     <select id="departmentFilter" class="select2 form-control" name="departmentId"
                                         data-placeholder="Choose ...">
                                         <option value="">Select ....</option>
-                                        {{--  @foreach ($departments as $department)  --}}
+
                                         <option value="">
                                             department name</option>
-                                        {{--  @endforeach  --}}
+
                                     </select>
                                 </div>
                                 <!-- KPI Filter -->
@@ -46,9 +46,9 @@
                                     <select id="kpiFilter" class="select2 form-control" name="kpiId"
                                         data-placeholder="Choose ...">
                                         <option value="">Select ....</option>
-                                        {{--  @foreach ($kpis as $kpi)  --}}
+
                                         <option value="">kpi name</option>
-                                        {{--  @endforeach  --}}
+
                                     </select>
                                 </div>
                                 <!-- Employee Filter -->
@@ -57,10 +57,10 @@
                                     <select id="employeeFilter" class="select2 form-control" name="employeeId"
                                         data-placeholder="Choose ...">
                                         <option value="">Select ....</option>
-                                        {{--  @foreach ($employees as $employee)  --}}
+
                                         <option value="">
                                             employee name</option>
-                                        {{--  @endforeach  --}}
+
                                     </select>
                                 </div>
                                 <!-- Buttons -->
@@ -77,7 +77,7 @@
                     </div>
                 </form>
             </div>
-        </div>
+        </div>  --}}
 
     </div>
 
@@ -97,7 +97,7 @@
                             <thead>
                                 <tr>
 
-                                    <th class="col-4">Exception</th>
+                                    <th class="col">Exception</th>
                                     <th>Root Cause</th>
                                     <th>Participants</th>
                                     <th>Process Type</th>
