@@ -42,14 +42,15 @@
                                                 class="bx bxs-pencil"></i>edit</span>
                                     </a>
                                     {{--  DELETE BUTTON  --}}
-                                    <a href="#" data-bs-toggle="modal" data-bs-target=".bs-delete-modal-lg-{{ $auditUnit->id }}">
+                                    <a href="#" data-bs-toggle="modal"
+                                        data-bs-target=".bs-delete-modal-lg-{{ $auditUnit->id }}">
                                         <span class="badge rounded-pill bg-danger fonte-size-13"><i
                                                 class="bx bxs-trash"></i> delete</span>
                                     </a>
 
                                     <!-- Modal for Delete Confirmation -->
-                                    <div class="modal fade bs-delete-modal-lg-{{ $auditUnit->id }}" tabindex="-1" role="dialog"
-                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                    <div class="modal fade bs-delete-modal-lg-{{ $auditUnit->id }}" tabindex="-1"
+                                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
                                         <div class="modal-dialog modal-lg modal-dialog-centered">
                                             <div class="modal-content">
                                                 <div class="modal-header">
@@ -64,7 +65,8 @@
                                                     <p class="text-center">Deleting a <b>unit</b> means removing it
                                                         from the <b>system entirely</b> and you cannot <b>recover</b> it
                                                         again</p>
-                                                    <form action="{{ route('unit.delete', $auditUnit->id) }}" method="POST">
+                                                    <form action="{{ route('unit.delete', $auditUnit->id) }}"
+                                                        method="POST">
                                                         @csrf
 
                                                         <div class="d-grid">
@@ -88,7 +90,7 @@
                 </tbody>
             </table>
             <nav aria-label="Page navigation example" class="mt-3">
-
+                {{ $auditUnits->links('pagination::bootstrap-5') }}
             </nav>
         </div>
 

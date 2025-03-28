@@ -49,7 +49,6 @@
                             <td>
 
                                 <span
-
                                     class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : 'bg-success') }}">
 
                                     {{ $exception->riskRate }}
@@ -131,7 +130,7 @@
                 </tbody>
             </table>
             <nav aria-label="Page navigation example" class="mt-3">
-
+                {{ $exceptions->links('pagination::bootstrap-5') }}
             </nav>
         </div>
 

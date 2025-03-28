@@ -97,7 +97,8 @@
                                                         <p class="text-center">Deleting a <b>batch</b> means removing it
                                                             from the <b>system entirely</b> and you cannot
                                                             <b>recover</b> it
-                                                            again</p>
+                                                            again
+                                                        </p>
                                                         <form action="{{ route('batch.delete', $batch->id) }}"
                                                             method="POST">
                                                             @csrf
@@ -127,7 +128,7 @@
                 </tbody>
             </table>
             <nav aria-label="Page navigation example" class="mt-3">
-
+                {{ $batchData->links('pagination::bootstrap-5') }}
             </nav>
         </div>
 
