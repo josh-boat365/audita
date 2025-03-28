@@ -17,7 +17,7 @@ class ReportsController extends Controller
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
 
-        dd($reports);
+        // dd($reports);
         return view('reports.index', compact('reports'));
     }
 
