@@ -4,16 +4,18 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\BatchController;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class ExceptionController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $access_token = session('api_token');
 
@@ -22,10 +24,34 @@ class ExceptionController extends Controller
         }
 
         $employeeId = $this->getLoggedInUserInformation()->id;
-        $exceptions = $this->getFilteredExceptions($employeeId);
+        $filteredExceptions = $this->getFilteredExceptions($employeeId);
+        $sortDescending = collect($filteredExceptions)->sortByDesc('createdAt');
 
+        $exceptions = $this->paginate($sortDescending, 3, $request);
 
         return view('exception-setup.index', compact('exceptions', 'employeeId'));
+    }
+
+
+    public function pendingExceptions(Request $request)
+    {
+        $access_token = session('api_token');
+
+        if (empty($access_token)) {
+            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+        }
+
+        $employeeId = $this->getLoggedInUserInformation()->id;
+        $pendingExceptions = $this->getPendingExceptions($employeeId);
+        $sortDescending = collect($pendingExceptions)->sortByDesc('createdAt');
+
+        $exceptions = $this->paginate($sortDescending, 3, $request);
+
+
+        //store exception count in session
+        session(['pending_exception_count' => $exceptions->count()]);
+
+        return view('exception-setup.pending', compact('exceptions', 'employeeId'));
     }
 
     /**
@@ -280,10 +306,14 @@ class ExceptionController extends Controller
         // Get the access token from the session
         $accessToken = session('api_token');
 
+        $data = [
+            'id' => $id
+        ];
+
         try {
             // Make the DELETE request to the external API
             $response = Http::withToken($accessToken)
-                ->put("http://192.168.1.200:5126/Auditor/ExceptionTracker/close-exception/{$id}");
+                ->put("http://192.168.1.200:5126/Auditor/ExceptionTracker/close-exception", $data);
 
             // Check the response status and return appropriate response
             if ($response->successful()) {
@@ -393,28 +423,36 @@ class ExceptionController extends Controller
 
         try {
             foreach ($files as $file) {
+                // Get the MIME type
+                $mimeType = $file->getMimeType(); // Example: "image/jpeg", "application/pdf"
                 $base64File = base64_encode(file_get_contents($file->getRealPath()));
+
+                // Append the MIME type header to the base64 data
+                $fileData = "data:$mimeType;base64,$base64File";
 
                 $payload = [
                     'exceptionTrackerId' => $id,
                     'fileName' => $file->getClientOriginalName(),
-                    'fileData' => $base64File,
+                    'fileData' => $fileData, // Correctly formatted with MIME type
                 ];
 
                 $response = Http::withToken($accessToken)->post($apiUrl, $payload);
 
                 if ($response->successful()) {
                     $uploadedFiles[] = [
-                        'id' => uniqid(),
                         'fileName' => $file->getClientOriginalName(),
                         'uploadDate' => now()->toDateTimeString(),
-                        'fileData' => $base64File,
+                        'fileData' => $fileData, // Store file with header
                     ];
                 }
             }
 
             if (!empty($uploadedFiles)) {
-                return response()->json(['status' => 'success', 'message' => 'All files uploaded successfully', 'files' => $uploadedFiles], 200);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'All files uploaded successfully',
+                    'files' => $uploadedFiles
+                ], 200);
             }
 
             return response()->json(['status' => 'error', 'message' => 'File upload failed'], 500);
@@ -424,30 +462,47 @@ class ExceptionController extends Controller
     }
 
 
-    public function getExceptionFiles($id)
+
+    public function downloadExceptionFile($fileId)
     {
         try {
             $accessToken = session('api_token');
+
             if (!$accessToken) {
+                Log::error('Unauthorized: Missing API token for file download');
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Unauthorized: Missing API token'
                 ], 401);
             }
 
-            $apiUrl = "http://192.168.1.200:5126/Auditor/ExceptionFileUpload?exceptionTrackerId={$id}";
+            $apiUrl = "http://192.168.1.200:5126/Auditor/ExceptionFileUpload/{$fileId}";
             $response = Http::withToken($accessToken)->get($apiUrl);
+
+            Log::info('Download API Response', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
 
             if (!$response->successful()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Failed to fetch files'
+                    'message' => 'Failed to fetch file'
                 ], 500);
             }
 
-            return response()->json($response->json()); // Return JSON response for AJAX
+            $fileData = $response->json();
+
+            $files = explode(',',$fileData['fileData'], 2);
+            $base64Data = $files[1];
+
+            return response()->json([
+                'status' => 'success',
+                'fileName' => $fileData['fileName'],
+                'fileData' => $base64Data, // This includes the file header!
+            ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching files', [
+            Log::error('Error downloading file', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -458,6 +513,8 @@ class ExceptionController extends Controller
             ], 500);
         }
     }
+
+
 
 
     public static function exceptionFileDelete($exceptionId)
@@ -489,6 +546,54 @@ class ExceptionController extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
+
+
+    public function deleteExceptionFile($fileId)
+    {
+        try {
+            $accessToken = session('api_token');
+
+            if (!$accessToken) {
+                Log::error('Unauthorized: Missing API token for file deletion');
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized: Missing API token'
+                ], 401);
+            }
+
+            $apiUrl = "http://192.168.1.200:5126/Auditor/ExceptionFileUpload/{$fileId}";
+            $response = Http::withToken($accessToken)->delete($apiUrl);
+
+            Log::info('Delete API Response', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Failed to delete file'
+                ], 500);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'File deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error deleting file', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Something went wrong, please try again'
+            ], 500);
+        }
+    }
+
+
 
     public static function getExceptions()
     {
@@ -606,7 +711,51 @@ class ExceptionController extends Controller
         $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) &&
+                $validGroups->has($groupId) && $exception->status == 'PENDING' &&
+                $employeeGroups->contains($groupId);
+        });
+
+        // dd($filteredExceptions->values()->all());
+
+        return $filteredExceptions->values()->all();
+    }
+
+
+    public function getPendingExceptions($employeeId)
+    {
+        // Fetch data from APIs
+        $exceptions = $this->getExceptions();
+        $batches = BatchController::getBatches();
+        $groups = GroupController::getActivityGroups();
+        $groupMembers = GroupMembersController::getGroupMembers();
+
+        // Filter active batches with status 'OPEN' and map them by ID
+        $validBatches = collect($batches)
+            ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+            ->keyBy('id');
+
+        // Filter active groups and map them by ID
+        $validGroups = collect($groups)
+            ->filter(fn($group) => $group->active)
+            ->keyBy('id');
+
+        // Get groups where the specified employee belongs
+        $employeeGroups = collect($groupMembers)
+            ->where('employeeId', $employeeId)
+            ->pluck('activityGroupId')
+            ->unique();
+
+        // dd($employeeGroups);
+
+        // Map batch IDs to their corresponding activity group IDs
+        $batchGroupMap = collect($batches)
+            ->pluck('activityGroupId', 'id');
+
+        // Filter exceptions
+        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
+            $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
+            return $validBatches->has($exception->exceptionBatchId) &&
+                $validGroups->has($groupId) && $exception->recommendedStatus == 'RESOLVED' &&
                 $employeeGroups->contains($groupId);
         });
 
@@ -641,5 +790,27 @@ class ExceptionController extends Controller
         }
 
         return $employee;
+    }
+
+    public static function paginate(array|Collection $items, int $perPage, Request $request): LengthAwarePaginator
+    {
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+
+        if (!$items instanceof Collection) {
+            $items = collect($items);
+        }
+
+        $currentItems = $items->slice(($currentPage - 1) * $perPage, $perPage);
+
+        return new LengthAwarePaginator(
+            $currentItems,
+            $items->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
     }
 }
