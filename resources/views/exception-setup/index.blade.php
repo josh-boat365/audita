@@ -1,5 +1,5 @@
 <x-base-layout>
-    <div class="container-fluid px-5">
+    <div class="container-fluid px-1">
 
         <!-- start page title -->
         <div class="row">
@@ -18,7 +18,7 @@
 
 
         <div class="table-responsive">
-            <table class="table table-borderless table-hover mb-0">
+            <table class="table table-bordered  table-hover mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Exception</th>
@@ -70,7 +70,7 @@
                             <td>
                                 <div class="d-flex gap-3">
                                     <a href="{{ route('exception.edit', $exception->id) }}">
-                                        <span class="badge rounded-pill bg-primary fonte-size-13"><i
+                                        <span class="badge round bg-primary font-size-13"><i
                                                 class="bx bxs-pencil"></i>open</span>
                                     </a>
                                     {{--  DELETE BUTTON  --}}
@@ -79,7 +79,7 @@
                                             ($exception->auditorId !== $employeeId && (empty($exception->fileAttached) && empty($exception->comment))))
                                         <a href="" data-bs-toggle="modal"
                                             data-bs-target=".bs-delete-modal-lg-{{ $exception->id }}">
-                                            <span class="badge rounded-pill bg-danger fonte-size-13"><i
+                                            <span class="badge round bg-danger font-size-13"><i
                                                     class="bx bxs-trash"></i> delete</span>
                                         </a>
                                         <!-- Modal for Delete Confirmation -->
