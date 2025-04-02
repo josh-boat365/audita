@@ -1,8 +1,8 @@
 <x-base-layout>
-    <!-- DataTables CSS -->
-    <link href="assets/libs/datatables.net-bs4/css/dataTables.bootstrap4.min.css" rel="stylesheet">
-    <!-- Buttons CSS -->
-    <link href="assets/libs/datatables.net-buttons-bs4/css/buttons.bootstrap4.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+
 
     <div class="container-fluid px-1">
         <!-- start page title -->
@@ -95,15 +95,12 @@
             <div class="card">
                 <div class="card-body">
                     <h4 class="card-title mb-4">Exceptions Reports Table</h4>
-
                     <div class="table-responsive">
-                        <table id="datatable-buttons"
-                            class="reportsTable table table-bordered table-striped table-hover dt-responsive nowrap">
+                        <table id="reportsTable" class="table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
-
-                                    <th class="col">Exception</th>
-                                    <th>Root Cause</th>
+                                    <th class="col-3">Exception</th>
+                                    <th class="col-3">Root Cause</th>
                                     <th>Participants</th>
                                     <th>Process Type</th>
                                     <th>Risk Rate</th>
@@ -112,111 +109,149 @@
                                     <th>Status</th>
                                     <th>Occurrence Date</th>
                                     <th>Resolution Date</th>
-                                    {{--  <th>Action</th>  --}}
                                 </tr>
                             </thead>
-                            <tbody id="reportsTableBody">
-                                {{--  {{ dd($reports->data) }}  --}}
+                            <tbody>
                                 @forelse ($reports as $report)
                                     <tr>
-
-                                        <td class="col-4">{{ $report->exception ?? 'N/A' }}</td>
-                                        <td class="col-4">{{ $report->rootCause ?? 'N/A' }}</td>
-                                        <td>{{ $report->auditorName ?? 'N/A' }},
-                                            {{ $report->auditeeName ?? 'No Auditee' }}</td>
+                                        <td>{{ $report->exception ?? 'N/A' }}</td>
+                                        <td>{{ $report->rootCause ?? 'N/A' }}</td>
+                                        <td>
+                                            {{ $report->auditorName ?? 'N/A' }},
+                                            {{ $report->auditeeName ?? 'No Auditee' }}
+                                        </td>
                                         <td>{{ $report->processType ?? 'N/A' }}</td>
                                         <td>{{ $report->riskRate ?? 'N/A' }}</td>
-                                        <td>Branch Here!</td>
+                                        <td>
+                                            @php
+                                                // Get branch name from exception batch data
+                                                $branchName = 'N/A';
+                                                foreach ($batches as $batch) {
+                                                    if ($batch->id == $report->exceptionBatchId) {
+                                                        foreach ($groups as $group) {
+                                                            if ($group->id == $batch->activityGroupId) {
+                                                                $branchName = $group->branchName;
+                                                                break;
+                                                            }
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                                echo $branchName;
+                                            @endphp
+                                        </td>
                                         <td>{{ $report->department ?? 'N/A' }}</td>
                                         <td>{{ $report->status ?? 'N/A' }}</td>
-                                        <td>{{ $report->occurrenceDate ?? 'N/A' }}</td>
-                                        <td>{{ $report->resolutionDate ?? 'N/A' }}</td>
-                                        {{--  <td><a href=""><span
-                                                    class="badge rounded-pill bg-primary">View</span></a>
-                                        </td>  --}}
+                                        <td>{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : 'N/A' }}
+                                        </td>
+                                        <td>{{ $report->resolutionDate ? \Carbon\Carbon::parse($report->resolutionDate)->format('Y-m-d') : 'N/A' }}
+                                        </td>
                                     </tr>
-
                                 @empty
                                     <tr>
                                         <td colspan="10" class="text-center">No data available</td>
                                     </tr>
                                 @endforelse
-
                             </tbody>
                         </table>
                     </div>
-
-
-                    <script>
-                        $(document).ready(function() {
-                            // Initialize the DataTable
-                            var table = $('#datatable-buttons').DataTable({
-                                dom: '<"top"Bf>rt<"bottom"lip><"clear">',
-                                buttons: [{
-                                        extend: 'excelHtml5',
-                                        exportOptions: {
-                                            columns: ':visible',
-                                            modifier: {
-                                                search: 'applied'
-                                            }
-                                        },
-                                        customize: function(xlsx) {
-                                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                                            $('row c', sheet).attr('s', '50');
-                                        }
-                                    },
-                                    {
-                                        extend: 'pdfHtml5',
-                                        exportOptions: {
-                                            columns: ':visible',
-                                            modifier: {
-                                                search: 'applied'
-                                            }
-                                        },
-                                        customize: function(doc) {
-                                            doc.defaultStyle.fontSize = 8;
-                                            doc.styles.tableHeader.fontSize = 10;
-                                            doc.pageMargins = [10, 10, 10, 10];
-                                        }
-                                    },
-                                    {
-                                        extend: 'print',
-                                        exportOptions: {
-                                            columns: ':visible',
-                                            modifier: {
-                                                search: 'applied'
-                                            }
-                                        }
-                                    },
-                                    {
-                                        extend: 'copyHtml5',
-                                        exportOptions: {
-                                            columns: ':visible',
-                                            modifier: {
-                                                search: 'applied'
-                                            }
-                                        }
-                                    },
-                                    'colvis'
-                                ],
-                                responsive: true,
-                                language: {
-                                    paginate: {
-                                        previous: "<i class='mdi mdi-chevron-left'>",
-                                        next: "<i class='mdi mdi-chevron-right'>"
-                                    }
-                                },
-                                drawCallback: function() {
-                                    $('.dataTables_paginate > .pagination').addClass('pagination-rounded');
-                                }
-                            });
-                        });
-                    </script>
-
-
                 </div>
             </div>
         </div> <!-- end col -->
     </div>
     </div>
+
+    @push('scripts')
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/2.2.2/js/dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
+
+
+        <script>
+            $(document).ready(function() {
+                $('#reportsTable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [{
+                            extend: 'excelHtml5',
+                            text: 'Export to Excel',
+                            title: 'Exceptions Report',
+                            exportOptions: {
+                                // Export only visible columns
+                                columns: ':visible',
+                                // Export only filtered data if search is applied
+                                modifier: {
+                                    search: 'applied',
+                                    order: 'applied'
+                                }
+                            }
+                        },
+                        {
+                            extend: 'colvis',
+                            text: 'Column Visibility',
+                            columns: ':not(.noVis)' // Exclude columns you don't want to be hideable
+                        }
+                    ],
+                    responsive: true,
+                    pageLength: 25,
+                    lengthMenu: [
+                        [10, 25, 50, 100, -1],
+                        [10, 25, 50, 100, "All"]
+                    ],
+                    columnDefs: [{
+                            targets: [0, 1], // Exception and Root Cause columns
+                            render: function(data, type, row) {
+                                if (type === 'display' && data.length > 50) {
+                                    return data.substr(0, 50) + '...';
+                                }
+                                return data;
+                            }
+                        },
+                        {
+                            targets: 5, // Branch column
+                            render: function(data, type, row) {
+                                // Format branch name if needed
+                                return data;
+                            }
+                        },
+                        {
+                            targets: [8, 9], // Date columns
+                            render: function(data, type, row) {
+                                if (type === 'display' || type === 'filter') {
+                                    if (data === 'N/A') return data;
+                                    return data; // Already formatted in HTML
+                                }
+                                return data;
+                            }
+                        }
+                    ],
+                    initComplete: function() {
+                        // Add custom search inputs for specific columns if needed
+                        this.api().columns().every(function() {
+                            var column = this;
+                            if (column.index() === 4) { // Risk Rate column
+                                var select = $(
+                                        '<select><option value="">All Risk Rates</option></select>')
+                                    .appendTo($(column.header()))
+                                    .on('change', function() {
+                                        var val = $.fn.dataTable.util.escapeRegex(
+                                            $(this).val()
+                                        );
+                                        column.search(val ? '^' + val + '$' : '', true, false)
+                                            .draw();
+                                    });
+                                column.data().unique().sort().each(function(d, j) {
+                                    select.append('<option value="' + d + '">' + d +
+                                        '</option>');
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+        </script>
+    @endpush
 </x-base-layout>
