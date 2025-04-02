@@ -15,6 +15,7 @@
                     <ul class="sub-menu" aria-expanded="false">
 
                         <li><a href="{{ route('dashboard') }}" key="t-default">Overview</a></li>
+                        <li><a href="{{ route('my.group.dashboard', $employeeId) }}" key="t-default">My Dashboard</a></li>
                         {{--  <li><a href="" key="t-default"></a></li>  --}}
 
 
@@ -58,7 +59,7 @@
                         <li>
                             <a href="{{ route('exception.pending') }}" key="create">
                                 Pending
-                                @if(session('pending_exception_count') >= 0)
+                                @if($pending_exception_count >= 0)
                                 <span class="badge rounded-full bg-danger">{{ session('pending_exception_count') }}</span>
                                 @else
                                 <span></span>
