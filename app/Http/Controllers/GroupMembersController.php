@@ -14,21 +14,33 @@ class GroupMembersController extends Controller
     public function index(Request $request)
     {
         $access_token = session('api_token');
-
         if (empty($access_token)) {
             return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
         }
 
-
         $groupMembersData = $this->getGroupMembers();
         $sortedMembers = collect($groupMembersData)->sortByDesc('createdAt');
-
         $groupMembers = ExceptionController::paginate($sortedMembers, 15, $request);
-        // dd($groupMembers);
+
         $employees = $this->getEmployeeData();
         $groups = GroupController::getActivityGroups();
 
-        return view('group-setup.members.index', compact('groupMembers', 'groups', 'employees'));
+        // Group the already paginated members
+        $groupedMembers = $groupMembers->groupBy('activityGroupId')
+            ->map(function ($members, $groupId) use ($groups) {
+                $group = collect($groups)->firstWhere('id', $groupId);
+                return [
+                    'group' => $group,
+                    'members' => $members
+                ];
+            });
+
+        return view('group-setup.members.index', [
+            'groupedMembers' => $groupedMembers,
+            'paginator' => $groupMembers, // Preserve your original paginator
+            'employees' => $employees,
+            'groups' => $groups
+        ]);
     }
 
     /**
@@ -38,7 +50,8 @@ class GroupMembersController extends Controller
     public function create()
     {
         $employees = $this->getEmployeeData();
-        $groups = GroupController::getActivityGroups();
+        $all_groups = GroupController::getActivityGroups();
+        $groups = collect($all_groups)->filter(fn($group) => $group->active == true); //active groups
 
         return view('group-setup.members.create', compact('employees', 'groups'));
     }
