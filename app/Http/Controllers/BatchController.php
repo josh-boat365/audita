@@ -21,7 +21,9 @@ class BatchController extends Controller
             return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
         }
 
-        $groups = collect(GroupController::getActivityGroups());
+        $all_groups = collect(GroupController::getActivityGroups());
+
+        $groups = collect($all_groups)->filter(fn($group) => $group->active == true); //active groups
 
         $units = UnitController::getAuditUnitData();
 
