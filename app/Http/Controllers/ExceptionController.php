@@ -27,7 +27,9 @@ class ExceptionController extends Controller
         $filteredExceptions = $this->getFilteredExceptions($employeeId);
         $sortDescending = collect($filteredExceptions)->sortByDesc('createdAt');
 
-        $exceptions = $this->paginate($sortDescending, 3, $request);
+        $exceptions = $this->paginate($sortDescending, 15, $request);
+
+        // dd($exceptions);
 
         return view('exception-setup.index', compact('exceptions', 'employeeId'));
     }
@@ -46,7 +48,7 @@ class ExceptionController extends Controller
         $pendingExceptions = $this->getPendingExceptions($employeeId);
         $sortDescending = collect($pendingExceptions)->sortByDesc('createdAt');
 
-        $exceptions = $this->paginate($sortDescending, 3, $request);
+        $exceptions = $this->paginate($sortDescending, 15, $request);
 
 
         //store exception count in session
@@ -54,6 +56,7 @@ class ExceptionController extends Controller
 
         return view('exception-setup.pending', compact('exceptions', 'employeeId'));
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -151,6 +154,7 @@ class ExceptionController extends Controller
             $riskRates = RiskRateController::getRiskRates();
             $exception = $this->getAnException($id);
             $employeeId = $this->getLoggedInUserInformation()->id;
+            $employeeDepartmentId = $this->getLoggedInUserInformation()->departmentId;
             // $employeeData = [
             //     'id' => $employee->id,
             //     'departmentId' => $employee->departmentId
@@ -163,7 +167,8 @@ class ExceptionController extends Controller
                 'departments',
                 'processTypes',
                 'riskRates',
-                'employeeId'
+                'employeeId',
+                'employeeDepartmentId'
             ));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             // Handle connection errors (e.g., API server is down)
@@ -742,8 +747,11 @@ class ExceptionController extends Controller
 
     public function getFilteredExceptions($employeeId)
     {
+        //filtering is based on groups if you don't belong to a group, you don't see an exception
+        //you only see exceptions in a particular group you are part of, But top managers can see all exceptions
+
         // Fetch data from APIs
-        $exceptions = $this->getExceptions();
+        $exceptions = $this->getExceptions(); //same as all reports data
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
         $groupMembers = GroupMembersController::getGroupMembers();
@@ -770,15 +778,21 @@ class ExceptionController extends Controller
         $batchGroupMap = collect($batches)
             ->pluck('activityGroupId', 'id');
 
-        // Filter exceptions
-        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
+        $employeeRoleId = $this->getLoggedInUserInformation()->empRoleId;
+
+        // top managers
+        // 1 - Managing Director
+        // 2 - Head of Internal Audit
+        // 4 - Head of Internal Control & Compliance
+        $topMangers = [1, 2, 4];
+
+        // Filter exceptions - and include top managers
+        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topMangers, $employeeRoleId) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && $exception->status == 'PENDING' && $exception->recommendedStatus == null &&
-                $employeeGroups->contains($groupId);
+                $validGroups->has($groupId) && ($exception->status == 'PENDING' && $exception->recommendedStatus == null) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topMangers));
         });
 
-        // dd($filteredExceptions->values()->all());
 
         return $filteredExceptions->values()->all();
     }
@@ -786,6 +800,10 @@ class ExceptionController extends Controller
 
     public function getPendingExceptions($employeeId)
     {
+
+        //filtering is based on groups if you don't belong to a group, you don't see an exception
+        //you only see exceptions in a particular group you are part of, But top managers can see all exceptions
+
         // Fetch data from APIs
         $exceptions = $this->getExceptions();
         $batches = BatchController::getBatches();
@@ -808,24 +826,29 @@ class ExceptionController extends Controller
             ->pluck('activityGroupId')
             ->unique();
 
-        // dd($employeeGroups);
-
         // Map batch IDs to their corresponding activity group IDs
         $batchGroupMap = collect($batches)
             ->pluck('activityGroupId', 'id');
 
-        // Filter exceptions
-        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap) {
+
+        $employeeRoleId = $this->getLoggedInUserInformation()->empRoleId;
+
+        // top managers
+        // 1 - Managing Director
+        // 2 - Head of Internal Audit
+        // 4 - Head of Internal Control & Compliance
+        $topMangers = [1, 2, 4];
+
+        // Filter exceptions - and include topManagers
+        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topMangers, $employeeRoleId) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && $exception->recommendedStatus == 'RESOLVED' && $exception->status == 'PENDING' &&
-                $employeeGroups->contains($groupId);
+                $validGroups->has($groupId) && ($exception->recommendedStatus == 'RESOLVED' || $exception->status == 'PENDING') && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topMangers));
         });
-
-        // dd($filteredExceptions->values()->all());
 
         return $filteredExceptions->values()->all();
     }
+
 
     public static function getLoggedInUserInformation()
     {
