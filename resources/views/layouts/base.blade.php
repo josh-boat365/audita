@@ -16,17 +16,14 @@
         @include('layouts.dash-nav')
 
         <!-- ========== Left Sidebar Start ========== -->
-        @include('layouts.left-side-nav', ['user' => $user])
+        @include('layouts.left-side-nav')
 
         <!-- Left Sidebar End -->
-
-        {{--  {{ dd(session('user'),  session('roleManagers')) }}  --}}
-
-
 
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
+        
         <div class="main-content">
 
             <div class="page-content">

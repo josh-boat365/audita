@@ -3,17 +3,23 @@
     <!-- FilePond CSS -->
     <link href="https://unpkg.com/filepond@^4/dist/filepond.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
-
-    </style>
     <div class="container-fluid">
 
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('exception.list') }}">
-                            List of Exceptions </a> > Update Exception > <a href="#">{{ $exception->exception }}</a>
-                    </h4>
+                    @if (URL::current() == route('exception.edit', $exception->id))
+                        <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('exception.list') }}">
+                                List of Exceptions </a> > Update Exception > <a
+                                href="#">{{ $exception->exception }}</a>
+                        </h4>
+                    @else
+                        <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('exception.pending') }}">
+                                List of Pending Exceptions </a> > Update Exception > <a
+                                href="#">{{ $exception->exception }}</a>
+                        </h4>
+                    @endif
                 </div>
             </div>
         </div>
@@ -24,35 +30,37 @@
 
         <ul class="nav nav-tabs nav-tabs-custom nav-justified" role="tablist">
             <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#exception-creation" role="tab">
+                <a class="nav-link active border border-3" data-bs-toggle="tab" href="#exception-creation"
+                    role="tab">
                     <span class="d-block d-sm-none"><i class="fas fa-file-alt"></i></span>
                     <span class="d-none d-sm-block">Exception Update</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#file-attachments" role="tab">
+                <a class="nav-link border border-3" data-bs-toggle="tab" href="#file-attachments" role="tab">
                     <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
                     <span class="d-none d-sm-block">Attach Files</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#chats-comments" role="tab">
+                <a class="nav-link border border-3" data-bs-toggle="tab" href="#chats-comments" role="tab">
                     <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
                     <span class="d-none d-sm-block">Chats & Comments</span>
                 </a>
             </li>
-            @if ($exception->auditorId !== $employeeId)
+            @if (($exception->auditorId == $employeeId) || (in_array($employeeDepartmentId,[7,8]) ))
                 <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#recommend-resolution" role="tab">
+                    <a class="nav-link border border-3" data-bs-toggle="tab" href="#close-exception" role="tab">
                         <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
-                        <span class="d-none d-sm-block">Auditee Exception Closure</span>
+                        <span class="d-none d-sm-block">Close Exception</span>
                     </a>
                 </li>
             @else
                 <li class="nav-item">
-                    <a class="nav-link" data-bs-toggle="tab" href="#close-exception" role="tab">
+                    <a class="nav-link border border-3" data-bs-toggle="tab" href="#recommend-resolution"
+                        role="tab">
                         <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
-                        <span class="d-none d-sm-block">Close Exception</span>
+                        <span class="d-none d-sm-block">Auditee Exception Closure</span>
                     </a>
                 </li>
             @endif
@@ -73,21 +81,21 @@
                                     {{--  Project Image   --}}
                                     <div class="mb-3">
                                         <label class="form-label">Exception<span class="required">*</span></label>
-                                        <textarea {{ $exception->auditorId == $employeeId ? 'disabled' : '' }} class="form-control" rows="3"
-                                            name="exception" placeholder="Enter exception details......" required>{{ $exception->exception }}</textarea>
+                                        <textarea @disabled($exception->auditorId != $employeeId) class="form-control" rows="3" name="exception"
+                                            placeholder="Enter exception details......" required>{{ $exception->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Root Cause<span class="required">*</span></label>
-                                        <textarea @disabled($exception->auditorId == $employeeId) class="form-control" rows="3" name="rootCause"
+                                        <textarea @disabled($exception->auditorId != $employeeId) class="form-control" rows="3" name="rootCause"
                                             placeholder="Enter root cause details......" required>{{ $exception->rootCause }}</textarea>
                                         <div class="invalid-feedback">Please enter the root cause.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Batch<span class="required">*</span></label>
-                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
                                             name="exceptionBatchId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($batches as $batch)
@@ -99,7 +107,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Unit/Dept<span class="required">*</span></label>
-                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
                                             name="departmentId" required>
                                             <option>Select Unit/Department</option>
                                             @foreach ($departments as $department)
@@ -110,8 +118,9 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Occurrence Date<span class="required">*</span></label>
-                                        <input @disabled($exception->auditorId == $employeeId) type="text" class="form-control"
+                                        <label class="form-label">Occurrence Date<span
+                                                class="required">*</span></label>
+                                        <input @disabled($exception->auditorId != $employeeId) type="text" class="form-control"
                                             placeholder="Select occurrence date" name="occurrenceDate"
                                             value="{{ $exception->occurrenceDate == null ? '' : Carbon\Carbon::parse($exception->occurrenceDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/yy" data-provide="datepicker"
@@ -132,7 +141,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label" for="project-status-input">Status</label>
-                                        <select @disabled($exception->auditorId == $employeeId) class="form-select" name="status"
+                                        <select @disabled($exception->auditorId != $employeeId) class="form-select" name="status"
                                             required>
                                             <option selected>Select.....</option>
                                             <option value="PENDING" @selected($exception->status === 'PENDING')>Pending</option>
@@ -144,7 +153,7 @@
                                     <div class="mb-3">
                                         <label class="form-label" for="project-visibility-input">Risk Rate<span
                                                 class="required">*</span></label>
-                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
                                             name="riskRateId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($riskRates as $riskRate)
@@ -158,7 +167,7 @@
                                     <div>
                                         <label class="form-label" for="project-visibility-input">Process
                                             Type/Scope<span class="required">*</span></label>
-                                        <select @disabled($exception->auditorId == $employeeId) class="form-select select2"
+                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
                                             name="processTypeId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($processTypes as $processType)
@@ -181,22 +190,22 @@
                                     <div class="mb-3">
                                         <label class="form-label">Proposed Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input @disabled($exception->auditorId == $employeeId) type="text" class="form-control"
+                                        <input @disabled($exception->auditorId != $employeeId) type="text" class="form-control"
                                             placeholder="Select due date" name="proposeResolutionDate"
                                             value="{{ $exception->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exception->proposeResolutionDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/Y" data-provide="datepicker"
-                                            data-date-autoclose="true" />
+                                            data-date-format="d/m/yy" data-provide="datepicker"
+                                            data-date-autoclose="true" required />
                                         <div class="invalid-feedback">Please select proposed resolution date.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input @disabled($exception->auditorId == $employeeId) type="text" class="form-control"
+                                        <input @disabled($exception->auditorId != $employeeId) type="text" class="form-control"
                                             placeholder="Select resolution date" name="resolutionDate"
                                             value="{{ $exception->resolutionDate == null ? '' : Carbon\Carbon::parse($exception->resolutionDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/Y" data-provide="datepicker"
-                                            data-date-autoclose="true" />
+                                            data-date-format="d/m/yy" data-provide="datepicker"
+                                            data-date-autoclose="true" required />
                                         <div class="invalid-feedback">Please select resolution date.</div>
                                     </div>
                                 </div>
@@ -585,38 +594,8 @@
             </div>
 
 
-            {{--  RECOMMEND RESOLUTION - USER  --}}
-            @if ($exception->auditorId !== $employeeId)
-                <div class="tab-pane" id="recommend-resolution" role="tabpanel">
-
-                    <form action="{{ route('exception.resolution', $exception->id) }}" method="POST"
-                        enctype="multipart/form-data" autocomplete="on" class="needs-validation">
-                        @csrf
-
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label" for="project-status-input">Push to
-                                        <strong>{{ $exception->auditorName }}</strong> your Auditor for
-                                        Resolution</label>
-                                    <select class="form-select" name="resolution" required>
-                                        <option selected>Select.....</option>
-                                        <option value="RESOLVED">Close Exception</option>
-                                    </select>
-                                    <div class="invalid-feedback">Please select exception status.</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-grid mt-3">
-                            <button type="submit" class="btn btn-primary">Update Status</button>
-                        </div>
-
-                    </form>
-                </div>
-            @else
-                {{--  CLOSE EXCEPTION - AUDITOR  --}}
-
+            {{--  CLOSE EXCEPTION - AUDITOR  --}}
+            @if (($exception->auditorId == $employeeId) || (in_array($employeeDepartmentId, [7,8]) ))
                 <div class="tab-pane" id="close-exception" role="tabpanel">
 
                     <div class="card">
@@ -670,6 +649,38 @@
 
 
                 </div>
+            @else
+                {{--  RECOMMEND RESOLUTION - USER  --}}
+
+                <div class="tab-pane" id="recommend-resolution" role="tabpanel">
+
+                    <form action="{{ route('exception.resolution', $exception->id) }}" method="POST"
+                        enctype="multipart/form-data" autocomplete="on" class="needs-validation">
+                        @csrf
+
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label" for="project-status-input">Push to
+                                        <strong>{{ $exception->auditorName }}</strong> your Auditor for
+                                        Resolution</label>
+                                    <select class="form-select" name="resolution" required>
+                                        <option selected>Select.....</option>
+                                        <option value="RESOLVED">Close Exception</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select exception status.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                        </div>
+
+                    </form>
+                </div>
+
+
                 <!-- end row -->
         </div>
         @endif
@@ -859,7 +870,6 @@
                     }
                 });
             }
-
         </script>
 
 

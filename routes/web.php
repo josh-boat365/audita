@@ -31,6 +31,7 @@ Route::post('/register', [AuthController::class, 'register'])->name('register.po
 
 // Route::middleware(['auth'])->group(function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/my-dashboard/group/{id}', [DashboardController::class, 'groupDashboard'])->name('my.group.dashboard');
 
 // BATCH SETUP
 Route::get('/batch', [BatchController::class, 'index'])->name('batch');
@@ -80,9 +81,11 @@ Route::post('/risk-rate/{id}/delete', [RiskRateController::class, 'destroy'])->n
 //EXCEPTION SETUP
 Route::get('/list-exception', [ExceptionController::class, 'index'])->name('exception.list');
 Route::get('/list-pending-exception', [ExceptionController::class, 'pendingExceptions'])->name('exception.pending');
+Route::get('/list-resolved-exception', [ExceptionController::class, 'resolvedExceptions'])->name('exception.resolved');
 Route::get('/create-exception', [ExceptionController::class, 'create'])->name('exception.create');
 Route::post('/create-exception', [ExceptionController::class, 'store'])->name('exception.post');
 Route::get('/exception/{id}/open', [ExceptionController::class, 'edit2'])->name('exception.edit');
+Route::get('/exception/{id}/open-pending', [ExceptionController::class, 'edit2'])->name('exception.pending.edit');
 Route::post('/exception/{id}/update', [ExceptionController::class, 'update'])->name('exception.update');
 Route::post('/exception/{id}/delete', [ExceptionController::class, 'destroy'])->name('exception.delete');
 Route::post('/exception/{id}/file-upload', [ExceptionController::class, 'exceptionFileUpload'])->name('exception.file.upload');

@@ -23,120 +23,125 @@
             <table class="table table-borderless table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Group Member</th>
                         <th>Group Name</th>
+                        <th>Branch</th>
+                        <th>Members</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($groupMembers as $groupMember)
-                        <tr>
-                            <th scope="row"><a href="#">
-                                    {{ $groupMember->employeeName }}
-                                </a>
-                            </th>
-                            <td class="col-3"> <span class="badge rounded-pill bg-dark">
-                                    {{ $groupMember->activityGroupName }}
-                                </span>
+                    @forelse ($groupedMembers as $groupData)
+                        @php
+                            $group = $groupData['group'];
+                            $members = $groupData['members'];
+                        @endphp
 
-                            </td>
-                            {{--
-                            <td>
-                                <span @style(['cursor: pointer']) class="dropdown badge rounded-pill bg-primary"
-                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                    Active
-                                    <div class="dropdown-menu">
-                                        <a href="" class="dropdown-item" data-bs-toggle="modal"
-                                            data-bs-target=".bs-example-modal-lg-" class="m-2">
-                                            Inactive
-                                        </a>
-                                    </div>
-                                </span>
-                                <div class="modal fade bs-example-modal-lg-" tabindex="-1" role="dialog"
-                                    aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog modal-sm modal-dialog-centered ">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="myLargeModalLabel">Confirm Batch State
-                                                    Update</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <h4 class="text-center mb-4"> Are you sure, you want to
-                                                    ?</h4>
-                                                <form action="" method="POST">
-                                                    @csrf
-                                                    <input type="hidden" name="active" value="">
-                                                    <div class="d-grid">
-                                                        <button type="submit" class="btn btn-success">Yes</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>  --}}
-
-                            <td>
-                                <div class="d-flex gap-3">
-                                    <a href="{{ route('members.edit', $groupMember->id) }}">
-                                        <span class="badge rounded-pill bg-primary fonte-size-13"><i
-                                                class="bx bxs-pencil"></i>edit</span>
-                                    </a>
-                                    {{--  DELETE BUTTON  --}}
-                                    <a href="#" data-bs-toggle="modal"
-                                        data-bs-target=".bs-delete-modal-lg-{{ $groupMember->id }}">
-                                        <span class="badge rounded-pill bg-danger fonte-size-13"><i
-                                                class="bx bxs-trash"></i> delete</span>
-                                    </a>
-
-                                    <!-- Modal for Delete Confirmation -->
-                                    <div class="modal fade bs-delete-modal-lg-{{ $groupMember->id }}" tabindex="-1"
-                                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="myLargeModalLabel">Confirm Batch
-                                                        Deletion</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                        aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <h4 class="text-center mb-4">Are you sure you want to delete this
-                                                        member?</h4>
-                                                    <p class="text-center">Deleting a <b>member</b> means removing
-                                                        he/she
-                                                        from the <b>system entirely</b>.</p>
-                                                    <form action="{{ route('members.delete', $groupMember->id) }}"
-                                                        method="POST">
-                                                        @csrf
-                                                        <div class="d-grid">
-                                                            <button type="submit" class="btn btn-danger">Yes,
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                        <!-- Group Header Row -->
+                        <tr class="group-header bg-light">
+                            <td colspan="4">
+                                <strong>{{ $group->name ?? 'Unnamed Group' }}</strong>
+                                <span class="badge bg-dark ms-2">{{ count($members) }} members</span>
                             </td>
                         </tr>
 
+                        <!-- Member Rows -->
+                        @foreach ($members as $member)
+                            <tr class="group-member">
+                                <td></td> <!-- Empty cell under Group Name -->
+                                <td>{{ $group->branchName ?? 'N/A' }}</td>
+                                <td>
+                                    <a href="#">
+                                        {{ $member->employeeName }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-3">
+                                        <a href="{{ route('members.edit', $member->id) }}">
+                                            <span class="badge rounded-pill bg-primary fonte-size-13">
+                                                <i class="bx bxs-pencil"></i> edit
+                                            </span>
+                                        </a>
+                                        <a href="#" data-bs-toggle="modal"
+                                            data-bs-target=".bs-delete-modal-lg-{{ $member->id }}">
+                                            <span class="badge rounded-pill bg-danger fonte-size-13">
+                                                <i class="bx bxs-trash"></i> delete
+                                            </span>
+                                        </a>
+
+                                        <!-- Modal for Delete Confirmation -->
+                                        <div class="modal fade bs-delete-modal-lg-{{ $member->id }}" tabindex="-1"
+                                            role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="myLargeModalLabel">Confirm Member
+                                                            Deletion</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                            aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h4 class="text-center mb-4">Are you sure you want to delete
+                                                            this member?</h4>
+                                                        <p class="text-center">Deleting a <b>member</b> means removing
+                                                            them from the group.</p>
+                                                        <form action="{{ route('members.delete', $member->id) }}"
+                                                            method="POST">
+                                                            @csrf
+                                                            <div class="d-grid">
+                                                                <button type="submit" class="btn btn-danger">Yes,
+                                                                    Delete</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
                     @empty
                         <tr>
-                            <td colspan="4" class="text-center">No Group Members Found</td>
+                            <td colspan="4" class="text-center">No Groups Found</td>
                         </tr>
                     @endforelse
-
                 </tbody>
             </table>
+
+            <!-- Maintain your existing pagination -->
             <nav aria-label="Page navigation example" class="mt-3">
-                {{ $groupMembers->links('pagination::bootstrap-5') }}
+                {{ $paginator->links('pagination::bootstrap-5') }}
             </nav>
         </div>
+
+        <style>
+            .group-header {
+                background-color: #f8f9fa !important;
+                font-weight: bold;
+            }
+
+            .group-header td {
+                padding: 12px 15px !important;
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            .group-member td {
+                padding: 8px 15px !important;
+                border-bottom: 1px solid #eee;
+            }
+
+            .group-member:last-child td {
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            .group-member td:first-child {
+                padding-left: 30px !important;
+            }
+
+            .table-hover .group-member:hover td {
+                background-color: rgba(0, 0, 0, 0.03);
+            }
+        </style>
 
 
 

@@ -40,7 +40,7 @@
     <!-- App js -->
     <script src="{{ asset('assets/js/app.js') }}"></script>
 
-    <!-- Required datatable js -->
+    {{--  <!-- Required datatable js -->
     <script src="{{ asset('assets/libs/datatables.net/js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('assets/libs/datatables.net-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
     <!-- Buttons examples -->
@@ -58,10 +58,10 @@
     <script src="{{ asset('assets/libs/datatables.net-responsive-bs4/js/responsive.bootstrap4.min.js') }}"></script>
 
     <!-- Datatable init js -->
-    <script src="{{ asset('assets/js/pages/datatables.init.js') }}"></script>
+    <script src="{{ asset('assets/js/pages/datatables.init.js') }}"></script>  --}}
 
     <script src="{{ asset('assets/libs/select2/js/select2.min.js') }}"></script>
-   
+
 
     <script>
         $(document).ready(function() {
