@@ -13,12 +13,18 @@ class ReportsController extends Controller
      */
     public function index()
     {
+        $access_token = session('api_token');
+
+        if(empty($access_token)){
+            return redirect()->back()->with('toast-warning','Session Expired, Kindly Login Again');
+        }
+
         $reports = $this->getAllReports();
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
 
-        // dd($reports);
-        return view('reports.index', compact('reports'));
+        
+        return view('reports.index', compact('reports', 'batches', 'groups'));
     }
 
     public static function getAllReports()
