@@ -78,7 +78,6 @@
                             <div class="card">
                                 <div class="card-body">
 
-                                    {{--  Project Image   --}}
                                     <div class="mb-3">
                                         <label class="form-label">Exception<span class="required">*</span></label>
                                         <textarea @disabled($exception->auditorId != $employeeId) class="form-control" rows="3" name="exception"

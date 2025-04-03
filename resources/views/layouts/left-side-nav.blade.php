@@ -13,9 +13,12 @@
                         <span key="t-dashboard">Dashboard</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-
-                        <li><a href="{{ route('dashboard') }}" key="t-default">Overview</a></li>
-                        <li><a href="{{ route('my.group.dashboard', $employeeId) }}" key="t-default">My Dashboard</a></li>
+                        @if (in_array($employeeRoleId, $topManagers))
+                            <li><a href="{{ route('dashboard') }}" key="t-default">Overview</a></li>
+                        @else
+                            <li><a href="{{ route('my.group.dashboard', $employeeId) }}" key="t-default">My
+                                    Dashboard</a></li>
+                        @endif
                         {{--  <li><a href="" key="t-default"></a></li>  --}}
 
 
@@ -59,10 +62,11 @@
                         <li>
                             <a href="{{ route('exception.pending') }}" key="create">
                                 Pending
-                                @if($pending_exception_count >= 0)
-                                <span class="badge rounded-full bg-danger">{{ session('pending_exception_count') }}</span>
+                                @if ($pending_exception_count >= 0)
+                                    <span
+                                        class="badge rounded-full bg-danger">{{ session('pending_exception_count') }}</span>
                                 @else
-                                <span></span>
+                                    <span></span>
                                 @endif
                             </a>
                         </li>
@@ -91,16 +95,20 @@
                     </ul>
                 </li>  --}}
 
+                @if (in_array($employeeRoleId, $topManagers) || in_array($employeeDepartmentId, $auditorDepartments))
+                    <li>
+                        <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                            <i class="bx bx-file"></i>
+                            <span key="t-dashboards">Reports</span>
+                        </a>
+                        <ul class="sub-menu" aria-expanded="false">
+                            <li><a href="{{ route('reports') }}">Overview</a></li>
+                        </ul>
+                    </li>
+                @else
+                    <li></li>
+                @endif
 
-                <li>
-                    <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
-                        <i class="bx bx-file"></i>
-                        <span key="t-dashboards">Reports</span>
-                    </a>
-                    <ul class="sub-menu" aria-expanded="false">
-                        <li><a href="{{ route('reports') }}">Overview</a></li>
-                    </ul>
-                </li>
 
 
                 {{--  <hr style="margin: 25vh auto 1rem auto; width: 14rem;">  --}}

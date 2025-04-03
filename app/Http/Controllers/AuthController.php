@@ -45,16 +45,16 @@ class AuthController extends Controller
             // Send the POST request to the API
             $response = Http::withoutVerifying()->post('http://bp-ho-gcupdate.Bestpointgh.com:8093/verification/LocalAccount/UserNameOrPhoneOrEmailAndPassword', $data);
 
-                // Check for a successful response and the presence of access token
-                if ($response->successful() && isset($response['access_token'])) {
-                    $data = $response->object();
+            // Check for a successful response and the presence of access token
+            if ($response->successful() && isset($response['access_token'])) {
+                $data = $response->object();
 
-                    // dd($data);
+                // dd($data);
 
-                    // Store access token and user profile data in the session
-                    session([
-                        'api_token' => $data->access_token,
-                        // 'token_issued_at' => time(), // Initialize last activity time
+                // Store access token and user profile data in the session
+                session([
+                    'api_token' => $data->access_token,
+                    // 'token_issued_at' => time(), // Initialize last activity time
                     'user_name' => $data->profile->fullName,
                     'user_email' => $data->profile->email,
                     'employee_id' => $data->profile->id,
@@ -65,8 +65,19 @@ class AuthController extends Controller
                 // Clear rate limit on success
                 RateLimiter::clear($throttleKey);
 
-                return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');
+                // top managers
+                // 1 - Managing Director
+                // 2 - Head of Internal Audit
+                // 4 - Head of Internal Control & Compliance
+                $topManagers = [1, 2, 4];
+                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
 
+                if (in_array($employeeRoleId, $topManagers)) {
+                    return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');
+                }
+
+                return redirect()->route('my.group.dashboard', $employeeId)->with('toast_success', 'Logged in successfully');
             }
 
             // Increment the rate limit on failed login attempt
