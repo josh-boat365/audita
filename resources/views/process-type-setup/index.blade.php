@@ -21,7 +21,7 @@
 
 
         <div class="table-responsive">
-            <table class="table table-borderless table-hover mb-0">
+            <table class="table table-bordered  table-hover mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Process Type Name</th>

@@ -16,14 +16,20 @@
         @include('layouts.dash-nav')
 
         <!-- ========== Left Sidebar Start ========== -->
-        @include('layouts.left-side-nav')
+        @include('layouts.left-side-nav', [
+            'employeeId' => $employeeId,
+            'employeeRoleId' => $employeeRoleId,
+            'topManagers' => $topManagers,
+            'auditorDepartments' => $auditorDepartments,
+            'employeeDepartmentId' => $employeeDepartmentId,
+        ])
 
         <!-- Left Sidebar End -->
 
         <!-- ============================================================== -->
         <!-- Start right Content here -->
         <!-- ============================================================== -->
-        
+
         <div class="main-content">
 
             <div class="page-content">
