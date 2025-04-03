@@ -353,7 +353,7 @@
                                                 </div>
                                                 <small class="text-muted">{{ $data['resolution_rate'] }}%</small>
                                             </td>
-                                            <td>{{ $data['avg_resolution'] }} days</td>
+                                            <td>{{ max(0, round(abs($data['avg_resolution']))) }} days</td>
                                         </tr>
                                     @empty
                                         <tr>

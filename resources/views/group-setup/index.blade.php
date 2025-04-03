@@ -21,7 +21,7 @@
 
 
         <div class="table-responsive">
-            <table class="table table-borderless table-hover mb-0">
+            <table class="table table-bordered  table-hover mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Group Name</th>
@@ -31,6 +31,7 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {{--  {{ dd($groups) }}  --}}
                     @forelse ($groups as $group)
                         <tr>
                             <th scope="row"><a href="#">{{ $group->name }}</a></th>
@@ -44,38 +45,8 @@
                                 <span @style(['cursor: pointer'])
                                     class="dropdown badge rounded-pill {{ $group->active == true ? 'bg-success' : 'bg-dark' }}"
                                     data-bs-toggle="dropdown" aria-expanded="false">
-                                    {{ $group->active == true ? 'Active' : 'Deactivated' }}
-                                    <div class="dropdown-menu">
-                                        <a href="" class="dropdown-item" data-bs-toggle="modal"
-                                            data-bs-target=".bs-example-modal-lg-{{ $group->id }}" class="m-2">
-                                            {{ $group->active == true ? 'Deactivated' : 'Activate' }}
-                                        </a>
-                                    </div>
+                                    Active
                                 </span>
-                                <div class="modal fade bs-example-modal-lg-{{ $group->id }}" tabindex="-1"
-                                    role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog modal-sm modal-dialog-centered ">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="myLargeModalLabel">Confirm Batch State
-                                                    Update</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                                    aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <h4 class="text-center mb-4"> Are you sure, you want to
-                                                    ?</h4>
-                                                <form action="" method="POST">
-                                                    @csrf
-                                                    <input type="hidden" name="active" value="">
-                                                    <div class="d-grid">
-                                                        <button type="submit" class="btn btn-success">Yes</button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </td>
 
                             <td>
@@ -84,6 +55,7 @@
                                         <span class="badge rounded-pill bg-primary fonte-size-13"><i
                                                 class="bx bxs-pencil"></i>edit</span>
                                     </a>
+                                    {{--  {{ dd($group->createdBy .' name: '. $employeeFullName) }}  --}}
                                     @if ($group->createdBy == $employeeFullName)
                                         {{--  DELETE BUTTON  --}}
                                         <a href="#" data-bs-toggle="modal"
@@ -163,24 +135,6 @@
                                 value="{{ old('name') }}" id="example-text-input">
                         </div>
                     </div>
-
-                    {{--  <div class="mb-3">
-                        <label class="form-label">Select Group Members</label>
-                        <select class="select2 form-control select2-multiple" multiple="multiple"
-                            data-placeholder="Choose ...">
-                            <optgroup label="Internal Control">
-                                <option value="qw">Elvis</option>
-                                <option value="we">Justice</option>
-                                <option value="rt">Kenneth</option>
-                            </optgroup>
-                            <optgroup label="Audit Control">
-                                <option value="ui">Micheal</option>
-                                <option value="jk">Dennis</option>
-                                <option value="fg">Frimpong</option>
-                                <option value="bn">Gideon</option>
-                            </optgroup>
-                        </select>
-                    </div>  --}}
 
                     <div class="row mb-3">
                         <label for="example-text-input" class="">Branch</label>
