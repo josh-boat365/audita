@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\BatchController;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -334,7 +335,12 @@ class ExceptionController extends Controller
 
             // Check the response status and return appropriate response
             if ($response->successful()) {
-                return redirect()->route('exception.list')->with('toast_success', 'Exception closed successfully');
+                if (URL::current() == route('exception.list')) {
+                    return redirect()->route('exception.list')->with('toast_success', 'Exception closed successfully');
+                }else{
+                    return redirect()->route('exception.pending')->with('toast_success', 'Exception closed successfully');
+
+                }
             } else {
                 // Log the error response
                 Log::error('Failed to close Exception', [
@@ -784,13 +790,13 @@ class ExceptionController extends Controller
         // 1 - Managing Director
         // 2 - Head of Internal Audit
         // 4 - Head of Internal Control & Compliance
-        $topMangers = [1, 2, 4];
+        $topManagers = [1, 2, 4];
 
         // Filter exceptions - and include top managers
-        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topMangers, $employeeRoleId) {
+        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && ($exception->status == 'PENDING' && $exception->recommendedStatus == null) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topMangers));
+                $validGroups->has($groupId) && ($exception->status == 'PENDING' && $exception->recommendedStatus == null) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
         });
 
 
@@ -843,7 +849,7 @@ class ExceptionController extends Controller
         $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topMangers, $employeeRoleId) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && ($exception->recommendedStatus == 'RESOLVED' || $exception->status == 'PENDING') && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topMangers));
+                $validGroups->has($groupId) && ($exception->recommendedStatus == 'RESOLVED' && $exception->status == 'PENDING' || $exception->status == 'PENDING') && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topMangers));
         });
 
         return $filteredExceptions->values()->all();
