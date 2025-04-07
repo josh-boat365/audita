@@ -23,7 +23,7 @@ class ReportsController extends Controller
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
 
-        
+
         return view('reports.index', compact('reports', 'batches', 'groups'));
     }
 
@@ -45,7 +45,7 @@ class ReportsController extends Controller
             } else {
                 $Reports = [];
                 Log::error('Exception Reports API request failed', ['status' => $response->status()]);
-                toast('Error fetching exception Reports data', 'error');
+                return redirect()->route('login')->with('toast_error', 'Error fetching exception Reports data');
             }
         } catch (\Exception $e) {
             $Reports = [];
