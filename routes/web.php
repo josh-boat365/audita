@@ -96,7 +96,8 @@ Route::post('/exception/{id}/auditee-resolution', [ExceptionController::class, '
 
 //EXCEPTION COMMENTS
 Route::post('/exception/{id}/comment', [ExceptionController::class, 'storeComment'])->name('exception.comment.post');
-Route::post('/exception/{id}/comment-delete', [ExceptionController::class, 'destroyComment'])->name('exception.comment.delete');
+Route::post('/exception/{id}/comment-delete', [ExceptionController::class, 'deleteComment'])->name('exception.comment.delete');
+Route::post('/exception/{id}/comment-edit', [ExceptionController::class, 'updateComment'])->name('exception.comment.edit');
 
 //REPORTS
 Route::get('/reports', [ReportsController::class, 'index'])->name('reports');

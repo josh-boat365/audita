@@ -48,7 +48,7 @@
                     <span class="d-none d-sm-block">Chats & Comments</span>
                 </a>
             </li>
-            @if (($exception->auditorId == $employeeId) || (in_array($employeeDepartmentId,[7,8]) ))
+            @if ($exception->auditorId == $employeeId || in_array($employeeDepartmentId, [7, 8]))
                 <li class="nav-item">
                     <a class="nav-link border border-3" data-bs-toggle="tab" href="#close-exception" role="tab">
                         <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
@@ -80,21 +80,21 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Exception<span class="required">*</span></label>
-                                        <textarea @disabled($exception->auditorId != $employeeId) class="form-control" rows="3" name="exception"
+                                        <textarea @disabled(!$canEdit)class="form-control" rows="3" name="exception"
                                             placeholder="Enter exception details......" required>{{ $exception->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Root Cause<span class="required">*</span></label>
-                                        <textarea @disabled($exception->auditorId != $employeeId) class="form-control" rows="3" name="rootCause"
+                                        <textarea @disabled(!$canEdit)class="form-control" rows="3" name="rootCause"
                                             placeholder="Enter root cause details......" required>{{ $exception->rootCause }}</textarea>
                                         <div class="invalid-feedback">Please enter the root cause.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Batch<span class="required">*</span></label>
-                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
+                                        <select @disabled(!$canEdit)class="form-select select2"
                                             name="exceptionBatchId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($batches as $batch)
@@ -106,7 +106,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Unit/Dept<span class="required">*</span></label>
-                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
+                                        <select @disabled(!$canEdit)class="form-select select2"
                                             name="departmentId" required>
                                             <option>Select Unit/Department</option>
                                             @foreach ($departments as $department)
@@ -119,7 +119,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">Occurrence Date<span
                                                 class="required">*</span></label>
-                                        <input @disabled($exception->auditorId != $employeeId) type="text" class="form-control"
+                                        <input @disabled(!$canEdit)type="text" class="form-control"
                                             placeholder="Select occurrence date" name="occurrenceDate"
                                             value="{{ $exception->occurrenceDate == null ? '' : Carbon\Carbon::parse($exception->occurrenceDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/yy" data-provide="datepicker"
@@ -140,7 +140,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label" for="project-status-input">Status</label>
-                                        <select @disabled($exception->auditorId != $employeeId) class="form-select" name="status"
+                                        <select @disabled(!$canEdit)class="form-select" name="status"
                                             required>
                                             <option selected>Select.....</option>
                                             <option value="PENDING" @selected($exception->status === 'PENDING')>Pending</option>
@@ -152,7 +152,7 @@
                                     <div class="mb-3">
                                         <label class="form-label" for="project-visibility-input">Risk Rate<span
                                                 class="required">*</span></label>
-                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
+                                        <select @disabled(!$canEdit)class="form-select select2"
                                             name="riskRateId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($riskRates as $riskRate)
@@ -166,7 +166,7 @@
                                     <div>
                                         <label class="form-label" for="project-visibility-input">Process
                                             Type/Scope<span class="required">*</span></label>
-                                        <select @disabled($exception->auditorId != $employeeId) class="form-select select2"
+                                        <select @disabled(!$canEdit)class="form-select select2"
                                             name="processTypeId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($processTypes as $processType)
@@ -189,7 +189,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">Proposed Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input @disabled($exception->auditorId != $employeeId) type="text" class="form-control"
+                                        <input @disabled(!$canEdit)type="text" class="form-control"
                                             placeholder="Select due date" name="proposeResolutionDate"
                                             value="{{ $exception->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exception->proposeResolutionDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/yy" data-provide="datepicker"
@@ -200,7 +200,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input @disabled($exception->auditorId != $employeeId) type="text" class="form-control"
+                                        <input @disabled(!$canEdit) type="text" class="form-control"
                                             placeholder="Select resolution date" name="resolutionDate"
                                             value="{{ $exception->resolutionDate == null ? '' : Carbon\Carbon::parse($exception->resolutionDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/yy" data-provide="datepicker"
@@ -270,10 +270,14 @@
                                             </button>
 
                                             <!-- Delete Button -->
-                                            <button onclick="deleteFile('{{ $file->id }}')"
-                                                class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i> Remove
-                                            </button>
+                                            @if ($file->uploadedBy == $employeeName)
+                                                <button onclick="deleteFile('{{ $file->id }}')"
+                                                    class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </button>
+                                            @else
+                                                <div></div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -304,7 +308,6 @@
                             </div>
                         </div>
 
-
                         <div>
                             <div class="chat-conversation p-3">
                                 <ul class="list-unstyled mb-0" data-simplebar style="max-height: 486px;">
@@ -318,105 +321,18 @@
                                             <li class="left">
                                                 <div class="conversation-list">
                                                     <div class="dropdown">
-
                                                         <a class="dropdown-toggle" href="#" role="button"
                                                             data-bs-toggle="dropdown" aria-haspopup="true"
                                                             aria-expanded="false">
                                                             <i class="bx bx-dots-vertical-rounded"></i>
                                                         </a>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href=""
+                                                            <a class="dropdown-item" href="#"
                                                                 data-bs-toggle="modal"
-                                                                data-bs-target=".bs-edit-left-modal-lg-{{ $comment->id }}">Edit</a>
-                                                            <a class="dropdown-item" href=""
+                                                                data-bs-target="#bs-edit-left-modal-lg-{{ $comment->id }}">Edit</a>
+                                                            <a class="dropdown-item" href="#"
                                                                 data-bs-toggle="modal"
-                                                                data-bs-target=".bs-delete-left-modal-lg-{{ $comment->id }}">Delete</a>
-                                                        </div>
-                                                    </div>
-
-                                                    {{--  EDITING COMMENT MODAL  --}}
-                                                    <!-- Modal for editing comment -->
-                                                    <div class="modal fade bs-edit-left-modal-lg-{{ $comment->id }}"
-                                                        tabindex="-1" role="dialog"
-                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="myLargeModalLabel">
-                                                                        Edit Your Comment
-                                                                    </h5>
-                                                                    <button type="button" class="btn-close"
-                                                                        data-bs-dismiss="modal"
-                                                                        aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-
-                                                                    <form
-                                                                        action="{{ route('batch.delete', $batch->id) }}"
-                                                                        method="POST">
-                                                                        @csrf
-
-                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
-                                                                        <div class="invalid-feedback">Please
-                                                                            enter a comment.</div>
-
-                                                                        <div class="d-grid">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary">Edit
-                                                                                Comment</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {{--  DELETING COMMENT MODAL  --}}
-                                                    <!-- Modal for deleting comment -->
-                                                    <div class="modal fade bs-delete-left-modal-lg-{{ $comment->id }}"
-                                                        tabindex="-1" role="dialog"
-                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="myLargeModalLabel">
-                                                                        Confirm Comment
-                                                                        Deletion
-                                                                    </h5>
-                                                                    <button type="button" class="btn-close"
-                                                                        data-bs-dismiss="modal"
-                                                                        aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <h4 class="text-center mb-4">Are you sure you
-                                                                        want to delete
-                                                                        this
-                                                                        comment?</h4>
-                                                                    <p class="text-center">Deleting a
-                                                                        <b>comment</b>
-                                                                        means removing it
-                                                                        from the <b>system entirely</b> and you
-                                                                        cannot
-                                                                        <b>recover</b> it
-                                                                        again
-                                                                    </p>
-                                                                    <form
-                                                                        action="{{ route('batch.delete', $batch->id) }}"
-                                                                        method="POST">
-                                                                        @csrf
-
-                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
-                                                                        <div class="invalid-feedback">Please
-                                                                            enter a comment.</div>
-
-                                                                        <div class="d-grid">
-                                                                            <button type="submit"
-                                                                                class="btn btn-danger">Delete
-                                                                                Comment</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
+                                                                data-bs-target="#bs-delete-left-modal-lg-{{ $comment->id }}">Delete</a>
                                                         </div>
                                                     </div>
 
@@ -428,7 +344,6 @@
                                                             {{ Carbon\Carbon::parse($comment->createdAt)->format('d/m/Y H:i A') }}
                                                         </p>
                                                     </div>
-
                                                 </div>
                                             </li>
                                             {{--  x- END OF COMMENT FROM OTHER USERS  --}}
@@ -437,104 +352,18 @@
                                             <li class=" right">
                                                 <div class="conversation-list">
                                                     <div class="dropdown">
-
                                                         <a class="dropdown-toggle" href="#" role="button"
                                                             data-bs-toggle="dropdown" aria-haspopup="true"
                                                             aria-expanded="false">
                                                             <i class="bx bx-dots-vertical-rounded"></i>
                                                         </a>
                                                         <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href=""
+                                                            <a class="dropdown-item" href="#"
                                                                 data-bs-toggle="modal"
-                                                                data-bs-target=".bs-edit-right-modal-lg-{{ $comment->id }}">Edit</a>
-                                                            <a class="dropdown-item" href=""
+                                                                data-bs-target="#bs-edit-right-modal-lg-{{ $comment->id }}">Edit</a>
+                                                            <a class="dropdown-item" href="#"
                                                                 data-bs-toggle="modal"
-                                                                data-bs-target=".bs-delete-right-modal-lg-{{ $comment->id }}">Delete</a>
-                                                        </div>
-                                                    </div>
-                                                    {{--  EDITING COMMENT MODAL  --}}
-                                                    <!-- Modal for editing comment -->
-                                                    <div class="modal fade bs-edit-right-modal-lg-{{ $comment->id }}"
-                                                        tabindex="-1" role="dialog"
-                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="myLargeModalLabel">
-                                                                        Edit Your Comment
-                                                                    </h5>
-                                                                    <button type="button" class="btn-close"
-                                                                        data-bs-dismiss="modal"
-                                                                        aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-
-                                                                    <form
-                                                                        action="{{ route('batch.delete', $batch->id) }}"
-                                                                        method="POST">
-                                                                        @csrf
-
-                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
-                                                                        <div class="invalid-feedback">Please
-                                                                            enter a comment.</div>
-
-                                                                        <div class="d-grid">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary">Edit
-                                                                                Comment</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {{--  DELETING COMMENT MODAL  --}}
-                                                    <!-- Modal for deleting comment -->
-                                                    <div class="modal fade bs-delete-right-modal-lg-{{ $comment->id }}"
-                                                        tabindex="-1" role="dialog"
-                                                        aria-labelledby="myLargeModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="myLargeModalLabel">
-                                                                        Confirm Comment
-                                                                        Deletion
-                                                                    </h5>
-                                                                    <button type="button" class="btn-close"
-                                                                        data-bs-dismiss="modal"
-                                                                        aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <h4 class="text-center mb-4">Are you sure you
-                                                                        want to delete
-                                                                        this
-                                                                        comment?</h4>
-                                                                    <p class="text-center">Deleting a
-                                                                        <b>comment</b>
-                                                                        means removing it
-                                                                        from the <b>system entirely</b> and you
-                                                                        cannot
-                                                                        <b>recover</b> it
-                                                                        again
-                                                                    </p>
-                                                                    <form
-                                                                        action="{{ route('batch.delete', $batch->id) }}"
-                                                                        method="POST">
-                                                                        @csrf
-
-                                                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
-                                                                        <div class="invalid-feedback">Please
-                                                                            enter a comment.</div>
-
-                                                                        <div class="d-grid">
-                                                                            <button type="submit"
-                                                                                class="btn btn-danger">Delete
-                                                                                Comment</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
+                                                                data-bs-target="#bs-delete-right-modal-lg-{{ $comment->id }}">Delete</a>
                                                         </div>
                                                     </div>
 
@@ -553,7 +382,6 @@
                                             </li>
                                             {{--  x- END OF USER COMMENT   --}}
                                         @endif
-
                                     @empty
                                         <li>
                                             <div class="chat-day-title">
@@ -561,9 +389,6 @@
                                             </div>
                                         </li>
                                     @endforelse
-
-
-
                                 </ul>
                             </div>
                             <div class="p-3 chat-input-section">
@@ -583,18 +408,138 @@
                                                     class="mdi mdi-send"></i></button>
                                         </div>
                                     </div>
-
                                 </form>
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>
+
+            <!-- All modals moved outside the chat container -->
+            @foreach ($sortedComments as $comment)
+                @if ($comment->createdBy != $exception->auditorName)
+                    {{--  EDITING COMMENT MODAL (LEFT) --}}
+                    <div class="modal fade" id="bs-edit-left-modal-lg-{{ $comment->id }}" tabindex="-1"
+                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                        Edit Your Comment
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{ route('exception.comment.edit', $comment->id) }}"
+                                        method="POST">
+                                        @csrf
+                                        <textarea class="form-control mb-3" rows="3" name="comment" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
+                                        <input type="hidden" name="exceptionTrackerId"
+                                            value="{{ $exception->id }}">
+                                        <div class="invalid-feedback">Please
+                                            enter a comment.</div>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">
+                                                Edit Comment
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{--  DELETING COMMENT MODAL (LEFT) --}}
+                    <div class="modal fade" id="bs-delete-left-modal-lg-{{ $comment->id }}" tabindex="-1"
+                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                        Confirm Comment Deletion
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <h4 class="text-center mb-4">Are you sure you want to delete this comment?</h4>
+                                    <p class="text-center">Deleting a <b>comment</b> means removing it from the
+                                        <b>system entirely</b> and you cannot <b>recover</b> it again
+                                    </p>
+                                    <form action="{{ route('exception.comment.delete', $comment->id) }}"
+                                        method="POST">
+                                        @csrf
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-danger">Delete Comment</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    {{--  EDITING COMMENT MODAL (RIGHT) --}}
+                    <div class="modal fade" id="bs-edit-right-modal-lg-{{ $comment->id }}" tabindex="-1"
+                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                        Edit Your Comment
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{{ route('batch.delete', $batch->id) }}" method="POST">
+                                        @csrf
+                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
+                                        <div class="invalid-feedback">Please enter a comment.</div>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">Edit Comment</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{--  DELETING COMMENT MODAL (RIGHT) --}}
+                    <div class="modal fade" id="bs-delete-right-modal-lg-{{ $comment->id }}" tabindex="-1"
+                        role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="myLargeModalLabel">
+                                        Confirm Comment Deletion
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <h4 class="text-center mb-4">Are you sure you want to delete this comment?</h4>
+                                    <p class="text-center">Deleting a <b>comment</b> means removing it from the
+                                        <b>system entirely</b> and you cannot <b>recover</b> it again
+                                    </p>
+                                    <form action="{{ route('batch.delete', $batch->id) }}" method="POST">
+                                        @csrf
+                                        <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
+                                        <div class="invalid-feedback">Please enter a comment.</div>
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-danger">Delete Comment</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
 
 
             {{--  CLOSE EXCEPTION - AUDITOR  --}}
-            @if (($exception->auditorId == $employeeId) || (in_array($employeeDepartmentId, [7,8]) ))
+            @if ($exception->auditorId == $employeeId || in_array($employeeDepartmentId, [7, 8]))
                 <div class="tab-pane" id="close-exception" role="tabpanel">
 
                     <div class="card">
