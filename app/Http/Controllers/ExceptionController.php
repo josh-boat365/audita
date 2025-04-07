@@ -146,21 +146,45 @@ class ExceptionController extends Controller
 
     public function edit2($id)
     {
-        $access_token = session('api_token');
         try {
-
+            // Get all necessary data
             $batches = BatchController::getBatches();
             $departments = $this->departmentData();
             $processTypes = ProcessTypeController::getProcessTypes();
             $riskRates = RiskRateController::getRiskRates();
+            $groups = GroupController::getActivityGroups();
+            $groupMembers = GroupMembersController::getGroupMembers(); // Assuming this method exists
+
+            // Get the exception and validate it exists
             $exception = $this->getAnException($id);
-            $employeeId = $this->getLoggedInUserInformation()->id;
-            $employeeDepartmentId = $this->getLoggedInUserInformation()->departmentId;
-            // $employeeData = [
-            //     'id' => $employee->id,
-            //     'departmentId' => $employee->departmentId
-            // ];
-            // dd($employeeId);
+            if (!$exception) {
+                toast('Exception not found', 'error');
+                return redirect()->back();
+            }
+
+            // Get user information
+            $user = $this->getLoggedInUserInformation();
+            $employeeId = $user->id;
+            $employeeDepartmentId = $user->departmentId;
+            $employeeName = $user->firstName . ' ' . $user->surname;
+
+            // Find the batch associated with the exception
+            $exceptionBatch = collect($batches)->firstWhere('id', $exception->exceptionBatchId);
+            if (!$exceptionBatch) {
+                toast('Associated batch not found', 'error');
+                return redirect()->back();
+            }
+
+            // Get all auditor IDs in the same group as the exception
+            $groupAuditorIds = collect($groupMembers)
+                ->where('activityGroupId', $exceptionBatch->activityGroupId)
+                ->pluck('employeeId')
+                ->toArray();
+
+            // Determine if current user can edit (is auditor or in same group)
+            $canEdit = ($exception->auditorId == $employeeId) ||
+                (in_array($employeeId, $groupAuditorIds));
+
 
             return view('exception-setup.edit', compact(
                 'exception',
@@ -168,21 +192,26 @@ class ExceptionController extends Controller
                 'departments',
                 'processTypes',
                 'riskRates',
+                'groups',
+                'groupAuditorIds',
                 'employeeId',
-                'employeeDepartmentId'
+                'employeeDepartmentId',
+                'employeeName',
+                'canEdit'
             ));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception edit  API', ['error' => $e->getMessage()]);
-
+            Log::error('Connection Error: Unable to reach Exception edit API', ['error' => $e->getMessage()]);
             toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return [];
+            return redirect()->back();
         } catch (\Exception $e) {
             Log::error('Exception occurred while fetching exception', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return redirect()->back()->with(
+                'toast_error',
+                'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>'
+            );
         }
     }
 
@@ -337,9 +366,8 @@ class ExceptionController extends Controller
             if ($response->successful()) {
                 if (URL::current() == route('exception.list')) {
                     return redirect()->route('exception.list')->with('toast_success', 'Exception closed successfully');
-                }else{
+                } else {
                     return redirect()->route('exception.pending')->with('toast_success', 'Exception closed successfully');
-
                 }
             } else {
                 // Log the error response
@@ -394,6 +422,94 @@ class ExceptionController extends Controller
             return [];
         } catch (\Exception $e) {
             Log::error('Exception occurred while adding comment', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+        }
+    }
+
+
+    public function updateComment(Request $request, $id)
+    {
+        // dd($request->all());
+        $request->validate([
+            'comment' => 'required|string|max:255',
+            'exceptionTrackerId' => 'required|integer',
+        ]);
+
+        $access_token = session('api_token');
+
+        $data = [
+            'id' => $id,
+            'exceptionTrackerId' => $request->input('exceptionTrackerId'),
+            'comment' => $request->input('comment'),
+        ];
+
+
+        try {
+            $response = Http::withToken($access_token)->put('http://192.168.1.200:5126/Auditor/ExceptionComment', $data);
+
+            if ($response->successful()) {
+                return redirect()->back()->with('toast_success', 'Comment updated successfully');
+            } else {
+                // Log the error response
+                Log::error('Failed to update comment', [
+                    'status' => $response->status(),
+                    'response' => $response->body(),
+                    'comment_id' => $id
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to update comment');
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception comment API for update', [
+                'error' => $e->getMessage(),
+                'comment_id' => $id
+            ]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return redirect()->back();
+        } catch (\Exception $e) {
+            Log::error('Exception occurred while updating comment', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'comment_id' => $id
+            ]);
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+        }
+    }
+
+
+    public function deleteComment($id)
+    {
+        $access_token = session('api_token');
+
+        try {
+            // Make the DELETE request to the external API
+            $response = Http::withToken($access_token)
+                ->delete("http://192.168.1.200:5126/Auditor/ExceptionComment/{$id}");
+
+            // Check the response status and return appropriate response
+            if ($response->successful()) {
+                return redirect()->back()->with('toast_success', 'Exception Comment Deleted successfully');
+            } else {
+                // Log the error response
+                Log::error('Failed to delete Exception Comment', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception Comment');
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception Comment delete API', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
+        } catch (\Exception $e) {
+            // Log the exception
+            Log::error('Exception occurred while deleting Exception Comment', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
