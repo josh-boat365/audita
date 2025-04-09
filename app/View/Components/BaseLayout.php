@@ -17,10 +17,16 @@ class BaseLayout extends Component
         if(session('api_token') == null){
             return view('auth.auth-login')->with('toast_warning', 'Session expired. Please login again.');
         }
-        $pending_exception_count =   session('pending_exception_count');
+
+
+
         $employeeId = ExceptionController::getLoggedInUserInformation()->id;
         $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
         $employeeDepartmentId = ExceptionController::getLoggedInUserInformation()->departmentId;
+
+        $exception = new ExceptionController();
+        $response = $exception->getPendingExceptions($employeeId);
+        $pending_exception_count =   collect($response)->count();
 
         // top managers
         // 1 - Managing Director
