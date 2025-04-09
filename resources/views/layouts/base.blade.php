@@ -22,6 +22,7 @@
             'topManagers' => $topManagers,
             'auditorDepartments' => $auditorDepartments,
             'employeeDepartmentId' => $employeeDepartmentId,
+            'pending_exception_count' => $pending_exception_count,
         ])
 
         <!-- Left Sidebar End -->
