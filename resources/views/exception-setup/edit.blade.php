@@ -312,28 +312,33 @@
                             <div class="chat-conversation p-3">
                                 <ul class="list-unstyled mb-0" data-simplebar style="max-height: 486px;">
                                     @php
-                                        $sortedComments = collect($exception->comment)->sortByDesc('createdAt');
+                                        $sortedComments = collect($exception->comment);
+                                        //->sortByDesc('createdAt')
                                     @endphp
 
                                     @forelse ($sortedComments as $comment)
-                                        @if ($comment->createdBy != $exception->auditorName)
+                                        @if ($comment->createdBy != $employeeName)
                                             {{--  COMMENT FROM OTHER USERS  --}}
                                             <li class="left">
                                                 <div class="conversation-list">
                                                     <div class="dropdown">
-                                                        <a class="dropdown-toggle" href="#" role="button"
-                                                            data-bs-toggle="dropdown" aria-haspopup="true"
-                                                            aria-expanded="false">
-                                                            <i class="bx bx-dots-vertical-rounded"></i>
-                                                        </a>
-                                                        <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="#"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#bs-edit-left-modal-lg-{{ $comment->id }}">Edit</a>
-                                                            <a class="dropdown-item" href="#"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#bs-delete-left-modal-lg-{{ $comment->id }}">Delete</a>
-                                                        </div>
+                                                        @if ($comment->createdBy == $employeeName)
+                                                            <a class="dropdown-toggle" href="#" role="button"
+                                                                data-bs-toggle="dropdown" aria-haspopup="true"
+                                                                aria-expanded="false">
+                                                                <i class="bx bx-dots-vertical-rounded"></i>
+                                                            </a>
+                                                            <div class="dropdown-menu">
+                                                                <a class="dropdown-item" href="#"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#bs-edit-left-modal-lg-{{ $comment->id }}">Edit</a>
+                                                                <a class="dropdown-item" href="#"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#bs-delete-left-modal-lg-{{ $comment->id }}">Delete</a>
+                                                            </div>
+                                                        @else
+                                                            <div></div>
+                                                        @endif
                                                     </div>
 
                                                     <div class="ctext-wrap">
@@ -346,25 +351,30 @@
                                                     </div>
                                                 </div>
                                             </li>
+                                            {{--  {{ dd($comment->createdBy, $employeeName) }}  --}}
                                             {{--  x- END OF COMMENT FROM OTHER USERS  --}}
-                                        @elseif($comment->createdBy == $exception->auditorName)
+                                        @elseif($comment->createdBy == $employeeName)
                                             {{--  USER COMMENT  --}}
                                             <li class=" right">
                                                 <div class="conversation-list">
                                                     <div class="dropdown">
-                                                        <a class="dropdown-toggle" href="#" role="button"
-                                                            data-bs-toggle="dropdown" aria-haspopup="true"
-                                                            aria-expanded="false">
-                                                            <i class="bx bx-dots-vertical-rounded"></i>
-                                                        </a>
-                                                        <div class="dropdown-menu">
-                                                            <a class="dropdown-item" href="#"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#bs-edit-right-modal-lg-{{ $comment->id }}">Edit</a>
-                                                            <a class="dropdown-item" href="#"
-                                                                data-bs-toggle="modal"
-                                                                data-bs-target="#bs-delete-right-modal-lg-{{ $comment->id }}">Delete</a>
-                                                        </div>
+                                                        @if ($comment->createdBy == $employeeName)
+                                                            <a class="dropdown-toggle" href="#" role="button"
+                                                                data-bs-toggle="dropdown" aria-haspopup="true"
+                                                                aria-expanded="false">
+                                                                <i class="bx bx-dots-vertical-rounded"></i>
+                                                            </a>
+                                                            <div class="dropdown-menu">
+                                                                <a class="dropdown-item" href="#"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#bs-edit-right-modal-lg-{{ $comment->id }}">Edit</a>
+                                                                <a class="dropdown-item" href="#"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#bs-delete-right-modal-lg-{{ $comment->id }}">Delete</a>
+                                                            </div>
+                                                        @else
+                                                            <div></div>
+                                                        @endif
                                                     </div>
 
                                                     <div class="ctext-wrap">
