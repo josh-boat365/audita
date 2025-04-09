@@ -64,7 +64,7 @@
                                 Pending
                                 @if ($pending_exception_count >= 0)
                                     <span
-                                        class="badge rounded-full bg-danger">{{ session('pending_exception_count') }}</span>
+                                        class="badge rounded-full bg-danger">{{ $pending_exception_count }}</span>
                                 @else
                                     <span></span>
                                 @endif
