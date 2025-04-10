@@ -182,7 +182,7 @@ class ExceptionController extends Controller
                 ->unique()
                 ->toArray();
 
-                dd($auditorIds);
+                // dd($auditorIds);
 
             // Get all auditor IDs in the same group as the exception
             $groupAuditorIds = collect($groupMembers)
