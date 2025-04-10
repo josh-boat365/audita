@@ -80,21 +80,21 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Exception<span class="required">*</span></label>
-                                        <textarea @disabled(!$canEdit)class="form-control" rows="3" name="exception"
+                                        <textarea @disabled(!$canEdit) class="form-control" rows="3" name="exception"
                                             placeholder="Enter exception details......" required>{{ $exception->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Root Cause<span class="required">*</span></label>
-                                        <textarea @disabled(!$canEdit)class="form-control" rows="3" name="rootCause"
+                                        <textarea @disabled(!$canEdit) class="form-control" rows="3" name="rootCause"
                                             placeholder="Enter root cause details......" required>{{ $exception->rootCause }}</textarea>
                                         <div class="invalid-feedback">Please enter the root cause.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Batch<span class="required">*</span></label>
-                                        <select @disabled(!$canEdit)class="form-select select2"
+                                        <select @disabled(!$canEdit) class="form-select select2"
                                             name="exceptionBatchId" required>
                                             <option selected>Select.....</option>
                                             @foreach ($batches as $batch)
