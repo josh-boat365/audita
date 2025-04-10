@@ -153,7 +153,8 @@ class ExceptionController extends Controller
             $processTypes = ProcessTypeController::getProcessTypes();
             $riskRates = RiskRateController::getRiskRates();
             $groups = GroupController::getActivityGroups();
-            $groupMembers = GroupMembersController::getGroupMembers(); // Assuming this method exists
+            $groupMembers = GroupMembersController::getGroupMembers();
+            $exceptions = $this->getExceptions();
 
             // Get the exception and validate it exists
             $exception = $this->getAnException($id);
@@ -174,6 +175,14 @@ class ExceptionController extends Controller
                 toast('Associated batch not found', 'error');
                 return redirect()->back();
             }
+
+            //Get all auditor ids from created exceptions
+            $auditorIds = collect($exceptions)
+                ->pluck('auditorId')
+                ->unique()
+                ->toArray();
+
+                // dd($auditorIds);
 
             // Get all auditor IDs in the same group as the exception
             $groupAuditorIds = collect($groupMembers)
