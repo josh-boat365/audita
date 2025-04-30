@@ -13,6 +13,10 @@ use App\Http\Controllers\ExceptionController;
 use App\Http\Controllers\ProcessTypeController;
 use App\Http\Controllers\GroupMembersController;
 
+
+
+Route::get('getAuthToken', [AuthController::class, 'getAuthToken']);
+
 // Route::middleware(['guest'])->group(
 // function () {
 Route::get('/', function () {
