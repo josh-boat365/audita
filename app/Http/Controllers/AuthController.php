@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 
 class AuthController extends Controller
@@ -113,20 +114,56 @@ class AuthController extends Controller
             return back()->with('toast_error', 'An error occurred. Please try again later.');
         }
     }
-    public function loginx(Request $request)
+
+
+    public function getAuthToken(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+        try {
+            // Check if the request has any data
+            if (empty($request->all())) {
+                return response()->json([
+                    'error' => 'Empty request received. Please provide the required parameters.'
+                ], 400);
+            }
 
-        $credentials = $request->only('email', 'password');
-        if (Auth::attempt($credentials)) {
-            return redirect()->route('dashboard')->with('toast_success', 'Successfully logged in');
+            // Validate the query string parameters
+            $validatedData = $request->validate([
+                'access_token' => 'required|string',
+                'fullName'     => 'required|string',
+                'email'        => 'required|email',
+                'id'           => 'required',
+            ]);
+
+            // Prepare user data from the validated query data
+            $userData = [
+                'api_token'   => $validatedData['access_token'],
+                'user_name'   => $validatedData['fullName'],
+                'user_email'  => $validatedData['email'],
+                'employee_id' => $validatedData['id'],
+            ];
+
+            // Additional logic like user session creation or updating records can go here
+
+            // Return a JSON response back to the requester
+            return response()->json([
+                'message' => 'User authenticated successfully',
+                'data'    => $userData,
+            ]);
+        } catch (ValidationException $e) {
+            // Catch and return validation errors in a structured format
+            return response()->json([
+                'error'   => 'Validation failed',
+                'details' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            // Catch any other exceptions and return an error message
+            return response()->json([
+                'error'   => 'An error occurred',
+                'details' => $e->getMessage(),
+            ], 500);
         }
-
-        return redirect()->route('login')->with('toast_error', 'Invalid credentials');
     }
+
 
     public function register(Request $request)
     {
