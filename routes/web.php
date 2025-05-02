@@ -15,7 +15,6 @@ use App\Http\Controllers\GroupMembersController;
 
 
 
-Route::get('getAuthToken', [AuthController::class, 'getAuthToken']);
 
 // Route::middleware(['guest'])->group(
 // function () {
