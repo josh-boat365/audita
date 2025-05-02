@@ -79,18 +79,18 @@ class ExceptionController extends Controller
     {
         // dd($request->all());
         $request->validate([
-            'exception' => 'required|string|max:255',
-            'rootCause' => 'required|string|max:255',
-            'status' => 'required|string|max:8',
+            'exception' => 'required|string',
+            'rootCause' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:8',
             'occurrenceDate' => 'required|date_format:d/m/Y',
             'proposeResolutionDate' => 'nullable|date_format:d/m/Y',
             'resolutionDate' => 'nullable|date_format:d/m/Y',
             'processTypeId' => 'required|integer',
-            'riskRateId' => 'required|integer',
+            'riskRateId' => 'nullable|integer',
             'departmentId' => 'required|integer',
             'exceptionBatchId' => 'required|integer',
         ]);
-
+        // dd($request);
         $access_token = session('api_token');
 
         $data = [
@@ -232,13 +232,13 @@ class ExceptionController extends Controller
     {
         $request->validate([
             'exception' => 'required|string|max:255',
-            'rootCause' => 'required|string|max:255',
-            'status' => 'required|string|max:8',
+            'rootCause' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:8',
             'occurrenceDate' => 'required|date_format:d/m/Y',
             'proposeResolutionDate' => 'nullable|date_format:d/m/Y',
             'resolutionDate' => 'nullable|date_format:d/m/Y',
             'processTypeId' => 'required|integer',
-            'riskRateId' => 'required|integer',
+            'riskRateId' => 'nullable|integer',
             'departmentId' => 'required|integer',
             'exceptionBatchId' => 'required|integer',
         ]);

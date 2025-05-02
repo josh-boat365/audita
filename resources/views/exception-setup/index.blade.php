@@ -37,7 +37,7 @@
                     {{--  {{ dd($exceptions) }}  --}}
                     @forelse ($exceptions as $exception)
                         <tr>
-                            <th scope="row"><a href="#">{{ $exception->exception }}</a></th>
+                            <th scope="row"><a href="#">{!! $exception->exception !!}</a></th>
                             <td> {{ $exception->rootCause }} </td>
                             <td> {{ $exception->auditorName }} </td>
 

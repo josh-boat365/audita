@@ -119,12 +119,6 @@ class AuthController extends Controller
     public function getAuthToken(Request $request)
     {
         try {
-            // Check if the request has any data
-            if (empty($request->all())) {
-                return response()->json([
-                    'error' => 'Empty request received. Please provide the required parameters.'
-                ], 400);
-            }
 
             // Validate the query string parameters
             $validatedData = $request->validate([
@@ -148,7 +142,8 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'User authenticated successfully',
                 'data'    => $userData,
-            ]);
+            ], 200);
+            
         } catch (ValidationException $e) {
             // Catch and return validation errors in a structured format
             return response()->json([
