@@ -20,47 +20,50 @@
                     <div class="card">
                         <div class="card-body">
 
-                            {{--  Project Image   --}}
+                            {{--  WYISWYG Editor  --}}
                             <div class="mb-3">
-                                <label class="form-label">Exception</label>
-                                <textarea class="form-control" rows="3" name="exception" placeholder="Enter exception details......" required>{{ old('exception') }}</textarea>
+                                <label class="form-label">Exception<span class="required">*</span></label>
+                                <textarea class="form-control" rows="3" id="exception" name="exception"
+                                    placeholder="Enter exception title and details......" required>{{ old('exception') }}</textarea>
                                 <div class="invalid-feedback">Please enter an exception.</div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Root Cause</label>
-                                <textarea class="form-control" rows="3" name="rootCause" placeholder="Enter root cause details......" required>{{ old('rootCause') }}</textarea>
+                                <textarea class="form-control" rows="3" name="rootCause" placeholder="Enter root cause details......">{{ old('rootCause') }}</textarea>
                                 <div class="invalid-feedback">Please enter the root cause.</div>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Batch</label>
+                                <label class="form-label">Batch<span class="required">*</span></label>
                                 <select class="form-select select2" name="exceptionBatchId" required>
-                                    <option selected>Select.....</option>
+                                    <option >Select.....</option>
                                     @foreach ($batches as $batch)
-                                        <option value="{{ $batch->id }}" {{ $batch->id === old('exceptionBatchId') ? 'selected' : '' }}>
+                                        <option value="{{ $batch->id }}"
+                                            {{ $batch->id === old('exceptionBatchId') ? 'selected' : '' }}>
                                             {{ $batch->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Unit/Dept</label>
+                                <label class="form-label">Unit/Dept<span class="required">*</span></label>
                                 <select class="form-select select2" name="departmentId" required>
                                     <option>Select Unit/Department</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}" {{ $department->id === old('departmentId') ? 'selected' : '' }}>
+                                        <option value="{{ $department->id }}"
+                                            {{ $department->id === old('departmentId') ? 'selected' : '' }}>
                                             {{ $department->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label">Occurrence Date</label>
-                                <input type="text" id="duedate-input" class="form-control"
-                                    placeholder="Select occurrence date" name="occurrenceDate"
-                                    value="{{ old('occurrenceDate') }}" data-date-format="dd/mm/yyyy"
-                                    data-provide="datepicker" data-date-autoclose="true" required />
+                                <label class="form-label">Occurrence Date<span class="required">*</span></label>
+                                <input type="text" class="form-control" placeholder="Select occurrence date"
+                                    name="occurrenceDate" value="{{ old('occurrenceDate') }}"
+                                    data-date-format="dd/mm/yyyy" data-provide="datepicker" data-date-autoclose="true"
+                                    required />
                                 <div class="invalid-feedback">Please select occurrence date.</div>
                             </div>
 
@@ -91,10 +94,11 @@
 
                             <div class="mb-3">
                                 <label class="form-label" for="project-visibility-input">Risk Rate</label>
-                                <select class="form-select select2" name="riskRateId" required>
-                                    <option selected>Select.....</option>
+                                <select class="form-select select2" name="riskRateId">
+                                    {{--  <option value="">Select.....</option>  --}}
                                     @foreach ($riskRates as $riskRate)
-                                        <option value="{{ $riskRate->id }}" {{ $riskRate->id === old('riskRateId') ? 'selected' : '' }}>
+                                        <option value="{{ $riskRate->id }}"
+                                            {{ $riskRate->id === old('riskRateId') ? 'selected' : '' }}>
                                             {{ $riskRate->name }}</option>
                                     @endforeach
 
@@ -102,11 +106,13 @@
                             </div>
 
                             <div>
-                                <label class="form-label" for="project-visibility-input">Process Type/Scope</label>
+                                <label class="form-label" for="project-visibility-input">Process Type/Scope<span
+                                        class="required">*</span></label>
                                 <select class="form-select select2" name="processTypeId" required>
-                                    <option selected>Select.....</option>
+                                    <option >Select.....</option>
                                     @foreach ($processTypes as $processType)
-                                        <option value="{{ $processType->id }}" {{ $processType->id === old('processTypeId') ? 'selected' : '' }}>
+                                        <option value="{{ $processType->id }}"
+                                            {{ $processType->id === old('processTypeId') ? 'selected' : '' }}>
                                             {{ $processType->name }}</option>
                                     @endforeach
                                 </select>
@@ -124,19 +130,19 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Proposed Resolution Date</label>
-                                <input type="text" id="duedate-input" class="form-control"
-                                    placeholder="Select due date" name="proposeResolutionDate"
-                                    value="{{ old('proposeResolutionDate') }}" data-date-format="dd/mm/yyyy"
-                                    data-provide="datepicker" data-date-autoclose="true" />
+                                <input type="text" class="form-control" placeholder="Select due date"
+                                    name="proposeResolutionDate" value="{{ old('proposeResolutionDate') }}"
+                                    data-date-format="dd/mm/yyyy" data-provide="datepicker"
+                                    data-date-autoclose="true" />
                                 <div class="invalid-feedback">Please select proposed resolution date.</div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Resolution Date</label>
-                                <input type="text" id="duedate-input" class="form-control"
-                                    placeholder="Select resolution date" name="resolutionDate"
-                                    value="{{ old('resolutionDate') }}" data-date-format="dd/mm/yyyy"
-                                    data-provide="datepicker" data-date-autoclose="true" />
+                                <input type="text" class="form-control" placeholder="Select resolution date"
+                                    name="resolutionDate" value="{{ old('resolutionDate') }}"
+                                    data-date-format="dd/mm/yyyy" data-provide="datepicker"
+                                    data-date-autoclose="true" />
                                 <div class="invalid-feedback">Please select resolution date.</div>
                             </div>
                         </div>
@@ -157,5 +163,22 @@
         </form>
 
     </div>
+    @push('scripts')
+        <script src="https://cdn.tiny.cloud/1/ynbajxrf957pph9rrymxt50tc689r3r3ccj4iyfnlr7j0n6p/tinymce/7/tinymce.min.js"
+            referrerpolicy="origin"></script>
+        <script>
+            tinymce.init({
+                selector: 'textarea#exception',
+                plugins: 'table lists',
+                toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist',
+                setup: function(editor) {
+                    // This ensures the content is synced on submit
+                    editor.on('change', function() {
+                        editor.save();
+                    });
+                }
+            });
+        </script>
+    @endpush
 
 </x-base-layout>
