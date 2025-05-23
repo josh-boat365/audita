@@ -41,6 +41,8 @@
 
     <!-- Plugins css -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="{{ asset('assets/libs/bootstrap-editable/css/bootstrap-editable.css') }}" rel="stylesheet" type="text/css" />
+
 
     {{--  Custom Styles  --}}
     <style>

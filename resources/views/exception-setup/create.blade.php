@@ -20,12 +20,18 @@
                     <div class="card">
                         <div class="card-body">
 
-                            {{--  WYISWYG Editor  --}}
                             <div class="mb-3">
-                                <label class="form-label">Exception<span class="required">*</span></label>
-                                <textarea class="form-control" rows="3" id="exception" name="exception"
-                                    placeholder="Enter exception title and details......" required>{{ old('exception') }}</textarea>
-                                <div class="invalid-feedback">Please enter an exception.</div>
+                                <label class="form-label">Exception Title<span class="required">*</span></label>
+                                <textarea class="form-control" rows="3"  name="title"
+                                    placeholder="Enter exception title......" required>{{ old('title') }}</textarea>
+                                <div class="invalid-feedback">Please enter exception title.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Exception Description<span class="required">*</span></label>
+                                <textarea class="form-control" rows="3" id="exception_description" name="description"
+                                    placeholder="Enter exception description......" required>{{ old('description') }}</textarea>
+                                <div class="invalid-feedback">Please enter an exception description.</div>
                             </div>
 
                             <div class="mb-3">
@@ -163,22 +169,6 @@
         </form>
 
     </div>
-    @push('scripts')
-        <script src="https://cdn.tiny.cloud/1/ynbajxrf957pph9rrymxt50tc689r3r3ccj4iyfnlr7j0n6p/tinymce/7/tinymce.min.js"
-            referrerpolicy="origin"></script>
-        <script>
-            tinymce.init({
-                selector: 'textarea#exception',
-                plugins: 'table lists',
-                toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist',
-                setup: function(editor) {
-                    // This ensures the content is synced on submit
-                    editor.on('change', function() {
-                        editor.save();
-                    });
-                }
-            });
-        </script>
-    @endpush
+
 
 </x-base-layout>

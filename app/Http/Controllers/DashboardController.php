@@ -378,6 +378,10 @@ class DashboardController extends Controller
     {
         $access_token = session('api_token');
 
+        if (!$access_token) {
+            return redirect()->back()->with('toast_error', 'Access token is missing. Please log in again.');
+        }
+
         try {
             // Fetch all necessary data
             $reports = collect(ReportsController::getAllReports());

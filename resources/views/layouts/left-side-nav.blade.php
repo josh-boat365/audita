@@ -58,13 +58,13 @@
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('exception.list') }}" key="list">List</a></li>
-                        <li><a href="{{ route('exception.create') }}" key="create">Create</a></li>
+                        <li><a href="{{ route('exception.create') }}" key="create">Internal Control Create</a></li>
+                        <li><a href="{{ route('audit.create') }}" key="create">Audit Create</a></li>
                         <li>
                             <a href="{{ route('exception.pending') }}" key="create">
                                 Pending
                                 @if ($pending_exception_count >= 0)
-                                    <span
-                                        class="badge rounded-full bg-danger">{{ $pending_exception_count }}</span>
+                                    <span class="badge rounded-full bg-danger">{{ $pending_exception_count }}</span>
                                 @else
                                     <span></span>
                                 @endif
@@ -96,6 +96,20 @@
                 </li>  --}}
 
                 @if (in_array($employeeRoleId, $topManagers) || in_array($employeeDepartmentId, $auditorDepartments))
+                    <li>
+                        <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                            <i class="bx bx-check-square"></i>
+                            <span key="t-dashboards">Approvals</span>
+                        </a>
+                        <ul class="sub-menu" aria-expanded="false">
+                            <li>
+                                <a href="{{ route('exception.supervisor.list') }}">Supervisor's Approval
+
+                                </a>
+                            </li>
+                            <li><a href="{{ route('exception.auditor.list') }}">Auditor's Approval</a></li>
+                        </ul>
+                    </li>
                     <li>
                         <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
                             <i class="bx bx-file"></i>
