@@ -52,6 +52,21 @@
                 </li>
 
                 <li>
+                    <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                        <i class="bx bx-detail"></i>
+                        <span key="t-dashboards">Branch Exceptions</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li>
+                            <a href="{{ route('auditee.exception.list') }}">List
+
+                            </a>
+                        </li>
+                        {{--  <li><a href="{{ route('exception.auditor.list') }}">Status</a></li>  --}}
+                    </ul>
+                </li>
+
+                <li>
                     <a href="#" class="has-arrow waves-effect" aria-label="Setup Menu">
                         <i class="bx bxs-file"></i>
                         <span key="setup">Exception Setup</span>

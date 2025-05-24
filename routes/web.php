@@ -106,8 +106,11 @@ Route::post('/exception/{id}/comment-edit', [ExceptionController::class, 'update
 
 //EXCEPTION APPROVALS
 Route::get('/exception/supervisor-approval-list', [ExceptionApprovalController::class, 'exceptionSupList'])->name('exception.supervisor.list');
+Route::get('/exception/supervisor/show-branch-exception-list', [ExceptionApprovalController::class, 'showBranchExcepitonListForApproval'])->name('show.branch.exception.for.approval');
 Route::get('/exception/{id}/open-supervisor-approval', [ExceptionApprovalController::class, 'supEditException'])->name('exception.supervisor.edit');
 Route::get('/exception/auditor-approval-list', [ExceptionApprovalController::class, 'exceptionAudList'])->name('exception.auditor.list');
+Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
+Route::get('/exception/auditee/open-exception-list', [ExceptionApprovalController::class, 'auditeeExceptionView'])->name('auditee.exception.view');
 
 
 //REPORTS
@@ -121,6 +124,7 @@ Route::post('/audit/create', [AuditCreateController::class, 'storeAudit'])->name
 Route::get('/audit/{id}/open', [AuditCreateController::class, 'editAudit'])->name('audit.edit');
 Route::post('/audit/{id}/update', [AuditCreateController::class, 'updateAudit'])->name('audit.update');
 Route::post('/audit/{id}/delete', [AuditCreateController::class, 'destroyAudit'])->name('audit.delete');
+
 
 
 
