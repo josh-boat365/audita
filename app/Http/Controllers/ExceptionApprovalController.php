@@ -10,7 +10,33 @@ class ExceptionApprovalController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function exceptionSupList(Request $request)
+    public function exceptionSupList()
+    {
+
+        return view('exception-setup.supervisor-approval-list');
+    }
+
+    public function showBranchExcepitonListForApproval()
+    {
+
+        return view('exception-setup.branch-exception-list-for-approval');
+    }
+
+    public function auditeeExceptionList(){
+
+        return view('exception-setup.auditee-exception-list');
+    }
+
+
+    public function auditeeExceptionView(){
+
+        return view('exception-setup.auditee-exception-view');
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function exceptionAudList(Request $request)
     {
         $access_token = session('api_token');
 
@@ -25,14 +51,6 @@ class ExceptionApprovalController extends Controller
         $exceptions = ExceptionController::paginate($sortDescending, 15, $request);
 
         return view('exception-setup.supervisor-approval-list', compact('exceptions', 'employeeId'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function exceptionAudList($id)
-    {
-        return view('exception-setup.auditor-approval-list');
     }
 
     public function supEditException($id)
