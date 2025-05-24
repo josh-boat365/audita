@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
 
 
@@ -35,7 +36,7 @@ class AuthController extends Controller
 
         // Prepare data for the API request
         $data = [
-            'appName' => 'Appraisal',
+            'appName' => 'Auditor',
             'user' => $request->input('username'),
             'password' => $request->input('password'),
             'validateAppAcess' => true
@@ -43,6 +44,8 @@ class AuthController extends Controller
 
 
         try {
+            //http://bp-ho-gcupdate.Bestpointgh.com:8093/verification/LocalAccount/UserNameOrPhoneOrEmailAndPassword
+            //http://192.168.1.200:5126/Auditor/Login
             // Send the POST request to the API
             $response = Http::withoutVerifying()->post('http://bp-ho-gcupdate.Bestpointgh.com:8093/verification/LocalAccount/UserNameOrPhoneOrEmailAndPassword', $data);
 
@@ -116,6 +119,14 @@ class AuthController extends Controller
     }
 
 
+
+    /**
+     * Handle the incoming request to get the auth token.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+
     public function getAuthToken(Request $request)
     {
         try {
@@ -137,25 +148,40 @@ class AuthController extends Controller
             ];
 
             // Additional logic like user session creation or updating records can go here
-
+            session([
+                'api_token'   => $userData['api_token'],
+                'user_name'   => $userData['user_name'],
+                'user_email'  => $userData['user_email'],
+                'employee_id' => $userData['employee_id'],
+            ]);
             // Return a JSON response back to the requester
-            return response()->json([
-                'message' => 'User authenticated successfully',
-                'data'    => $userData,
-            ], 200);
-            
+            // return response()->json([
+            //     'message' => 'User authenticated successfully',
+            //     'data'    => $userData,
+            // ], 200);
+
+            $topManagers = [1, 2, 4];
+            $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+            $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+
+            if (in_array($employeeRoleId, $topManagers)) {
+                return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');
+            }
+
+            return redirect()->route('my.group.dashboard', $employeeId)->with('toast_success', 'Logged in successfully');
+
         } catch (ValidationException $e) {
             // Catch and return validation errors in a structured format
-            return response()->json([
-                'error'   => 'Validation failed',
-                'details' => $e->errors(),
-            ], 422);
+            Log::error('Validation error', [
+                'errors' => $e->errors(),
+            ]);
+            return redirect()->back()->with('toast_error', 'Validation failed. Please check your input.');
         } catch (\Exception $e) {
             // Catch any other exceptions and return an error message
-            return response()->json([
-                'error'   => 'An error occurred',
-                'details' => $e->getMessage(),
-            ], 500);
+            Log::error('Error during authentication', [
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->back()->with('toast_error', 'An error occurred. Please try again later.');
         }
     }
 

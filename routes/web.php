@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditCreateController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UnitController;
@@ -12,9 +13,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExceptionController;
 use App\Http\Controllers\ProcessTypeController;
 use App\Http\Controllers\GroupMembersController;
+use App\Http\Controllers\ExceptionApprovalController;
 
 
-
+Route::post('/getAuthAPIToken', [AuthController::class, 'getAuthToken']);
 
 // Route::middleware(['guest'])->group(
 // function () {
@@ -102,9 +104,27 @@ Route::post('/exception/{id}/comment', [ExceptionController::class, 'storeCommen
 Route::post('/exception/{id}/comment-delete', [ExceptionController::class, 'deleteComment'])->name('exception.comment.delete');
 Route::post('/exception/{id}/comment-edit', [ExceptionController::class, 'updateComment'])->name('exception.comment.edit');
 
+//EXCEPTION APPROVALS
+Route::get('/exception/supervisor-approval-list', [ExceptionApprovalController::class, 'exceptionSupList'])->name('exception.supervisor.list');
+Route::get('/exception/supervisor/show-branch-exception-list', [ExceptionApprovalController::class, 'showBranchExcepitonListForApproval'])->name('show.branch.exception.for.approval');
+Route::get('/exception/{id}/open-supervisor-approval', [ExceptionApprovalController::class, 'supEditException'])->name('exception.supervisor.edit');
+Route::get('/exception/auditor-approval-list', [ExceptionApprovalController::class, 'exceptionAudList'])->name('exception.auditor.list');
+Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
+Route::get('/exception/auditee/open-exception-list', [ExceptionApprovalController::class, 'auditeeExceptionView'])->name('auditee.exception.view');
+
+
 //REPORTS
 Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
 Route::get('/reports/{id}/download', [ReportsController::class, 'download'])->name('reports.download');
+
+
+//AUDIT CREATE
+Route::get('/audit/create', [AuditCreateController::class, 'index'])->name('audit.create');
+Route::post('/audit/create', [AuditCreateController::class, 'storeAudit'])->name('audit.post');
+Route::get('/audit/{id}/open', [AuditCreateController::class, 'editAudit'])->name('audit.edit');
+Route::post('/audit/{id}/update', [AuditCreateController::class, 'updateAudit'])->name('audit.update');
+Route::post('/audit/{id}/delete', [AuditCreateController::class, 'destroyAudit'])->name('audit.delete');
+
 
 
 
