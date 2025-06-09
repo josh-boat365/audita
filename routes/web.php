@@ -76,6 +76,11 @@ Route::get('/process-type/{id}/edit', [ProcessTypeController::class, 'edit'])->n
 Route::post('/process-type/{id}/update', [ProcessTypeController::class, 'update'])->name('process-type.update');
 Route::post('/process-type/{id}/delete', [ProcessTypeController::class, 'destroy'])->name('process-type.delete');
 
+//SUB PROCESS TYPE SETUP
+Route::post('/sub-process-type', [ProcessTypeController::class, 'storeSubProcess'])->name('sub.process.type');
+Route::get('/get-sub-process-types/{processTypeId}', [ProcessTypeController::class, 'getSubProcessTypesByProcessTypeId'])->name('get.subProcessTypes');
+
+
 //RISK RATE SETUP
 Route::get('/risk-rate', [RiskRateController::class, 'index'])->name('risk-rate');
 Route::post('/risk-rate', [RiskRateController::class, 'store'])->name('risk-rate.post');
@@ -120,7 +125,8 @@ Route::get('/reports/{id}/download', [ReportsController::class, 'download'])->na
 
 //AUDIT CREATE
 Route::get('/audit/create', [AuditCreateController::class, 'index'])->name('audit.create');
-Route::post('/audit/create', [AuditCreateController::class, 'storeAudit'])->name('audit.post');
+Route::post('/audit/bulk-exceptions/create', [AuditCreateController::class, 'store'])->name('bulk.exception.create');
+Route::post('/audit/create', [AuditCreateController::class, 'store'])->name('audit.post');
 Route::get('/audit/{id}/open', [AuditCreateController::class, 'editAudit'])->name('audit.edit');
 Route::post('/audit/{id}/update', [AuditCreateController::class, 'updateAudit'])->name('audit.update');
 Route::post('/audit/{id}/delete', [AuditCreateController::class, 'destroyAudit'])->name('audit.delete');
