@@ -73,6 +73,49 @@ class ProcessTypeController extends Controller
         }
     }
 
+
+
+    public function storeSubProcess(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'processTypeId' => 'required|integer',
+            'active' => 'required|integer',
+        ]);
+
+        $access_token = session('api_token');
+
+        $data = [
+            'name' => $request->input('name'),
+            'processTypeId' => $request->input('processTypeId'),
+            'active' => $request->input('active') == 1 ? true : false,
+        ];
+
+        try {
+            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/SubProcessType', $data);
+
+            if ($response->successful()) {
+
+                return redirect()->back()->with('toast_success', 'Sub Process Type created successfully');
+            } else {
+                // Log the error response
+                Log::error('Failed to create sub process type', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to create sub process type');
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception occurred while creating sub process type', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+        }
+    }
+
+
+
     /**
      * Display the specified resource.
      */
@@ -215,6 +258,106 @@ class ProcessTypeController extends Controller
 
         return $processType;
     }
+
+
+    public static function getSubProcessTypes()
+    {
+        $access_token = session('api_token');
+
+        try {
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/SubProcessType');
+
+            if ($response->successful()) {
+                $processType = $response->object() ?? [];
+            } elseif ($response->status() == 404) {
+                $processType = [];
+                Log::warning('Process Type API returned 404 Not Found');
+                toast('Sub Process Type data not found', 'warning');
+            } else {
+
+                $processType = [];
+                Log::error('Sub Process Type API request failed', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+                toast('Error fetching sub process type data', 'error');
+            }
+        } catch (\Exception $e) {
+            $processType = [];
+            Log::error('Error fetching sub process type data', ['error' => $e->getMessage()]);
+            toast('Error fetching sub process type data', 'error');
+        }
+
+        return $processType;
+    }
+
+
+    // public static function getSubProcessTypesByProcessTypeId($processTypeId)
+    // {
+    //     $access_token = session('api_token');
+
+    //     try {
+    //         $response = Http::withToken($access_token)->get(
+    //             'http://192.168.1.200:5126/Auditor/SubProcessType',$processTypeId
+    //         );
+    //         if ($response->successful()) {
+
+    //             $subProcessTypes = $response->object() ?? [];
+    //             //pluck by processTypeId
+    //             $subProcessTypes = collect($subProcessTypes)->where('processTypeId', $processTypeId)->values()->all() ?? [];
+
+    //         } elseif ($response->status() == 404) {
+    //             $subProcessTypes = [];
+    //             Log::warning('Sub Process Type API returned 404 Not Found');
+    //             toast('Sub Process Type data not found', 'warning');
+    //         } else {
+
+    //             $subProcessTypes = [];
+    //             Log::error('Sub Process Type API request failed', [
+    //                 'status' => $response->status(),
+    //                 'response' => $response->body()
+    //             ]);
+    //             toast('Error fetching sub process type data', 'error');
+    //         }
+    //     } catch (\Exception $e) {
+    //         $subProcessTypes = [];
+    //         Log::error('Error fetching sub process type data', ['error' => $e->getMessage()]);
+    //         toast('Error fetching sub process type data', 'error');
+    //     }
+    //      // return $subProcessTypes;
+    //     return response()->json($subProcessTypes);
+    // }
+
+    public static function getSubProcessTypesByProcessTypeId($processTypeId = null)
+    {
+        $access_token = session('api_token');
+
+        try {
+            $response = Http::withToken($access_token)->get(
+                'http://192.168.1.200:5126/Auditor/SubProcessType'
+            );
+
+            if ($response->successful()) {
+                $allSubProcessTypes = $response->json() ?? [];
+
+                // If specific processTypeId requested, filter results
+                if ($processTypeId) {
+                    $filtered = array_filter($allSubProcessTypes, function ($item) use ($processTypeId) {
+                        return $item['processTypeId'] == $processTypeId;
+                    });
+                    return response()->json(array_values($filtered));
+                }
+
+                return response()->json($allSubProcessTypes);
+            }
+
+            return response()->json([], $response->status());
+        } catch (\Exception $e) {
+            return response()->json([], 500);
+        }
+    }
+
+
     public function getAProcessType($id)
     {
         $access_token = session('api_token');
