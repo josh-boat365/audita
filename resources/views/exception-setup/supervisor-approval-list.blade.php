@@ -1,4 +1,7 @@
 <x-base-layout>
+    @php
+        $status = 'PENDING';
+    @endphp
     <div class="container-fluid px-1">
 
         <!-- start page title -->
@@ -24,89 +27,52 @@
                         <th>Auditor</th>
                         <th>Branch</th>
                         <th>Department</th>
+                        <th>Date</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-
-                    <tr>
-                        <th scope="row"><a href="#">Micheal Asenso</a></th>
-
-
-                        <td>
-                            <span class="dropdown badge rounded-pill bg-primary">
-                                Sweduru
-                            </span>
-                        </td>
-                        <td> Operations </td>
-                        <td> <span class="dropdown badge rounded-pill bg-success }}">
-                                Pending Supervisor Approval
-                            </span>
-                        </td>
-
-                        <td>
-                            <div class="d-flex gap-3">
-                                <a href="{{ route('show.branch.exception.for.approval') }}">
-                                    <span class="badge round bg-primary font-size-13"><i
-                                            class="bx bxs-pencil"></i>open</span>
-                                </a>
-
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <th scope="row"><a href="#">Frimpong Agyei</a></th>
+                    @forelse ($pendingExceptions as $exception)
+                        <tr>
+                            <th scope="row"><a href="#">{{ $exception['submittedBy'] }}</a></th>
 
 
-                        <td>
-                            <span class="dropdown badge rounded-pill bg-primary">
-                                Sweduru
-                            </span>
-                        </td>
-                        <td> Finance </td>
-                        <td> <span class="dropdown badge rounded-pill bg-success }}">
-                                Pending Supervisor Approval
-                            </span>
-                        </td>
+                            <td>
+                                <span class="dropdown badge rounded-pill bg-primary">
+                                    {{ $exception['groupName'] }}
+                                </span>
+                            </td>
+                            <td> {{ $exception['department'] }} <span class="dropdown badge rounded-pill bg-dark">
+                                    {{ $exception['exceptionCount'] }}
+                                </span> </td>
+                            <td> {{ Carbon\Carbon::parse($exception['submittedAt'])->format('jS F, Y ') }} </td>
+                            <td> <span class="dropdown badge rounded-pill bg-success ">
+                                    {{ $exception['status'] }}
+                                </span>
+                            </td>
 
-                        <td>
-                            <div class="d-flex gap-3">
-                                <a href="{{ route('show.branch.exception.for.approval') }}">
-                                    <span class="badge round bg-primary font-size-13"><i
-                                            class="bx bxs-pencil"></i>open</span>
-                                </a>
+                            <td>
+                                <div class="d-flex gap-3">
+                                    <a
+                                        href="{{ url("/exception/supervisor/show-exception-list-for-approval/{$exception['id']}/{$exception['status']}") }}">
+                                        <span class="badge round bg-primary font-size-13"><i
+                                                class="bx bxs-pencil"></i>open</span>
+                                    </a>
 
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row"><a href="#">Dennis Appiah</a></th>
+                                </div>
+                            </td>
+                        </tr>
 
-
-                        <td>
-                            <span class="dropdown badge rounded-pill bg-primary">
-                                Sweduru
-                            </span>
-                        </td>
-                        <td> Business </td>
-                        <td> <span class="dropdown badge rounded-pill bg-success }}">
-                                Pending Supervisor Approval
-                            </span>
-                        </td>
-
-                        <td>
-                            <div class="d-flex gap-3">
-                                <a href="{{ route('show.branch.exception.for.approval') }}">
-                                    <span class="badge round bg-primary font-size-13"><i
-                                            class="bx bxs-pencil"></i>open</span>
-                                </a>
-
-                            </div>
-                        </td>
-                    </tr>
-
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bx bx-file fs-1 text-muted"></i>
+                                <p class="mb-0">No pending exceptions for <b>APPROVAL</b> from <b>AUDITOR</b></p>
+                                <small>All exceptions have been processed</small>
+                            </td>
+                        </tr>
+                    @endforelse
 
                 </tbody>
             </table>
