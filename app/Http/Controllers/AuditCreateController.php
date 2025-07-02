@@ -14,7 +14,11 @@ class AuditCreateController extends Controller
      */
     public function index()
     {
-        // Convert all data to Collections for consistent handling
+        $access_token = session('api_token');
+        if (empty($access_token)) {
+            return redirect()->back()->with('toast_warning', 'Session Expired, Kindly Login Again');
+        }
+
         $departments = ExceptionController::departmentData();
         $batches = BatchController::getBatches();
         $processTypes = ProcessTypeController::getProcessTypes();
@@ -86,8 +90,8 @@ class AuditCreateController extends Controller
                 'exception' => $exception['exception'],
                 'status' => 'PENDING', // Default status,
                 'subProcessTypeId' => $exception['subProcessTypeId'],
-                'departmentId' => $request->input('departmentId'), // Assuming same department for all
-                'exceptionBatchId' => $request->input('exceptionBatchId') // Assuming same batch for all
+                'departmentId' => $request->input('departmentId'),
+                'exceptionBatchId' => $request->input('exceptionBatchId')
             ];
         }
 
@@ -102,7 +106,7 @@ class AuditCreateController extends Controller
                 Log::error('Failed to create bulk exceptions', [
                     'status' => $response->status(),
                     'response' => $response->body(),
-                    'request_data' => $data // Log the data we sent for debugging
+                    'request_data' => $data
                 ]);
 
                 return redirect()->back()
