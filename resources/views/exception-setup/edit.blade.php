@@ -230,7 +230,7 @@
                             method="POST" enctype="multipart/form-data">
                             @csrf
                             <label class="form-label">Attach Files</label>
-                            <div class="dropzone" id="myId">
+                            <div class="dropzone file-upload-dropzone">
                                 <div class="dz-message needsclick">
                                     <div class="mb-3">
                                         <i class="display-4 text-muted bx bxs-cloud-upload"></i>
@@ -640,12 +640,12 @@
 
     </div>
     @push('scripts')
-        <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        {{--  <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>  --}}
 
         <script>
             Dropzone.autoDiscover = false;
-            var myDropzone = new Dropzone("#myId", {
+            var myDropzone = new Dropzone("#file-upload-dropzone", {
                 url: "{{ route('exception.file.upload', $exception->id) }}",
                 paramName: "files[]",
                 maxFilesize: 5,
@@ -754,9 +754,6 @@
                     }
                 });
             }
-
-
-
 
 
             //Delete exception files
