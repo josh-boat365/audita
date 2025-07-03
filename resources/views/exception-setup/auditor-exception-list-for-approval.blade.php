@@ -139,15 +139,15 @@
                             </td>
                             <td>
                                 <div class="d-flex gap-2">
-                                    {{--  <button type="button" class="btn btn-secondary btn-sm push-for-amendment-btn"
+                                    <button type="button" class="btn btn-success btn-sm save-edit-btn"
                                         data-exception-id="{{ $exceptionItem->id }}">
-                                        <i class="bx bx-check"></i> Push for Edit
-                                    </button>  --}}
-                                    <button type="button" class="btn btn-danger btn-sm decline-btn"
+                                        <i class="bx bx-save"></i> Save Edit
+                                    </button>
+                                    {{--  <button type="button" class="btn btn-danger btn-sm decline-btn"
                                         data-exception-id="{{ $exceptionItem->id }}" data-bs-toggle="modal"
                                         data-bs-target="#declineModal">
                                         <i class="bx bx-x"></i> Decline
-                                    </button>
+                                    </button>  --}}
                                 </div>
                             </td>
                         </tr>
@@ -238,20 +238,20 @@
                 });
 
                 // SUB-EXCPETION STATUSES -  individual rows
-                document.querySelectorAll('.push-for-amendment-btn').forEach(btn => {
+                document.querySelectorAll('.save-edit-btn').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const exceptionId = this.getAttribute('data-exception-id');
 
                         Swal.fire({
-                            title: 'Confirm To Push Exception for Amendment',
-                            text: 'Are you sure you want to push this exception for amendment?',
+                            title: 'Confirm Save',
+                            text: 'Are you sure you want to save this new changes?',
                             icon: 'question',
                             showCancelButton: true,
-                            confirmButtonText: 'Yes, push for amendment',
+                            confirmButtonText: 'Yes, Save Edit',
                             cancelButtonText: 'Cancel'
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                submitExceptionAction(exceptionId, 'AMENDMENT');
+                                submitExceptionAction(exceptionId, 'PENDING');
                             }
                         });
                     });
@@ -377,7 +377,7 @@
                     };
 
                     // Show loading indicator
-                    const buttons = row.find('.push-for-amendment-btn, .decline-btn');
+                    const buttons = row.find('.save-edit-btn, .decline-btn');
                     buttons.prop('disabled', true).html('<i class="bx bx-loader bx-spin"></i> Processing');
 
                     $.ajax({
@@ -438,7 +438,7 @@
                         complete: function() {
                             buttons.prop('disabled', false)
                                 .html(function() {
-                                    return $(this).hasClass('push-for-amendment-btn') ?
+                                    return $(this).hasClass('save-edit-btn') ?
                                         '<i class="bx bx-check"></i> Push for Edit' :
                                         '<i class="bx bx-x"></i> Decline';
                                 });
