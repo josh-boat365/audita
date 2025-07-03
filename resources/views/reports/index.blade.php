@@ -1,11 +1,9 @@
 <x-base-layout>
     <link rel="stylesheet" href="https://cdn.datatables.net/2.2.2/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
-
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <div class="container-fluid px-1">
-        <!-- start page title -->
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
@@ -13,82 +11,93 @@
                 </div>
             </div>
         </div>
-        <!-- end page title -->
-        {{--  {{ dd($reports) }}  --}}
-        {{--  <div class="row">
-            <div class="col-12">
-                <form id="filterForm" method="POST" action="">
-                    @csrf
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row align-items-center g-2">
-                                <!-- Batch Filter -->
-                                <div class="col-md-3">
-                                    <label for="batchFilter" class="form-label">Exception</label>
-                                    <select id="batchFilter" class="select2 form-control" name="batchId"
-                                        data-placeholder="Choose ...">
-                                        <option value="">Select ....</option>
-
-                                        <option value="">Batch Name</option>
-
-                                    </select>
-                                </div>
-                                <!-- Department Filter -->
-                                <div class="col-md-3">
-                                    <label for="departmentFilter" class="form-label">Department</label>
-                                    <select id="departmentFilter" class="select2 form-control" name="departmentId"
-                                        data-placeholder="Choose ...">
-                                        <option value="">Select ....</option>
-
-                                        <option value="">
-                                            department name</option>
-
-                                    </select>
-                                </div>
-                                <!-- KPI Filter -->
-                                <div class="col-md-3">
-                                    <label for="kpiFilter" class="form-label">Group</label>
-                                    <select id="kpiFilter" class="select2 form-control" name="kpiId"
-                                        data-placeholder="Choose ...">
-                                        <option value="">Select ....</option>
-
-                                        <option value="">kpi name</option>
-
-                                    </select>
-                                </div>
-                                <!-- Employee Filter -->
-                                <div class="col-md-3">
-                                    <label for="employeeFilter" class="form-label">Auditor</label>
-                                    <select id="employeeFilter" class="select2 form-control" name="employeeId"
-                                        data-placeholder="Choose ...">
-                                        <option value="">Select ....</option>
-
-                                        <option value="">
-                                            employee name</option>
-
-                                    </select>
-                                </div>
-                                <!-- Buttons -->
-                                <div class="col-12 mt-3 d-flex justify-content-end gap-2">
-                                    <button id="filterButton" type="submit" class="btn btn-success">
-                                        <i class="bx bx-filter-alt"></i> Filter
-                                    </button>
-                                    <a href="" class="btn btn-primary">
-                                        <i class="bx bx-rotate-left"></i> Refresh
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>  --}}
-
     </div>
 
     <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
 
-
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Export Filters</h4>
+                    <form id="exportFilters">
+                        <div class="row">
+                            <!-- Existing filters -->
+                            <div class="col-md-2">
+                                <label for="batchFilter" class="form-label">Batch</label>
+                                <select id="batchFilter" class="form-select">
+                                    <option value="">All Batches</option>
+                                    @foreach ($batches as $batch)
+                                        <option value="{{ $batch->id }}">{{ $batch->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="branchFilter" class="form-label">Branch</label>
+                                <select id="branchFilter" class="form-select">
+                                    <option value="">All Branches</option>
+                                    @foreach (array_unique(array_column($groups, 'branchName')) as $branchName)
+                                        <option value="{{ $branchName }}">{{ $branchName }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="auditorFilter" class="form-label">Auditor</label>
+                                <select id="auditorFilter" class="form-select">
+                                    <option value="">All Auditors</option>
+                                    @foreach (array_unique(array_column($reports, 'auditorName')) as $auditor)
+                                        @if ($auditor)
+                                            <option value="{{ $auditor }}">{{ $auditor }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="statusFilter" class="form-label">Status</label>
+                                <select id="statusFilter" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    @foreach (array_unique(array_column($reports, 'status')) as $status)
+                                        @if ($status)
+                                            <option value="{{ $status }}">{{ $status }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                            <!-- New Risk Rate Filter -->
+                            <div class="col-md-2">
+                                <label for="riskRateFilter" class="form-label">Risk Rate</label>
+                                <select id="riskRateFilter" class="form-select">
+                                    <option value="">All Risk Rates</option>
+                                    @foreach (array_unique(array_column($reports, 'riskRate')) as $rate)
+                                        @if ($rate)
+                                            <option value="{{ $rate }}">{{ $rate }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-3">
+                                <label for="dateFromFilter" class="form-label">From Date</label>
+                                <input type="text" id="dateFromFilter" class="form-control datepicker"
+                                    placeholder="Select start date">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="dateToFilter" class="form-label">To Date</label>
+                                <input type="text" id="dateToFilter" class="form-control datepicker"
+                                    placeholder="Select end date">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" id="resetFilters" class="btn btn-secondary">Reset
+                                    Filters</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-12">
@@ -99,8 +108,8 @@
                         <table id="reportsTable" class="table table-bordered table-striped table-hover">
                             <thead>
                                 <tr>
-                                    <th class="col-3">Exception</th>
-                                    <th class="col-3">Root Cause</th>
+                                    <th>Exception</th>
+                                    <th>Root Cause</th>
                                     <th>Participants</th>
                                     <th>Process Type</th>
                                     <th>Risk Rate</th>
@@ -113,7 +122,21 @@
                             </thead>
                             <tbody>
                                 @forelse ($reports as $report)
-                                    <tr>
+                                    <tr data-batch="{{ $report->exceptionBatchId }}"
+                                        data-branch="@php
+foreach ($batches as $batch) {
+                                                if ($batch->id == $report->exceptionBatchId) {
+                                                    foreach ($groups as $group) {
+                                                        if ($group->id == $batch->activityGroupId) {
+                                                            echo $group->branchName;
+                                                            break;
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            } @endphp"
+                                        data-auditor="{{ $report->auditorName }}" data-status="{{ $report->status }}"
+                                        data-occurrence-date="{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : '' }}">
                                         <td>{{ $report->exception ?? 'N/A' }}</td>
                                         <td>{{ $report->rootCause ?? 'N/A' }}</td>
                                         <td>
@@ -124,7 +147,6 @@
                                         <td>{{ $report->riskRate ?? 'N/A' }}</td>
                                         <td>
                                             @php
-                                                // Get branch name from exception batch data
                                                 $branchName = 'N/A';
                                                 foreach ($batches as $batch) {
                                                     if ($batch->id == $report->exceptionBatchId) {
@@ -157,8 +179,7 @@
                     </div>
                 </div>
             </div>
-        </div> <!-- end col -->
-    </div>
+        </div>
     </div>
 
     @push('scripts')
@@ -169,30 +190,70 @@
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
-
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
         <script>
             $(document).ready(function() {
-                $('#reportsTable').DataTable({
+                // Initialize date picker
+                flatpickr('.datepicker', {
+                    dateFormat: 'Y-m-d',
+                    allowInput: true
+                });
+
+                // Initialize DataTable
+                var table = $('#reportsTable').DataTable({
                     dom: 'Bfrtip',
                     buttons: [{
                             extend: 'excelHtml5',
                             text: 'Export to Excel',
                             title: 'Exceptions Report',
                             exportOptions: {
-                                // Export only visible columns
                                 columns: ':visible',
-                                // Export only filtered data if search is applied
                                 modifier: {
+                                    // This ensures we export only what's visible in the table
                                     search: 'applied',
-                                    order: 'applied'
+                                    order: 'applied',
+                                    page: 'all',
+                                    // Custom filter to match our applied filters
+                                    filter: 'applied'
+                                },
+                                // Customize the data being exported
+                                format: {
+                                    body: function(data, row, column, node) {
+                                        return data;
+                                    }
                                 }
+                            },
+                            customize: function(xlsx) {
+                                // Add filter information to the exported file
+                                var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                                $('row:first c', sheet).attr('s', '2'); // Header styling
+                            },
+                            filename: function() {
+                                // Dynamic filename based on filters
+                                let filename = 'Exceptions_Report';
+                                const batch = $('#batchFilter').val();
+                                const branch = $('#branchFilter').val();
+                                const auditor = $('#auditorFilter').val();
+                                const status = $('#statusFilter').val();
+                                const riskRate = $('#riskRateFilter').val();
+                                const dateFrom = $('#dateFromFilter').val();
+                                const dateTo = $('#dateToFilter').val();
+
+                                if (batch) filename += `_Batch-${batch}`;
+                                if (branch) filename += `_Branch-${branch}`;
+                                if (auditor) filename += `_Auditor-${auditor}`;
+                                if (status) filename += `_Status-${status}`;
+                                if (riskRate) filename += `_Risk-${riskRate}`;
+                                if (dateFrom) filename += `_From-${dateFrom}`;
+                                if (dateTo) filename += `_To-${dateTo}`;
+
+                                return filename;
                             }
                         },
                         {
                             extend: 'colvis',
-                            text: 'Column Visibility',
-                            columns: ':not(.noVis)' // Exclude columns you don't want to be hideable
+                            text: 'Column Visibility'
                         }
                     ],
                     responsive: true,
@@ -202,7 +263,7 @@
                         [10, 25, 50, 100, "All"]
                     ],
                     columnDefs: [{
-                            targets: [0, 1], // Exception and Root Cause columns
+                            targets: [0, 1],
                             render: function(data, type, row) {
                                 if (type === 'display' && data.length > 50) {
                                     return data.substr(0, 50) + '...';
@@ -211,45 +272,78 @@
                             }
                         },
                         {
-                            targets: 5, // Branch column
-                            render: function(data, type, row) {
-                                // Format branch name if needed
-                                return data;
-                            }
-                        },
-                        {
-                            targets: [8, 9], // Date columns
+                            targets: [8, 9],
                             render: function(data, type, row) {
                                 if (type === 'display' || type === 'filter') {
                                     if (data === 'N/A') return data;
-                                    return data; // Already formatted in HTML
+                                    return data;
                                 }
                                 return data;
                             }
                         }
-                    ],
-                    initComplete: function() {
-                        // Add custom search inputs for specific columns if needed
-                        this.api().columns().every(function() {
-                            var column = this;
-                            if (column.index() === 4) { // Risk Rate column
-                                var select = $(
-                                        '<select><option value="">All Risk Rates</option></select>')
-                                    .appendTo($(column.header()))
-                                    .on('change', function() {
-                                        var val = $.fn.dataTable.util.escapeRegex(
-                                            $(this).val()
-                                        );
-                                        column.search(val ? '^' + val + '$' : '', true, false)
-                                            .draw();
-                                    });
-                                column.data().unique().sort().each(function(d, j) {
-                                    select.append('<option value="' + d + '">' + d +
-                                        '</option>');
-                                });
-                            }
-                        });
+                    ]
+                });
+
+                // Filter functions
+                // Custom filtering function that works with DataTables native filtering
+                function applyCustomFilters() {
+                    $.fn.dataTable.ext.search.push(
+                        function(settings, data, dataIndex) {
+                            const row = table.row(dataIndex).node();
+                            const rowBatch = $(row).data('batch');
+                            const rowBranch = $(row).data('branch');
+                            const rowAuditor = $(row).data('auditor');
+                            const rowStatus = $(row).data('status');
+                            const rowRiskRate = $(row).find('td:eq(4)').text().trim();
+                            const rowDate = $(row).data('occurrence-date');
+
+                            const batch = $('#batchFilter').val();
+                            const branch = $('#branchFilter').val();
+                            const auditor = $('#auditorFilter').val();
+                            const status = $('#statusFilter').val();
+                            const riskRate = $('#riskRateFilter').val();
+                            const dateFrom = $('#dateFromFilter').val();
+                            const dateTo = $('#dateToFilter').val();
+
+                            if (batch && rowBatch != batch) return false;
+                            if (branch && rowBranch != branch) return false;
+                            if (auditor && rowAuditor != auditor) return false;
+                            if (status && rowStatus != status) return false;
+                            if (riskRate && rowRiskRate != riskRate) return false;
+                            if (dateFrom && rowDate && rowDate < dateFrom) return false;
+                            if (dateTo && rowDate && rowDate > dateTo) return false;
+
+                            return true;
+                        }
+                    );
+
+                    table.draw();
+                    $.fn.dataTable.ext.search.pop(); // Remove the filter after applying
+                }
+
+                // Apply filters on change
+                $('#batchFilter, #branchFilter, #auditorFilter, #statusFilter, #riskRateFilter').on('change',
+            function() {
+                    applyCustomFilters();
+                });
+
+                $('#dateFromFilter, #dateToFilter').on('change', function() {
+                    const dateFrom = $('#dateFromFilter').val();
+                    const dateTo = $('#dateToFilter').val();
+
+                    if (dateFrom && dateTo && dateFrom > dateTo) {
+                        alert('End date must be after start date');
+                        $(this).val('');
+                        return;
                     }
+
+                    applyCustomFilters();
+                });
+
+                // Reset all filters
+                $('#resetFilters').on('click', function() {
+                    $('#exportFilters').trigger('reset');
+                    table.search('').columns().search('').draw();
                 });
             });
         </script>
