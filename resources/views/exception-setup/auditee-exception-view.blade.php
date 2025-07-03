@@ -22,10 +22,6 @@
         {{-- ========== PAGE HEADER SECTION ========== --}}
         @include('partials.auditee.page-header')
 
-        <button type="button" class="mb-4 btn btn-primary btn-rounded waves-effect waves-light float-left">
-            Push For Review
-        </button>
-
         {{-- ========== FILTER SECTION ========== --}}
         @if (!empty($pendingException) && count($exceptions) > 0)
             @include('partials.auditee.filters', [
