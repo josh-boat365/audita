@@ -172,6 +172,10 @@ class ExceptionApprovalController extends Controller
 
             // 5. Process Response Data
             $exceptions = $response->json();
+            // dd($exceptions);
+
+            $loggedInUser = ExceptionController::getLoggedInUserInformation();
+            // dd($loggedInUser->departmentId);
 
             if (!is_array($exceptions)) {
                 Log::error('Invalid API response format', ['response' => $exceptions]);
@@ -189,6 +193,7 @@ class ExceptionApprovalController extends Controller
                     'groupName' => '---',
                     'department' => '---',
                     'exceptionCount' => '---',
+                    'auditorDepartmentId' => '---', //current logged in user's department id (auditor department check)
                 ]];
             } else {
                 $pendingExceptions = collect($exceptions)
@@ -199,13 +204,16 @@ class ExceptionApprovalController extends Controller
                             in_array($exception['status'], $validParentStatuses);
                     })
                     // Transform and count nested exceptions
-                    ->map(function ($exception) {
+                    ->map(function ($exception) use($loggedInUser) {
                         $pendingCount = collect($exception['exceptions'] ?? [])
                             ->where('status', 'APPROVED')
                             // ->where('recommendedStatus', null) // Only count if recommendedStatus is null
                             ->count();
+                        $countForRespondedExceptionsByAuditee = collect($exception['exceptions'] ?? [])
+                        ->where('recommendedStatus', 'RESOLVED')
+                        ->count();
 
-                        return [
+                    return [
                             'id' => $exception['id'] ?? null,
                             'status' => $exception['status'] ?? '---',
                             'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
@@ -213,6 +221,8 @@ class ExceptionApprovalController extends Controller
                             'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
                             'department' => $exception['departmentName'] ?? 'Unknown Department',
                             'exceptionCount' => $pendingCount,
+                            'auditorDepartmentId' =>  $loggedInUser->departmentId,
+                        'countForRespondedExceptionsByAuditee' => $countForRespondedExceptionsByAuditee
                         ];
                     })
                     // Only include if at least 1 nested exception matches
@@ -965,7 +975,10 @@ class ExceptionApprovalController extends Controller
     public function showAuditorExceptionListForApproval($batchId, $status)
     {
         // Validate session
-        $this->validateSession();
+        $sessionValidation = $this->validateSession();
+        if ($sessionValidation) {
+            return $sessionValidation;
+        }
 
         // Fetch exception data
         $responseObject = $this->fetchExceptionData($batchId);
