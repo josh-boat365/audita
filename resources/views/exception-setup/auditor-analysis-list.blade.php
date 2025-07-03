@@ -1,6 +1,6 @@
 <x-base-layout>
     @php
-        $status = 'PENDING';
+        $status = 'APPROVED';
     @endphp
     <div class="container-fluid px-1">
 
@@ -8,14 +8,11 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18">List of Exceptions For Approval</h4>
+                    <h4 class="mb-sm-0 font-size-18">List of Exceptions For Your Per-view To Analyze</h4>
                 </div>
             </div>
         </div>
         <!-- end page title -->
-
-        {{--  <a href="{{ route('exception.create') }}" class="btn btn-success btn-rounded waves-effect waves-light "><i
-                class="bx bxs-plus"></i>Create</a>  --}}
 
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
 
@@ -27,7 +24,6 @@
                         <th>Auditor</th>
                         <th>Branch</th>
                         <th>Department</th>
-                        <th>Date</th>
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
@@ -68,7 +64,7 @@
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
                                 <i class="bx bx-file fs-1 text-muted"></i>
-                                <p class="mb-0">No pending exceptions for <b>APPROVAL</b> from <b>AUDITOR</b></p>
+                                <p class="mb-0">No pending exceptions for <b>RESPONSE</b> from <b>AUDITOR</b></p>
                                 <small>All exceptions have been processed</small>
                             </td>
                         </tr>

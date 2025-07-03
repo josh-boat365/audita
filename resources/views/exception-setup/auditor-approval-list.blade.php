@@ -1,6 +1,6 @@
 <x-base-layout>
     @php
-        $status = 'PENDING';
+        $status = 'AMENDMENT';
     @endphp
     <div class="container-fluid px-1">
 
@@ -8,7 +8,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18">List of Exceptions For Approval</h4>
+                    <h4 class="mb-sm-0 font-size-18">List of Exceptions For Approval From Supervisor</h4>
                 </div>
             </div>
         </div>
@@ -47,15 +47,15 @@
                                     {{ $exception['exceptionCount'] }}
                                 </span> </td>
                             <td> {{ Carbon\Carbon::parse($exception['submittedAt'])->format('jS F, Y ') }} </td>
-                            <td> <span class="dropdown badge rounded-pill bg-success ">
-                                    {{ $exception['status'] }}
+                            <td> <span class="dropdown badge rounded-pill {{ $exception['status'] === 'APPROVED' ? 'bg-dark' : ($exception['status'] === 'AMENDMENT' ? 'bg-warning' : 'bg-danger') }} ">
+                                    {{ $exception['status'] == 'APPROVED' ? 'DECLINED' : $exception['status'] }}
                                 </span>
                             </td>
 
                             <td>
                                 <div class="d-flex gap-3">
                                     <a
-                                        href="{{ url("/exception/supervisor/show-exception-list-for-approval/{$exception['id']}/{$exception['status']}") }}">
+                                        href="{{ url("/exception/auditor/show-exception-list-for-approval/{$exception['id']}/{$exception['status']}") }}">
                                         <span class="badge round bg-primary font-size-13"><i
                                                 class="bx bxs-pencil"></i>open</span>
                                     </a>
@@ -68,7 +68,7 @@
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
                                 <i class="bx bx-file fs-1 text-muted"></i>
-                                <p class="mb-0">No pending exceptions for <b>APPROVAL</b> from <b>AUDITOR</b></p>
+                                <p class="mb-0">No pending exceptions for <b>APPROVAL</b></p>
                                 <small>All exceptions have been processed</small>
                             </td>
                         </tr>

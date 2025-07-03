@@ -127,6 +127,15 @@
                     </li>
                     <li>
                         <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                            <i class="bx bx-analyse"></i>
+                            <span key="t-dashboards">Exception Analysis</span>
+                        </a>
+                        <ul class="sub-menu" aria-expanded="false">
+                            <li><a href="{{ route('auditor.analysis.exception') }}">Auditor's Analysis</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
                             <i class="bx bx-file"></i>
                             <span key="t-dashboards">Reports</span>
                         </a>
