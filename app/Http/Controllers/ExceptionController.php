@@ -247,27 +247,57 @@ class ExceptionController extends Controller
             'riskRateId' => 'nullable|integer',
             'departmentId' => 'required|integer',
             'exceptionBatchId' => 'required|integer',
+            'requestTrackerId' => 'nullable|integer',
+            'requestType' => 'nullable|string',
         ]);
+
+        // dd($request->all());
 
 
         $access_token = session('api_token');
 
-        $data = [
-            'id' => $id,
-            'exceptionTitle' => $request->input('exception'),
-            'exception' => $request->input('exception'),
-            'rootCause' => $request->input('rootCause'),
-            'status' => $request->input('status'),
-            'statusComment' => $request->input('statusComment'),
-            'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
-            'proposeResolutionDate' => $request->input('proposeResolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
-            'resolutionDate' => $request->input('resolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
-            'processTypeId' => $request->input('processTypeId'),
-            'subProcessTypeId' => $request->input('subProcessTypeId'),
-            'riskRateId' => $request->input('riskRateId'),
-            'departmentId' => $request->input('departmentId'),
-            'exceptionBatchId' => $request->input('exceptionBatchId'),
-        ];
+        if($request->input('requestType') == 'BATCH'){
+            $data = [
+                'id' => $id,
+                'exceptionTitle' => $request->input('exception'),
+                'exception' => $request->input('exception'),
+                'rootCause' => $request->input('rootCause'),
+                'status' => $request->input('status'),
+                'statusComment' => $request->input('statusComment'),
+                'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
+                'proposeResolutionDate' => $request->input('proposeResolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
+                'resolutionDate' => $request->input('resolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
+                'processTypeId' => $request->input('processTypeId'),
+                'subProcessTypeId' => $request->input('subProcessTypeId'),
+                'riskRateId' => $request->input('riskRateId'),
+                'departmentId' => $request->input('departmentId'),
+                'exceptionBatchId' => $request->input('exceptionBatchId'),
+                'requestTrackerId' => $request->input('requestTrackerId'),
+                'requestType' => $request->input('requestType'),
+            ];
+
+            // dd($data);
+
+        }else{
+            $data = [
+                'id' => $id,
+                'exceptionTitle' => $request->input('exception'),
+                'exception' => $request->input('exception'),
+                'rootCause' => $request->input('rootCause'),
+                'status' => $request->input('status'),
+                'statusComment' => $request->input('statusComment'),
+                'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
+                'proposeResolutionDate' => $request->input('proposeResolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
+                'resolutionDate' => $request->input('resolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
+                'processTypeId' => $request->input('processTypeId'),
+                'subProcessTypeId' => $request->input('subProcessTypeId'),
+                'riskRateId' => $request->input('riskRateId'),
+                'departmentId' => $request->input('departmentId'),
+                'exceptionBatchId' => $request->input('exceptionBatchId'),
+
+            ];
+        }
+
         // dd($data);
 
         try {
