@@ -16,6 +16,8 @@
                 <form action="{{ route('exception.update', $exceptionItem->id) }}" method="POST"
                     enctype="multipart/form-data" autocomplete="on" class="needs-validation">
                     @csrf
+                    <input type="hidden" name="requestType" value="BATCH">
+                    <input type="hidden" name="requestTrackerId" value="{{ $pendingException->id ?? '' }}">
                     <div class="row">
                         <div class="col-lg-8">
                             <div class="card">
@@ -62,11 +64,9 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Occurrence Date<span class="required">*</span></label>
-                                        <input type="text" class="form-control" placeholder="Select occurrence date"
-                                            name="occurrenceDate"
-                                            value="{{ $exceptionItem->occurrenceDate == null ? '' : Carbon\Carbon::parse($exceptionItem->occurrenceDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/yy" data-provide="datepicker"
-                                            data-date-autoclose="true" required />
+                                        <input type="date" class="form-control" name="resolutionDate" required
+                                            value="{{ $exceptionItem->occurrenceDate ? \Carbon\Carbon::parse($exceptionItem->occurrenceDate)->format('Y-m-d') : '' }}"
+                                            placeholder="Select resolution date" />
                                         <div class="invalid-feedback">Please select occurrence date.</div>
                                     </div>
                                 </div>
@@ -157,22 +157,19 @@
                                     <div class="mb-3">
                                         <label class="form-label">Proposed Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input type="text" class="form-control" placeholder="Select due date"
-                                            name="proposeResolutionDate"
-                                            value="{{ $exceptionItem->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exceptionItem->proposeResolutionDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/yy" data-provide="datepicker"
-                                            data-date-autoclose="true" />
-                                        <div class="invalid-feedback">Please select proposed resolution date.</div>
+                                        <input type="date" class="form-control" name="proposeResolutionDate"
+                                            value="{{ $exceptionItem->proposeResolutionDate ? \Carbon\Carbon::parse($exceptionItem->proposeResolutionDate)->format('Y-m-d') : '' }}"
+                                            placeholder="Select resolution date" />
+                                        <div class="invalid-feedback">Please select proposed Resolution Date date.
+                                        </div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input type="text" class="form-control"
-                                            placeholder="Select resolution date" name="resolutionDate"
-                                            value="{{ $exceptionItem->resolutionDate == null ? '' : Carbon\Carbon::parse($exceptionItem->resolutionDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/yy" data-provide="datepicker"
-                                            data-date-autoclose="true" />
+                                        <input type="date" class="form-control" name="resolutionDate"
+                                            value="{{ $exceptionItem->resolutionDate ? \Carbon\Carbon::parse($exceptionItem->resolutionDate)->format('Y-m-d') : '' }}"
+                                            placeholder="Select resolution date" />
                                         <div class="invalid-feedback">Please select resolution date.</div>
                                     </div>
                                 </div>

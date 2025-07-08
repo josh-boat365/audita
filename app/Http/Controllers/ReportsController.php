@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ReportsController extends Controller
 {
@@ -13,10 +14,10 @@ class ReportsController extends Controller
      */
     public function index()
     {
-        $access_token = session('api_token');
-
-        if(empty($access_token)){
-            return redirect()->back()->with('toast-warning','Session Expired, Kindly Login Again');
+        // Validate session
+        $sessionValidation = $this->validateSession();
+        if ($sessionValidation) {
+            return $sessionValidation;
         }
 
         $reports = $this->getAllReports();
@@ -54,6 +55,45 @@ class ReportsController extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
         return $Reports;
+    }
+
+
+
+
+    public function exportPdf(Request $request)
+    {
+        // Validate session
+        $sessionValidation = $this->validateSession();
+        if ($sessionValidation) {
+            return $sessionValidation;
+        }
+
+
+        $filters = json_decode($request->input('filters'), true);
+        $data = json_decode($request->input('data'), true);
+        // dd($data);
+        // Generate filename based on filters
+        $filename = 'Exceptions_Report';
+        if ($filters['batch']) $filename .= '_Batch-' . $filters['batch'];
+        if ($filters['branch']) $filename .= '_Branch-' . $filters['branch'];
+        if ($filters['status']) $filename .= '_Status-' . $filters['status'];
+        $filename .= '.pdf';
+
+        $pdf = Pdf::loadView('reports.pdf_template', [
+            'data' => $data,
+            'filters' => $filters
+        ]);
+
+        return $pdf->stream($filename);
+    }
+
+    private function validateSession()
+    {
+        if (empty(session('api_token'))) {
+            session()->flush();
+            return redirect()->route(route: 'login')->with('toast_warning', 'Session expired, login to access the application');
+        }
+        return null;
     }
 
     /**

@@ -133,6 +133,7 @@ Route::get('/exception/auditor/analysis-exception-view', [ExceptionApprovalContr
 //REPORTS
 Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
 Route::get('/reports/{id}/download', [ReportsController::class, 'download'])->name('reports.download');
+Route::post('/reports/export-pdf', [ReportsController::class, 'exportPdf'])->name('reports.export.pdf');
 
 
 //AUDIT CREATE
