@@ -1,7 +1,8 @@
 <x-base-layout>
-    @php
-        $status = 'AMENDMENT';
-    @endphp
+
+
+
+
     <div class="container-fluid px-1">
 
         <!-- start page title -->
@@ -34,6 +35,23 @@
                 </thead>
                 <tbody>
                     @forelse ($pendingExceptions as $exception)
+                        @php
+                            $status = $exception['status'];
+                            $tooltip = match ($status) {
+                                'APPROVED' => 'This batch has a status of APPROVED but has some exceptions DECLINED',
+                                'AMENDMENT'
+                                    => 'This batch has a status of AMENDMENT but has some exceptions DECLINED/PENDING',
+                                default => 'This batch has a status of DECLINED and it is just for VIEWING',
+                            };
+
+                            $badgeClass = match ($status) {
+                                'APPROVED' => 'bg-dark',
+                                'AMENDMENT' => 'bg-warning',
+                                default => 'bg-danger',
+                            };
+
+                            $label = $status === 'APPROVED' ? 'DECLINED' : $status;
+                        @endphp
                         <tr>
                             <th scope="row"><a href="#">{{ $exception['submittedBy'] }}</a></th>
 
@@ -47,8 +65,10 @@
                                     {{ $exception['exceptionCount'] }}
                                 </span> </td>
                             <td> {{ Carbon\Carbon::parse($exception['submittedAt'])->format('jS F, Y ') }} </td>
-                            <td> <span class="dropdown badge rounded-pill {{ $exception['status'] === 'APPROVED' ? 'bg-dark' : ($exception['status'] === 'AMENDMENT' ? 'bg-warning' : 'bg-danger') }} ">
-                                    {{ $exception['status'] == 'APPROVED' ? 'DECLINED' : $exception['status'] }}
+                            <td>
+                                <span class="dropdown badge rounded-pill {{ $badgeClass }}" data-bs-toggle="tooltip"
+                                    data-bs-placement="top" title="{{ $tooltip }}">
+                                    {{ $label }}
                                 </span>
                             </td>
 
