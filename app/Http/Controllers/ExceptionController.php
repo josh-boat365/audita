@@ -184,7 +184,7 @@ class ExceptionController extends Controller
                 ->unique()
                 ->toArray();
 
-                // dd($auditorIds);
+            // dd($auditorIds);
 
             // Get all auditor IDs in the same group as the exception
             $groupAuditorIds = collect($groupMembers)
@@ -256,10 +256,10 @@ class ExceptionController extends Controller
 
         $access_token = session('api_token');
 
-        if($request->input('requestType') == 'BATCH'){
+        if ($request->input('requestType') == 'BATCH') {
             $data = [
                 'id' => $id,
-                'exceptionTitle' => $request->input('exception'),
+                'exceptionTitle' => $request->input('exceptionTitle'),
                 'exception' => $request->input('exception'),
                 'rootCause' => $request->input('rootCause'),
                 'status' => $request->input('status'),
@@ -278,10 +278,10 @@ class ExceptionController extends Controller
 
             // dd($data);
 
-        }else{
+        } else {
             $data = [
                 'id' => $id,
-                'exceptionTitle' => $request->input('exception'),
+                'exceptionTitle' => $request->input('exceptionTile'),
                 'exception' => $request->input('exception'),
                 'rootCause' => $request->input('rootCause'),
                 'status' => $request->input('status'),
