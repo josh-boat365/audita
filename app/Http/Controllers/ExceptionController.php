@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\BatchController;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ExceptionController extends Controller
@@ -82,9 +83,9 @@ class ExceptionController extends Controller
             'exception' => 'required|string',
             'rootCause' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:8',
-            'occurrenceDate' => 'required|date_format:d/m/Y',
-            'proposeResolutionDate' => 'nullable|date_format:d/m/Y',
-            'resolutionDate' => 'nullable|date_format:d/m/Y',
+            'occurrenceDate' => 'required|date_format:Y-m-d',
+            'proposeResolutionDate' => 'nullable|date_format:Y-m-d',
+            'resolutionDate' => 'nullable|date_format:Y-m-d',
             'processTypeId' => 'required|integer',
             'riskRateId' => 'nullable|integer',
             'departmentId' => 'required|integer',
@@ -97,11 +98,11 @@ class ExceptionController extends Controller
             'exception' => $request->input('exception'),
             'rootCause' => $request->input('rootCause'),
             'status' => $request->input('status'),
-            'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
+            'occurrenceDate' => Carbon::createFromFormat('Y-m-d', $request->input('occurrenceDate'))->format('Y-m-d'),
             'proposeResolutionDate' => $request->input('proposeResolutionDate') ?
-                Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
+                Carbon::createFromFormat('Y-m-d', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
             'resolutionDate' => $request->input('resolutionDate') ?
-                Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
+                Carbon::createFromFormat('Y-m-d', $request->input('resolutionDate'))->format('Y-m-d') : null,
             'processTypeId' => $request->input('processTypeId'),
             'riskRateId' => $request->input('riskRateId'),
             'departmentId' => $request->input('departmentId'),
@@ -232,16 +233,16 @@ class ExceptionController extends Controller
 
     public function update(Request $request, string $id)
     {
-        // dd($request->all());
-        $request->validate([
+        // Validate request data
+        $validated = $request->validate([
             'exceptionTitle' => 'required|string|max:255',
             'exception' => 'required|string|max:255',
             'rootCause' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:8',
             'statusComment' => 'nullable|string|max:255',
-            'occurrenceDate' => 'required|date_format:d/m/Y',
-            'proposeResolutionDate' => 'nullable|date_format:d/m/Y',
-            'resolutionDate' => 'nullable|date_format:d/m/Y',
+            'occurrenceDate' => 'required|date_format:Y-m-d',
+            'proposeResolutionDate' => 'nullable|date_format:Y-m-d',
+            'resolutionDate' => 'nullable|date_format:Y-m-d',
             'processTypeId' => 'required|integer',
             'subProcessTypeId' => 'required|integer',
             'riskRateId' => 'nullable|integer',
@@ -251,77 +252,154 @@ class ExceptionController extends Controller
             'requestType' => 'nullable|string',
         ]);
 
-        // dd($request->all());
-
-
-        $access_token = session('api_token');
-
-        if ($request->input('requestType') == 'BATCH') {
-            $data = [
-                'id' => $id,
-                'exceptionTitle' => $request->input('exceptionTitle'),
-                'exception' => $request->input('exception'),
-                'rootCause' => $request->input('rootCause'),
-                'status' => $request->input('status'),
-                'statusComment' => $request->input('statusComment'),
-                'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
-                'proposeResolutionDate' => $request->input('proposeResolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
-                'resolutionDate' => $request->input('resolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
-                'processTypeId' => $request->input('processTypeId'),
-                'subProcessTypeId' => $request->input('subProcessTypeId'),
-                'riskRateId' => $request->input('riskRateId'),
-                'departmentId' => $request->input('departmentId'),
-                'exceptionBatchId' => $request->input('exceptionBatchId'),
-                'requestTrackerId' => $request->input('requestTrackerId'),
-                'requestType' => $request->input('requestType'),
-            ];
-
-            // dd($data);
-
-        } else {
-            $data = [
-                'id' => $id,
-                'exceptionTitle' => $request->input('exceptionTile'),
-                'exception' => $request->input('exception'),
-                'rootCause' => $request->input('rootCause'),
-                'status' => $request->input('status'),
-                'statusComment' => $request->input('statusComment'),
-                'occurrenceDate' => Carbon::createFromFormat('d/m/Y', $request->input('occurrenceDate'))->format('Y-m-d'),
-                'proposeResolutionDate' => $request->input('proposeResolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('proposeResolutionDate'))->format('Y-m-d') : null,
-                'resolutionDate' => $request->input('resolutionDate') ? Carbon::createFromFormat('d/m/Y', $request->input('resolutionDate'))->format('Y-m-d') : null,
-                'processTypeId' => $request->input('processTypeId'),
-                'subProcessTypeId' => $request->input('subProcessTypeId'),
-                'riskRateId' => $request->input('riskRateId'),
-                'departmentId' => $request->input('departmentId'),
-                'exceptionBatchId' => $request->input('exceptionBatchId'),
-
-            ];
+        // Validate that the ID parameter is numeric
+        if (!is_numeric($id)) {
+            Log::error('Invalid ID parameter provided', ['id' => $id]);
+            return redirect()->back()->with('toast_error', 'Invalid exception identifier');
         }
 
-        // dd($data);
+        $accessToken = session('api_token');
+        $isBatchRequest = $validated['requestType'] === 'BATCH';
+
+        // Check for authentication
+        if (!$accessToken) {
+            Log::error('No API token found in session');
+            return redirect()->back()->with('toast_error', 'Authentication required. Please login again.');
+        }
 
         try {
-            $response = Http::withToken($access_token)->put('http://192.168.1.200:5126/Auditor/ExceptionTracker', $data);
+            // Build update data with CSRF token
+            $data = array_merge([
+                'id' => $id,
+                '_token' => csrf_token(), // Add CSRF protection
+            ], $validated);
 
-            if ($response->successful()) {
-                return redirect()->back()->with('toast_success', 'Exception updated successfully');
-            } else {
-                // Log the error response
+            // Add requestTrackerId and requestType only for batch requests
+            if (!$isBatchRequest) {
+                unset($data['requestTrackerId'], $data['requestType']);
+            }
+
+            // Initialize variables for batch processing
+            $shouldUpdateBatchStatus = false;
+            $approvedCount = 0;
+            $resolvedCount = 0;
+
+            if ($isBatchRequest && isset($validated['requestTrackerId'])) {
+                // Rate limit batch status checks (max 5 per minute)
+                RateLimiter::attempt(
+                    'batch-status-check:' . $validated['requestTrackerId'],
+                    5,
+                    function () use ($accessToken, $validated, &$batchData) {
+                        $batchResponse = Http::withToken($accessToken)
+                            ->timeout(30)
+                            ->retry(3, 100) // Retry 3 times with 100ms delay
+                            ->get("http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/{$validated['requestTrackerId']}");
+
+                        if ($batchResponse->successful()) {
+                            $batchData = $batchResponse->object();
+                        }
+                    }
+                );
+
+                if (isset($batchData->exceptions)) {
+                    $currentExceptionStatus = null;
+
+                    // Count APPROVED and RESOLVED exceptions and find current exception status
+                    foreach ($batchData->exceptions as $exception) {
+                        if (isset($exception->status)) {
+                            if ($exception->status === 'APPROVED') {
+                                $approvedCount++;
+                            } elseif ($exception->status === 'RESOLVED') {
+                                $resolvedCount++;
+                            }
+
+                            // Find the current exception's status
+                            if (isset($exception->id) && $exception->id == $id) {
+                                $currentExceptionStatus = $exception->status;
+                            }
+                        }
+                    }
+
+                    // Only adjust counts if we're actually changing from APPROVED to RESOLVED
+                    if ($currentExceptionStatus === 'APPROVED' && $validated['status'] === 'RESOLVED') {
+                        $approvedCount--; // One less APPROVED
+                        $resolvedCount++; // One more RESOLVED
+                        Log::info('Exception status transition from APPROVED to RESOLVED', [
+                            'exception_id' => $id,
+                            'batch_id' => $validated['requestTrackerId']
+                        ]);
+                    }
+
+                    // Update batch status only if all APPROVED exceptions are now RESOLVED
+                    $shouldUpdateBatchStatus = ($approvedCount === 0 && $resolvedCount > 0);
+                }
+            }
+
+            // Update the exception with rate limiting
+            $updateResponse = RateLimiter::attempt(
+                'exception-update:' . $id,
+                5,
+                function () use ($accessToken, $data) {
+                    return Http::withToken($accessToken)
+                        ->timeout(30)
+                        ->retry(3, 100) // Retry 3 times with 100ms delay
+                        ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker', $data);
+                },
+                60 // 1 minute decay
+            );
+
+            if (!$updateResponse || !$updateResponse->successful()) {
                 Log::error('Failed to update Exception', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
+                    'status' => $updateResponse ? $updateResponse->status() : 'no-response',
+                    'exception_id' => $id,
+                    'batch_request' => $isBatchRequest
                 ]);
                 return redirect()->back()->with('toast_error', 'Sorry, failed to update Exception');
             }
+
+            Log::info('Exception updated successfully', ['exception_id' => $id]);
+
+            // Update batch status if needed
+            if ($shouldUpdateBatchStatus) {
+                $batchStatusResponse = Http::withToken($accessToken)
+                    ->timeout(30)
+                    ->retry(3, 100)
+                    ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-batch-exception-status', [
+                        'batchExceptionId' => $validated['requestTrackerId'],
+                        'status' => 'RESOLVED',
+                        '_token' => csrf_token() // CSRF protection
+                    ]);
+
+                if ($batchStatusResponse->successful()) {
+                    Log::info('Batch status updated to RESOLVED', [
+                        'batch_id' => $validated['requestTrackerId'],
+                        'resolved_count' => $resolvedCount
+                    ]);
+
+                    return redirect()->route('auditor.analysis.exception')
+                        ->with('toast_success', 'Exception updated successfully. All batch exceptions have been resolved.');
+                } else {
+                    Log::warning('Exception updated but batch status update failed', [
+                        'request_tracker_id' => $validated['requestTrackerId'],
+                        'status' => $batchStatusResponse->status()
+                    ]);
+                }
+            }
+
+            return redirect()->back()->with('toast_success', 'Exception updated successfully');
         } catch (\Exception $e) {
             Log::error('Exception occurred while updating Exception', [
+                'exception_id' => $id,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+
+            return redirect()->back()->with(
+                'toast_error',
+                'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>'
+            );
         }
     }
-
 
     /**
      * Remove the specified resource from storage.
@@ -849,6 +927,40 @@ class ExceptionController extends Controller
         return $exceptions;
     }
 
+    public static function getBatchExceptions()
+    {
+        $access_token = session('api_token');
+
+        try {
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions');
+
+            if ($response->successful()) {
+                $exceptions = $response->object() ?? [];
+            } elseif ($response->status() == 404) {
+                $exceptions = [];
+                Log::warning('Exception API returned 404 Not Found: pending-batch-exceptions');
+                toast('Exception  data not found', 'warning');
+            } else {
+                $exceptions = [];
+                Log::error('Exception API request failed: pending-batch-exceptions', ['status' => $response->status()]);
+                toast('Error fetching exception  data', 'error');
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            // Handle connection errors (e.g., API server is down)
+            Log::error('Connection Error: Unable to reach Exception Tracker API: pending-batch-exceptions', ['error' => $e->getMessage()]);
+
+            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
+            return [];
+        } catch (\Exception $e) {
+            $exceptions = [];
+            Log::error('Error fetching exception data: pending-batch-exceptions', ['error' => $e->getMessage()]);
+            toast('Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>', 'error');
+        }
+
+        return $exceptions;
+    }
+
+
 
     public static function getAnException($id)
     {
@@ -919,13 +1031,15 @@ class ExceptionController extends Controller
         return $departments;
     }
 
-    public function getFilteredExceptions($employeeId)
+    public static function getFilteredExceptions($employeeId)
     {
         //filtering is based on groups if you don't belong to a group, you don't see an exception
         //you only see exceptions in a particular group you are part of, But top managers can see all exceptions
 
+        $instance = new self();
+
         // Fetch data from APIs
-        $exceptions = $this->getExceptions(); //same as all reports data
+        $exceptions = $instance->getExceptions(); //same as all reports data
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
         $groupMembers = GroupMembersController::getGroupMembers();
@@ -952,7 +1066,7 @@ class ExceptionController extends Controller
         $batchGroupMap = collect($batches)
             ->pluck('activityGroupId', 'id');
 
-        $employeeRoleId = $this->getLoggedInUserInformation()->empRoleId;
+        $employeeRoleId = $instance->getLoggedInUserInformation()->empRoleId;
 
         // top managers
         // 1 - Managing Director
@@ -970,6 +1084,62 @@ class ExceptionController extends Controller
 
         return $filteredExceptions->values()->all();
     }
+
+
+    public static function getFilteredBatchExceptions($employeeId)
+    {
+        //filtering is based on groups if you don't belong to a group, you don't see an exception
+        //you only see exceptions in a particular group you are part of, But top managers can see all exceptions
+
+        $instance = new self();
+
+        // Fetch data from APIs
+        $exceptions = $instance->getBatchExceptions(); //same as all reports data
+        $batches = BatchController::getBatches();
+        $groups = GroupController::getActivityGroups();
+        $groupMembers = GroupMembersController::getGroupMembers();
+
+        // Filter active batches with status 'OPEN' and map them by ID
+        $validBatches = collect($batches)
+            ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+            ->keyBy('id');
+
+        // Filter active groups and map them by ID
+        $validGroups = collect($groups)
+            ->filter(fn($group) => $group->active)
+            ->keyBy('id');
+
+        // Get groups where the specified employee belongs
+        $employeeGroups = collect($groupMembers)
+            ->where('employeeId', $employeeId)
+            ->pluck('activityGroupId')
+            ->unique();
+
+        // dd($employeeGroups);
+
+        // Map batch IDs to their corresponding activity group IDs
+        $batchGroupMap = collect($batches)
+            ->pluck('activityGroupId', 'id');
+
+        $employeeRoleId = $instance->getLoggedInUserInformation()->empRoleId;
+
+        // top managers
+        // 1 - Managing Director
+        // 2 - Head of Internal Audit
+        // 4 - Head of Internal Control & Compliance
+        $topManagers = [1, 2, 4];
+
+        // Filter exceptions - and include top managers
+        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+            $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
+            return $validBatches->has($exception->exceptionBatchId) &&
+                $validGroups->has($groupId) && ($exception->status == 'PENDING' && $exception->recommendedStatus == null) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+        });
+
+
+        return $filteredExceptions->values()->all();
+    }
+
 
 
     public function getPendingExceptions($employeeId)
