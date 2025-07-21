@@ -642,7 +642,7 @@ class ExceptionApprovalController extends Controller
                 $data['statusComment'] = $request->input('statusComment');
             }
 
-            dd($data);
+            // dd($data);
 
             $response = Http::withToken($access_token)
                 ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-batch-exception-status/', $data);
@@ -853,7 +853,7 @@ class ExceptionApprovalController extends Controller
             'status' => 'required|string|in:ANALYSIS',
         ]);
 
-        dd($request->all());
+        // dd($request->all());
     }
 
 
