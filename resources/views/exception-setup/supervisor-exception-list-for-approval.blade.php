@@ -43,7 +43,8 @@
         </div>
 
         <!-- Edit Batch Modal -->
-        {{--  <div class="modal fade" tabindex="-1" aria-labelledby="editBatchModalLabel"
+        {{--
+        <div class="modal fade" tabindex="-1" aria-labelledby="editBatchModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">

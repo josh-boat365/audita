@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\ExceptionController;
 
 class ExceptionApprovalController extends Controller
 {
@@ -204,16 +205,16 @@ class ExceptionApprovalController extends Controller
                             in_array($exception['status'], $validParentStatuses);
                     })
                     // Transform and count nested exceptions
-                    ->map(function ($exception) use($loggedInUser) {
+                    ->map(function ($exception) use ($loggedInUser) {
                         $pendingCount = collect($exception['exceptions'] ?? [])
                             ->where('status', 'APPROVED')
                             // ->where('recommendedStatus', null) // Only count if recommendedStatus is null
                             ->count();
                         $countForRespondedExceptionsByAuditee = collect($exception['exceptions'] ?? [])
-                        ->where('recommendedStatus', 'RESOLVED')
-                        ->count();
+                            ->where('recommendedStatus', 'RESOLVED')
+                            ->count();
 
-                    return [
+                        return [
                             'id' => $exception['id'] ?? null,
                             'status' => $exception['status'] ?? '---',
                             'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
@@ -222,7 +223,7 @@ class ExceptionApprovalController extends Controller
                             'department' => $exception['departmentName'] ?? 'Unknown Department',
                             'exceptionCount' => $pendingCount,
                             'auditorDepartmentId' =>  $loggedInUser->departmentId,
-                        'countForRespondedExceptionsByAuditee' => $countForRespondedExceptionsByAuditee
+                            'countForRespondedExceptionsByAuditee' => $countForRespondedExceptionsByAuditee
                         ];
                     })
                     // Only include if at least 1 nested exception matches
@@ -627,7 +628,7 @@ class ExceptionApprovalController extends Controller
             $request->validate([
                 'batchExceptionId' => 'required|integer',
                 // 'singleExceptionId' => 'required|integer',
-                'status' => 'required|string|in:APPROVED,AMENDMENT,ANALYSIS,DECLINED',
+                'status' => 'required|string|in:APPROVED,AMENDMENT,ANALYSIS,DECLINED,PENDING',
                 'statusComment' => 'nullable|string|max:255',
             ]);
 
@@ -649,6 +650,7 @@ class ExceptionApprovalController extends Controller
             if ($response->successful()) {
                 // Define status messages mapping
                 $statusMessages = [
+                    'PENDING' => 'supervisor for review',
                     'APPROVED' => 'approved',
                     'AMENDMENT' => 'amendment',
                     'ANALYSIS' => 'push for analysis'
@@ -669,7 +671,8 @@ class ExceptionApprovalController extends Controller
                 // Handle regular HTTP responses based on status
                 return $request->status === 'ANALYSIS'
                     ? redirect()->back()->with('toast_success', $message)
-                    : redirect()->route('exception.supervisor.list')->with('toast_success', $message);
+                    : ($request->status === 'PENDING' ? redirect()->route('exception.auditor.list')->with('toast_success', $message)
+                        : redirect()->route('exception.supervisor.list')->with('toast_success', $message));
             }
 
             $errorData = [
@@ -787,7 +790,7 @@ class ExceptionApprovalController extends Controller
                     // Transform and count nested exceptions
                     ->map(function ($exception) {
                         $pendingCount = collect($exception['exceptions'] ?? [])
-                            ->whereIn('status', ['DECLINED'])
+                            ->whereIn('status', ['DECLINED', 'PENDING'])
                             ->count();
 
                         return [
@@ -850,7 +853,7 @@ class ExceptionApprovalController extends Controller
             'status' => 'required|string|in:ANALYSIS',
         ]);
 
-        dd($request->all());
+        // dd($request->all());
     }
 
 
@@ -983,36 +986,67 @@ class ExceptionApprovalController extends Controller
         // Fetch exception data
         $responseObject = $this->fetchExceptionData($batchId);
 
-
-        $exception = collect($responseObject)
+        // Filter and clean data in one go
+        $exception = collect($responseObject ?? [])
             ->filter(function ($item) use ($status) {
-                return $item->status == $status;
+                return isset($item->status) &&
+                    $item->status === $status &&
+                    isset($item->exceptions) &&
+                    !empty($item->exceptions);
             })
             ->map(function ($item) {
+                // Filter nested exceptions and provide defaults
                 $item->exceptions = collect($item->exceptions)
-                    ->where('status', 'DECLINED')
+                    ->filter(function ($ex) {
+                        return isset($ex->status) &&
+                            ($ex->status === 'DECLINED' || $ex->status === 'PENDING') &&
+                            ($ex->recommendedStatus === null || !isset($ex->recommendedStatus));
+                    })
+                    ->map(function ($ex) {
+                        // Set defaults for null values
+                        $ex->exceptionTitle = $ex->exceptionTitle ?? 'No Title';
+                        $ex->exception = $ex->exception ?? 'No Description';
+                        $ex->statusComment = $ex->statusComment ?? '';
+                        $ex->auditorName = $ex->auditorName ?? 'Unknown';
+                        $ex->processType = $ex->processType ?? 'Unknown';
+                        $ex->subProcessType = $ex->subProcessType ?? 'Unknown';
+                        $ex->department = $ex->department ?? 'Unknown';
+                        $ex->exceptionBatch = $ex->exceptionBatch ?? 'Unknown';
+                        $ex->exceptionBatchCode = $ex->exceptionBatchCode ?? 'N/A';
+                        $ex->comment = $ex->comment ?? [];
+                        $ex->fileAttached = $ex->fileAttached ?? [];
+                        return $ex;
+                    })
                     ->values()
                     ->toArray();
+
+                // Set defaults for main item
+                $item->refNum = $item->refNum ?? 'N/A';
+                $item->processTypeName = $item->processTypeName ?? 'Unknown';
+                $item->departmentName = $item->departmentName ?? 'Unknown';
+                $item->statusComment = $item->statusComment ?? '';
+
                 return $item;
             })
-            ->filter(fn($item) => !empty($item->exceptions))
+            ->filter(function ($item) {
+                return !empty($item->exceptions);
+            })
             ->values()
-            ->toArray() ?? [];
+            ->toArray();
 
-        // dd($exception);
-
-        // $exception = $responseObject ?? [];
-        $departments = ExceptionController::departmentData();
-        $batches = BatchController::getBatches();
-        $processTypes = ProcessTypeController::getProcessTypes();
-        $subProcessTypes = collect(ProcessTypeController::getSubProcessTypes());
-        $groupedSubProcessTypes = collect($subProcessTypes)
+        // Get reference data with fallbacks
+        $departments = ExceptionController::departmentData() ?? [];
+        $batches = BatchController::getBatches() ?? [];
+        $processTypes = ProcessTypeController::getProcessTypes() ?? [];
+        $subProcessTypes = collect(ProcessTypeController::getSubProcessTypes() ?? []);
+        $groupedSubProcessTypes = $subProcessTypes
+            ->filter(function ($item) {
+                return isset($item->processTypeId);
+            })
             ->groupBy('processTypeId')
             ->toArray();
 
-        // dd($exception);
-
-        // Return view for auditor approval
+        // Return view
         return view(
             'exception-setup.auditor-exception-list-for-approval',
             compact(

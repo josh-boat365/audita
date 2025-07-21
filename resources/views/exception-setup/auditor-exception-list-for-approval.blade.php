@@ -1,54 +1,80 @@
 <x-base-layout>
     @php
-        $pendingException = $exception[0] ?? null;
-        $batchId = $pendingException->exceptionBatchId ?? '';
-        $processTypeId = $pendingException->processTypeId ?? '';
-        $departmentId = $pendingException->departmentId ?? '';
-        $requestDate = isset($pendingException->requestDate)
-            ? Carbon\Carbon::parse($pendingException->requestDate)->format('Y-m-d')
+        // Safely get first exception with null checks
+        $firstException = collect($exception)->first() ?? null;
+        $batchId = $firstException->exceptionBatchId ?? '';
+        $processTypeId = $firstException->processTypeId ?? '';
+        $departmentId = $firstException->departmentId ?? '';
+        $requestDate = isset($firstException->requestDate)
+            ? Carbon\Carbon::parse($firstException->requestDate)->format('Y-m-d')
             : '';
+        $employeeName = session('user_name') ?? 'Unknown User';
+        $batchStatus = $firstException->status ?? null;
+
+        // Process exceptions with sorting
+        $processedExceptions = collect($exception ?? [])->map(function ($batchItem) use ($batchStatus) {
+            $exceptions = collect($batchItem->exceptions ?? []);
+
+            // Sort exceptions based on batch status
+            if ($batchStatus === 'AMENDMENT') {
+                $exceptions = $exceptions
+                    ->sortBy(function ($exception) {
+                        // Pending goes to bottom, Declined stays in normal order (show Amend button)
+                        return ($exception->status ?? null) === 'PENDING' ? 1 : 0;
+                    })
+                    ->values();
+            }
+            // For DECLINED status, we keep the original order (all will be declined)
+
+            $batchItem->exceptions = $exceptions->all();
+            return $batchItem;
+        });
+
+        // Count total exceptions safely
+        $totalExceptions = $processedExceptions->sum(fn($item) => count($item->exceptions ?? []));
+        $hasExceptions = $totalExceptions > 0;
     @endphp
 
     <div class="container-fluid px-1">
-        <!-- start page title -->
+        <!-- Page Title -->
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18"><a href="{{ route('exception.auditor.list') }}">Exceptions</a> >
-                        {{ $pendingException->submittedBy ?? '' }} >
-                        {{ $pendingException->exceptionBatch->activityGroupName ?? '' }} > <a
-                            href="#">{{ $pendingException->departmentName ?? '' }}</a></h4>
+                    <h4 class="mb-sm-0 font-size-18">
+                        <a href="{{ route('exception.auditor.list') }}">Exceptions</a> >
+                        {{ $firstException->submittedBy ?? 'Unknown' }} >
+                        {{ $firstException->exceptionBatch ?? 'Unknown Batch' }} >
+                        <a href="#">{{ $firstException->departmentName ?? 'Unknown Department' }}</a>
+                    </h4>
                 </div>
             </div>
         </div>
-        <!-- end page title -->
 
-
-
+        <!-- Action Buttons -->
         <div class="d-flex gap-2 mb-4 justify-content-end">
-            {{--  <!-- Edit Batch Button -->
-            <button type="button" class="btn btn-dark btn-rounded waves-effect waves-light" id="amendBatchBtn">
-                Amend Batch
-            </button>  --}}
-
-            <!-- Approve Batch Button -->
-            <button type="button" class="btn btn-primary btn-rounded waves-effect waves-light" id="approveBatchBtn">
-                Push For Review
-            </button>
-
+            @if ($batchStatus !== 'DECLINED')
+                <button type="button" class="btn btn-primary btn-rounded waves-effect waves-light"
+                    id="pushBatchForReview">
+                    Push For Review
+                </button>
+            @endif
         </div>
 
-        {{-- Display comment in card --}}
+        <!-- Comments Card -->
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Comments</h5>
-                <p class="card-text"> <i>{{ $pendingException->statusComment ?? 'No comments on batch, check the exceptions for the needed amendments below if required.' }}</i></p>
+                <p class="card-text">
+                    <i>
+                        {{ !empty(trim($firstException->statusComment ?? ''))
+                            ? $firstException->statusComment
+                            : 'No comments on batch, check the exceptions for the needed amendments below if required.' }}
+                    </i>
+                </p>
             </div>
         </div>
 
-
-
-
+        <!-- Filters -->
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
@@ -59,8 +85,9 @@
                                 <select class="form-select select2" id="batchFilter">
                                     <option>Select.....</option>
                                     @foreach ($batches as $batch)
-                                        <option value="{{ $batch->id }}" @selected($batch->id === $batchId)>
-                                            {{ $batch->name }}</option>
+                                        <option value="{{ $batch->id }}" @selected($batch->id == $batchId)>
+                                            {{ $batch->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -69,8 +96,9 @@
                                 <select class="form-select select2" id="processTypeFilter">
                                     <option>Select.....</option>
                                     @foreach ($processTypes as $processType)
-                                        <option value="{{ $processType->id }}" @selected($processType->id === $processTypeId)>
-                                            {{ $processType->name }}</option>
+                                        <option value="{{ $processType->id }}" @selected($processType->id == $processTypeId)>
+                                            {{ $processType->name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -79,7 +107,7 @@
                                 <select class="form-select select2" id="departmentFilter">
                                     <option>Select.....</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}" @selected($department->id === $departmentId)>
+                                        <option value="{{ $department->id }}" @selected($department->id == $departmentId)>
                                             {{ $department->name }}
                                         </option>
                                     @endforeach
@@ -98,6 +126,7 @@
 
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
 
+        <!-- Exceptions Table -->
         <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                 <thead class="table-light">
@@ -111,363 +140,233 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($pendingException->exceptions as $key => $exceptionItem)
-                        <tr id="exception-row-{{ $exceptionItem->id }}">
-                            <td>{{ ++$key }}</td>
-                            <td>
-                                <textarea class="form-control editable-textarea" rows="3" name="exceptionTitle"
-                                    placeholder="Enter exception title">{{ $exceptionItem->exceptionTitle }}</textarea>
-                            </td>
-                            <td>
-                                <textarea class="form-control editable-textarea" rows="3" name="exceptionDescription"
-                                    placeholder="Enter exception description">{{ $exceptionItem->exception }}</textarea>
-                            </td>
-                            <td>
-                                <select class="form-select sub-process-type" name="subProcessTypeId">
-                                    <option value="">Select...</option>
-                                    @if (isset($groupedSubProcessTypes[$pendingException->processTypeId]))
-                                        @foreach ($groupedSubProcessTypes[$pendingException->processTypeId] as $subProcessType)
-                                            <option value="{{ $subProcessType->id }}" @selected($subProcessType->id === $exceptionItem->subProcessTypeId)>
-                                                {{ $subProcessType->name }}
-                                            </option>
-                                        @endforeach
-                                    @endif
-                                </select>
-                            </td>
-                            <td>
-                                <span><i>{{ $exceptionItem->statusComment }}</i></span>
-                            </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success btn-sm save-edit-btn"
-                                        data-exception-id="{{ $exceptionItem->id }}">
-                                        <i class="bx bx-save"></i> Save Edit
-                                    </button>
-                                    {{--  <button type="button" class="btn btn-danger btn-sm decline-btn"
-                                        data-exception-id="{{ $exceptionItem->id }}" data-bs-toggle="modal"
-                                        data-bs-target="#declineModal">
-                                        <i class="bx bx-x"></i> Decline
-                                    </button>  --}}
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
+                    @if ($hasExceptions)
+                        @php $rowNumber = 1; @endphp
+                        @foreach ($processedExceptions as $batchItem)
+                            @foreach ($batchItem->exceptions ?? [] as $exceptionItem)
+                                @php
+                                    $exceptionStatus = $exceptionItem->status ?? null;
+                                    $isDeclined = $exceptionStatus === 'DECLINED';
+                                    $isPending = $exceptionStatus === 'PENDING';
+
+                                    // Determine if Amend button should be shown
+                                    $showAmendButton = false;
+
+                                    if ($batchStatus === 'AMENDMENT') {
+                                        // Show for DECLINED, hide for PENDING
+                                        $showAmendButton = $isDeclined;
+                                    }
+                                    // For DECLINED batch status, never show Amend button
+                                @endphp
+
+                                <tr id="exception-row-{{ $exceptionItem->id }}"
+                                    class="{{ $batchStatus === 'DECLINED' ? 'table-danger' : '' }} {{ $isPending ? 'bg-light' : '' }}">
+                                    <td>{{ $rowNumber++ }}</td>
+                                    <td>{{ $exceptionItem->exceptionTitle ?? 'No Title' }}</td>
+                                    <td>{{ $exceptionItem->exception ?? 'No Description' }}</td>
+                                    <td>
+                                        <select class="form-select sub-process-type" name="subProcessTypeId">
+                                            <option value="">Select...</option>
+                                            @isset($groupedSubProcessTypes[$batchItem->processTypeId ?? ''])
+                                                @foreach ($groupedSubProcessTypes[$batchItem->processTypeId] as $subProcessType)
+                                                    <option value="{{ $subProcessType->id }}" @selected($subProcessType->id == ($exceptionItem->subProcessTypeId ?? ''))>
+                                                        {{ $subProcessType->name }}
+                                                    </option>
+                                                @endforeach
+                                            @endisset
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <span><i>
+                                                {{ !empty(trim($exceptionItem->statusComment ?? '')) ? $exceptionItem->statusComment : 'No comment' }}</i></span>
+                                    </td>
+                                    <td>
+                                        @if ($showAmendButton)
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-dark btn-sm"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#amendExceptionModal-{{ $exceptionItem->id }}">
+                                                    <i class="bx bx-pencil"></i> Amend
+                                                </button>
+                                            </div>
+
+                                            <!-- Amend Modal -->
+                                            <div class="modal fade" id="amendExceptionModal-{{ $exceptionItem->id }}"
+                                                tabindex="-1" aria-labelledby="amendExceptionModalLabel"
+                                                aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">Amend Exception</h5>
+                                                            <button type="button" class="btn-close"
+                                                                data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <form
+                                                            action="{{ route('exception.update', $exceptionItem->id) }}"
+                                                            method="POST">
+                                                            @csrf
+                                                            <input type="hidden" name="departmentId"
+                                                                value="{{ $batchItem->departmentId ?? '' }}">
+                                                            <input type="hidden" name="processTypeId"
+                                                                value="{{ $batchItem->processTypeId ?? '' }}">
+                                                            <input type="hidden" name="exceptionBatchId"
+                                                                value="{{ $batchItem->exceptionBatchId ?? '' }}">
+                                                            <input type="hidden" name="occurrenceDate"
+                                                                value="{{ isset($exceptionItem->occurrenceDate) ? \Carbon\Carbon::parse($exceptionItem->occurrenceDate)->format('d/m/Y') : '' }}">
+                                                            <input type="hidden" name="status" value="PENDING">
+                                                            <input type="hidden" name="statusComment"
+                                                                value="{{ $exceptionItem->statusComment ?? '' }}">
+                                                            <input type="hidden" name="requestType" value="BATCH">
+                                                            <input type="hidden" name="requestTrackerId"
+                                                                value="{{ $batchItem->id ?? '' }}">
+
+                                                            <div class="modal-body">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Exception Title</label>
+                                                                    <textarea class="form-control" name="exceptionTitle" rows="3" required>{{ $exceptionItem->exceptionTitle ?? '' }}</textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Exception
+                                                                        Description</label>
+                                                                    <textarea class="form-control" name="exception" rows="3" required>{{ $exceptionItem->exception ?? '' }}</textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Sub Process Type</label>
+                                                                    <select class="form-select sub-process-type"
+                                                                        name="subProcessTypeId">
+                                                                        <option value="">Select...</option>
+                                                                        @isset($groupedSubProcessTypes[$batchItem->processTypeId ?? ''])
+                                                                            @foreach ($groupedSubProcessTypes[$batchItem->processTypeId] as $subProcessType)
+                                                                                <option value="{{ $subProcessType->id }}"
+                                                                                    @selected($subProcessType->id == ($exceptionItem->subProcessTypeId ?? ''))>
+                                                                                    {{ $subProcessType->name }}
+                                                                                </option>
+                                                                            @endforeach
+                                                                        @endisset
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary"
+                                                                    data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-danger">Save
+                                                                    Exception</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    @else
                         <tr>
-                            <td colspan="5" class="text-center">No exceptions found.</td>
+                            <td colspan="6" class="text-center">All Exceptions Amended. Push <b>Batch for
+                                    Review</b></td>
                         </tr>
-                    @endforelse
+                    @endif
                 </tbody>
             </table>
-        </div>
-
-        <!-- Decline Modal -->
-        <div class="modal fade" id="declineModal" tabindex="-1" aria-labelledby="declineModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="declineModalLabel">Decline Exception</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="statusComment" class="form-label">Reason for Decline</label>
-                            <textarea class="form-control" name="statusComment" id="statusComment" rows="3"
-                                placeholder="Enter reason for decline..." required></textarea>
-                        </div>
-                        <input type="hidden" id="currentExceptionId">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" id="confirmDeclineBtn" class="btn btn-danger">Confirm Decline</button>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="{{ asset('assets/js/ajax.jquery.min.js') }}"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // Function to load sub-process types for a process type
-                function loadSubProcessTypes(processTypeId, callback) {
+                // Batch Approval
+                document.getElementById('pushBatchForReview')?.addEventListener('click', function() {
+                    Swal.fire({
+                        title: 'Push Batch For Review ?',
+                        text: 'Are you sure you want to push this entire batch for review?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, Push for Review',
+                        cancelButtonText: 'No, Cancel',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            submitBatchAction('PENDING');
+                        }
+                    });
+                });
+
+                function submitBatchAction(status) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '{{ route('exception.supervisor.action') }}';
+
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+                    if (!csrfToken) {
+                        console.error('CSRF token not found');
+                        return;
+                    }
+
+                    const inputs = [{
+                            name: '_token',
+                            value: csrfToken
+                        },
+                        {
+                            name: 'batchExceptionId',
+                            value: '{{ $firstException->id ?? '' }}'
+                        },
+                        {
+                            name: 'status',
+                            value: status
+                        }
+                    ];
+
+                    inputs.forEach(input => {
+                        const el = document.createElement('input');
+                        el.type = 'hidden';
+                        el.name = input.name;
+                        el.value = input.value;
+                        form.appendChild(el);
+                    });
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+
+                // Process Type Filter Change
+                $('#processTypeFilter').change(function() {
+                    const processTypeId = $(this).val();
                     if (!processTypeId) return;
 
                     $.ajax({
                         url: '/get-sub-process-types/' + processTypeId,
                         type: 'GET',
                         success: function(data) {
-                            if (callback) callback(data);
+                            document.querySelectorAll('#exceptionsTable tbody tr').forEach(row => {
+                                updateRowSubProcessTypes(row, data);
+                            });
                         },
                         error: function(xhr) {
                             console.error('Error loading sub-process types:', xhr.responseText);
                             Swal.fire('Error', 'Failed to load sub-process types', 'error');
                         }
                     });
-                }
+                });
 
-                // Update a row's sub-process dropdown
                 function updateRowSubProcessTypes(row, subProcessTypes) {
                     const select = row.querySelector('.sub-process-type');
-                    const currentValue = select.value;
+                    if (!select) return;
 
+                    const currentValue = select.value;
                     select.innerHTML = '<option value="">Select...</option>';
-                    subProcessTypes.forEach(subType => {
+
+                    subProcessTypes?.forEach(subType => {
                         select.innerHTML += `<option value="${subType.id}">${subType.name}</option>`;
                     });
 
                     // Restore selection if still valid
-                    if (currentValue && subProcessTypes.some(st => st.id == currentValue)) {
+                    if (currentValue && subProcessTypes?.some(st => st.id == currentValue)) {
                         select.value = currentValue;
                     }
                 }
-
-                // When process type filter changes
-                $('#processTypeFilter').change(function() {
-                    const processTypeId = $(this).val();
-
-                    if (!processTypeId) return;
-
-                    loadSubProcessTypes(processTypeId, function(subProcessTypes) {
-                        // Update all existing rows
-                        document.querySelectorAll('#exceptionsTable tbody tr').forEach(row => {
-                            updateRowSubProcessTypes(row, subProcessTypes);
-                        });
-                    });
-                });
-
-                // SUB-EXCPETION STATUSES -  individual rows
-                document.querySelectorAll('.save-edit-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const exceptionId = this.getAttribute('data-exception-id');
-
-                        Swal.fire({
-                            title: 'Confirm Save',
-                            text: 'Are you sure you want to save this new changes?',
-                            icon: 'question',
-                            showCancelButton: true,
-                            confirmButtonText: 'Yes, Save Edit',
-                            cancelButtonText: 'Cancel'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                submitExceptionAction(exceptionId, 'PENDING');
-                            }
-                        });
-                    });
-                });
-
-                // Decline button handler for individual rows
-                document.querySelectorAll('.decline-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const exceptionId = this.getAttribute('data-exception-id');
-                        document.getElementById('currentExceptionId').value = exceptionId;
-                        document.getElementById('statusComment').value = ''; // Clear previous reason
-                    });
-                });
-
-                // Confirm decline button in modal
-                document.getElementById('confirmDeclineBtn').addEventListener('click', function() {
-                    const reason = document.getElementById('statusComment').value.trim();
-                    const exceptionId = document.getElementById('currentExceptionId').value;
-
-                    if (!reason) {
-                        Swal.fire('Error', 'Please provide a reason for decline', 'error');
-                        return;
-                    }
-
-                    submitExceptionAction(exceptionId, 'DECLINED', reason);
-
-                    // Close modal
-                    bootstrap.Modal.getInstance(document.getElementById('declineModal')).hide();
-                });
-
-
-                // SUBMIT BATCH APPROVAL ACTION - PARENT BATCH STATUS
-                document.getElementById('approveBatchBtn').addEventListener('click', function() {
-                    Swal.fire({
-                        title: 'Approve Batch?',
-                        text: 'Are you sure you want to approve this entire batch?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, Approve',
-                        cancelButtonText: 'No, Cancel',
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            submitBatchAction('APPROVED', 'Batch approved');
-                        }
-                    });
-                });
-
-
-                // Form validation for edit batch
-                document.getElementById('amendBatchBtn').addEventListener('click', function(e) {
-                    Swal.fire({
-                        title: 'Confirm To Push Batch for Amendment',
-                        text: 'Are you sure you want to push this batch for amendment?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, push for amendment',
-                        cancelButtonText: 'Cancel'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            submitBatchAction('AMENDMENT', 'Batch pushed for amendment');
-                        }
-                    });
-                });
-
-                // Form validation for decline batch
-                document.getElementById('declineBatchForm')?.addEventListener('submit', function(e) {
-                    const comment = document.getElementById('declineComment')?.value.trim();
-                    if (!comment) {
-                        e.preventDefault();
-                        alert('Please provide a reason for declining');
-                        document.getElementById('declineComment')?.focus();
-                    } else {
-                        // Auto-submit if comment is valid
-                        submitBatchAction('DECLINED', comment);
-                    }
-                });
-
-                function submitBatchAction(status, comment) {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '{{ route('exception.supervisor.action') }}';
-
-                    const csrf = document.createElement('input');
-                    csrf.type = 'hidden';
-                    csrf.name = '_token';
-                    csrf.value = document.querySelector('meta[name="csrf-token"]').content;
-
-                    const batchId = document.createElement('input');
-                    batchId.type = 'hidden';
-                    batchId.name = 'batchExceptionId';
-                    batchId.value = '{{ $pendingException->id ?? '' }}';
-
-                    const statusInput = document.createElement('input');
-                    statusInput.type = 'hidden';
-                    statusInput.name = 'status';
-                    statusInput.value = status;
-
-                    const commentInput = document.createElement('input');
-                    commentInput.type = 'hidden';
-                    commentInput.name = 'statusComment';
-                    commentInput.value = comment;
-
-                    form.appendChild(csrf);
-                    form.appendChild(batchId);
-                    form.appendChild(statusInput);
-                    form.appendChild(commentInput);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-
-
-                // SUBMIT EXCEPTION ACTION FOR INDIVIDUAL EXCEPTIONS
-                function submitExceptionAction(exceptionId, action, declineReason = null) {
-                    const row = $('#exception-row-' + exceptionId);
-                    const formData = {
-                        _token: $('meta[name="csrf-token"]').attr('content'),
-                        singleExceptionId: exceptionId,
-                        status: action,
-                        batchExceptionId: '{{ $pendingException->id ?? '' }}',
-                        statusComment: declineReason
-                    };
-
-                    // Show loading indicator
-                    const buttons = row.find('.save-edit-btn, .decline-btn');
-                    buttons.prop('disabled', true).html('<i class="bx bx-loader bx-spin"></i> Processing');
-
-                    $.ajax({
-                        url: '{{ route('exception.supervisor.approve-decline') }}',
-                        type: 'POST',
-                        data: formData,
-                        dataType: 'json',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'application/json'
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                // Remove the processed row
-                                row.fadeOut(300, function() {
-                                    $(this).remove();
-
-                                    // Update UI if no rows left
-                                    if ($('#exceptionsTable tbody tr').length === 0) {
-                                        $('#exceptionsTable tbody').html(
-                                            '<tr><td colspan="5" class="text-center">No exceptions remaining</td></tr>'
-                                        );
-                                    }
-                                });
-
-                                // Show success toast
-                                const Toast = Swal.mixin({
-                                    toast: true,
-                                    position: 'top-end',
-                                    showConfirmButton: false,
-                                    timer: 3000
-                                });
-
-                                Toast.fire({
-                                    icon: 'success',
-                                    title: response.message
-                                });
-                            } else {
-                                Swal.fire('Error', response.message, 'error');
-                            }
-                        },
-                        error: function(xhr) {
-                            let errorMessage = 'An error occurred while processing your request';
-
-                            try {
-                                const response = xhr.responseJSON;
-                                if (response && response.message) {
-                                    errorMessage = response.message;
-                                } else if (xhr.responseText) {
-                                    errorMessage = xhr.responseText.substring(0, 200);
-                                }
-                            } catch (e) {
-                                console.error('Error parsing error response:', e);
-                            }
-
-                            Swal.fire('Error', errorMessage, 'error');
-                        },
-                        complete: function() {
-                            buttons.prop('disabled', false)
-                                .html(function() {
-                                    return $(this).hasClass('save-edit-btn') ?
-                                        '<i class="bx bx-check"></i> Push for Edit' :
-                                        '<i class="bx bx-x"></i> Decline';
-                                });
-                        }
-                    });
-                }
-
-                // Auto-resize textareas
-                document.querySelectorAll('.editable-textarea').forEach(textarea => {
-                    textarea.addEventListener('input', function() {
-                        this.style.height = 'auto';
-                        this.style.height = (this.scrollHeight) + 'px';
-                    });
-                    // Trigger initial resize
-                    textarea.dispatchEvent(new Event('input'));
-                });
             });
         </script>
-
-        <style>
-            .editable-textarea {
-                resize: none;
-                overflow: hidden;
-                min-height: 60px;
-            }
-
-            .sub-process-type {
-                min-width: 150px;
-            }
-        </style>
     @endpush
 </x-base-layout>

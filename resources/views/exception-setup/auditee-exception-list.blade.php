@@ -1,7 +1,4 @@
 <x-base-layout>
-    @php
-        $status = 'APPROVED';
-    @endphp
 
     <!-- Add SweetAlert2 CSS in the head section -->
     @push('styles')

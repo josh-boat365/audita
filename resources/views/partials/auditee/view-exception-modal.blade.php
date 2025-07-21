@@ -36,7 +36,7 @@
                                         <textarea class="form-control" rows="3" name="exception" placeholder="Enter exception details......" required>{{ $exceptionItem->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
-
+                                    
                                     <div class="mb-3">
                                         <label class="form-label">Root Cause</label>
                                         <textarea class="form-control" rows="3" name="rootCause" placeholder="Enter root cause details......">{{ $exceptionItem->rootCause }}</textarea>
@@ -64,7 +64,7 @@
 
                                     <div class="mb-3">
                                         <label class="form-label">Occurrence Date<span class="required">*</span></label>
-                                        <input type="date" class="form-control" name="resolutionDate" required
+                                        <input type="date" class="form-control" name="occurrenceDate" required
                                             value="{{ $exceptionItem->occurrenceDate ? \Carbon\Carbon::parse($exceptionItem->occurrenceDate)->format('Y-m-d') : '' }}"
                                             placeholder="Select resolution date" />
                                         <div class="invalid-feedback">Please select occurrence date.</div>
@@ -167,6 +167,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">Resolution Date</label>
                                         <small>(optional)</small>
+
                                         <input type="date" class="form-control" name="resolutionDate"
                                             value="{{ $exceptionItem->resolutionDate ? \Carbon\Carbon::parse($exceptionItem->resolutionDate)->format('Y-m-d') : '' }}"
                                             placeholder="Select resolution date" />

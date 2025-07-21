@@ -142,6 +142,9 @@
                         <ul class="sub-menu" aria-expanded="false">
                             <li><a href="{{ route('reports') }}">Overview</a></li>
                         </ul>
+                        <ul class="sub-menu" aria-expanded="false">
+                            <li><a href="{{ route('auditor.report') }}">Auditor's Report</a></li>
+                        </ul>
                     </li>
                 @else
                     <li></li>
