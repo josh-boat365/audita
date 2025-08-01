@@ -895,8 +895,8 @@
                             <style>
                                 body {
                                     font-family: 'Arial', serif;
-                                    font-size: 14pt;
-                                    line-height: 1.8;
+                                    font-size: 12pt;
+                                    line-height: 1.6;
                                     margin: 1in;
                                     color: #000;
                                 }
