@@ -885,7 +885,7 @@
                     const exceptionReports = generateExceptionReportsForWord(filteredData);
                     const filterSummary = generateFilterSummaryForWord(filters);
 
-                    // Generate Word-compatible HTML content
+                    // Generate Word-compatible HTML content - to word
                     const wordContent = `
                         <!DOCTYPE html>
                         <html>
