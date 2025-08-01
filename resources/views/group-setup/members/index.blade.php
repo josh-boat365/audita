@@ -158,10 +158,11 @@
                     <div class="mb-3">
                         <label class="form-label">Select Group Member</label>
                         <div>
+                            {{--  {{ dd($employees) }}  --}}
                             <select class="select2 form-control select2-multiple" multiple="multiple"
                                 data-placeholder="Choose ..." id="customSelect" name="employeeId">
-                                @foreach ($employees as $employee)
-                                    <option value="{{ $employee->id }}">{{ $employee->firstName }},
+                                @foreach ($employees->get('data') as $employee)
+                                    <option value="{{ $employee->id ?? '' }}">{{ $employee->firstName }},
                                         {{ $employee->surname }} - {{ $employee->empRoleName }}</option>
                                 @endforeach
 

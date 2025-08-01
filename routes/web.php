@@ -15,45 +15,87 @@ use App\Http\Controllers\ProcessTypeController;
 use App\Http\Controllers\GroupMembersController;
 use App\Http\Controllers\ExceptionApprovalController;
 
+/*
+|--------------------------------------------------------------------------
+| API Authentication Routes
+|--------------------------------------------------------------------------
+| Routes for API token generation and authentication
+*/
 
 Route::post('/getAuthAPIToken', [AuthController::class, 'getAuthToken']);
 
+/*
+|--------------------------------------------------------------------------
+| Guest Authentication Routes
+|--------------------------------------------------------------------------
+| Routes for user login and registration (accessible to guests only)
+*/
+
 // Route::middleware(['guest'])->group(
 // function () {
-Route::get('/', function () {
-    return view('auth.auth-login');
-})->name('login');
+    // Login Routes
+    Route::get('/', function () {
+        return view('auth.auth-login');
+    })->name('login');
 
-Route::get('/register', function () {
-    return view('auth.auth-register');
-})->name('register');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+    // Registration Routes
+    Route::get('/register', function () {
+        return view('auth.auth-register');
+    })->name('register');
+
+    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 // }
 // );
 
+/*
+|--------------------------------------------------------------------------
+| Protected Dashboard Routes
+|--------------------------------------------------------------------------
+| Main dashboard and group-specific dashboard routes
+*/
 
 // Route::middleware(['auth'])->group(function () {
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-Route::get('/my-dashboard/group/{id}', [DashboardController::class, 'groupDashboard'])->name('my.group.dashboard');
+    // Main Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// BATCH SETUP
+    // Group Dashboard
+    Route::get('/my-dashboard/group/{id}', [DashboardController::class, 'groupDashboard'])->name('my.group.dashboard');
+
+/*
+|--------------------------------------------------------------------------
+| Batch Management Routes
+|--------------------------------------------------------------------------
+| CRUD operations for batch management
+*/
+
 Route::get('/batch', [BatchController::class, 'index'])->name('batch');
 Route::post('/batch', [BatchController::class, 'store'])->name('batch.post');
 Route::get('/batch-edit/{id}', [BatchController::class, 'edit'])->name('batch.edit');
 Route::post('/batch/{id}/update', [BatchController::class, 'update'])->name('batch.update');
 Route::post('/batch/{id}/delete', [BatchController::class, 'destroy'])->name('batch.delete');
 
+/*
+|--------------------------------------------------------------------------
+| Group Management Routes
+|--------------------------------------------------------------------------
+| CRUD operations for group setup and management
+*/
 
-// GROUP SETUP
 Route::get('/group', [GroupController::class, 'index'])->name('group');
 Route::post('/group', [GroupController::class, 'store'])->name('group.post');
 Route::get('/group-edit/group/{id}', [GroupController::class, 'edit'])->name('group.edit');
 Route::post('/group-update/{id}/group', [GroupController::class, 'update'])->name('group.update');
 Route::post('/group-delete/{id}/group', [GroupController::class, 'destroy'])->name('group.delete');
 
-//GROUP MEMBERS SETUP
+/*
+|--------------------------------------------------------------------------
+| Group Members Management Routes
+|--------------------------------------------------------------------------
+| CRUD operations for managing group members
+*/
+
 Route::get('/group-members', [GroupMembersController::class, 'index'])->name('members');
 Route::get('/group-members-create', [GroupMembersController::class, 'create'])->name('members.create');
 Route::post('/group-members-create', [GroupMembersController::class, 'store'])->name('members.post');
@@ -61,84 +103,149 @@ Route::get('/group-members/{id}/edit', [GroupMembersController::class, 'edit'])-
 Route::post('/group-members/{id}/update', [GroupMembersController::class, 'update'])->name('members.update');
 Route::post('/group-members/{id}/delete', [GroupMembersController::class, 'destroy'])->name('members.delete');
 
+/*
+|--------------------------------------------------------------------------
+| Unit Management Routes
+|--------------------------------------------------------------------------
+| CRUD operations for unit setup and management
+*/
 
-//UNIT SETUP
 Route::get('/unit', [UnitController::class, 'index'])->name('unit');
 Route::post('/unit', [UnitController::class, 'store'])->name('unit.post');
 Route::get('/unit-edit/{id}', [UnitController::class, 'edit'])->name('unit.edit');
 Route::post('/unit/{id}/update', [UnitController::class, 'update'])->name('unit.update');
 Route::post('/unit/{id}/delete', [UnitController::class, 'destroy'])->name('unit.delete');
 
-//PROCESS TYPE SETUP
+/*
+|--------------------------------------------------------------------------
+| Process Type Management Routes
+|--------------------------------------------------------------------------
+| CRUD operations for process types and sub-process types
+*/
+
+// Main Process Type Routes
 Route::get('/process-type', [ProcessTypeController::class, 'index'])->name('process-type');
 Route::post('/process-type', [ProcessTypeController::class, 'store'])->name('process-type.post');
 Route::get('/process-type/{id}/edit', [ProcessTypeController::class, 'edit'])->name('process-type.edit');
 Route::post('/process-type/{id}/update', [ProcessTypeController::class, 'update'])->name('process-type.update');
 Route::post('/process-type/{id}/delete', [ProcessTypeController::class, 'destroy'])->name('process-type.delete');
 
-//SUB PROCESS TYPE SETUP
+// Sub Process Type Routes
 Route::post('/sub-process-type', [ProcessTypeController::class, 'storeSubProcess'])->name('sub.process.type');
 Route::get('/get-sub-process-types/{processTypeId}', [ProcessTypeController::class, 'getSubProcessTypesByProcessTypeId'])->name('get.subProcessTypes');
 
+/*
+|--------------------------------------------------------------------------
+| Risk Rate Management Routes
+|--------------------------------------------------------------------------
+| CRUD operations for risk rate setup and management
+*/
 
-//RISK RATE SETUP
 Route::get('/risk-rate', [RiskRateController::class, 'index'])->name('risk-rate');
 Route::post('/risk-rate', [RiskRateController::class, 'store'])->name('risk-rate.post');
 Route::get('/risk-rate/{id}/edit', [RiskRateController::class, 'edit'])->name('risk-rate.edit');
 Route::post('/risk-rate/{id}/update', [RiskRateController::class, 'update'])->name('risk-rate.update');
 Route::post('/risk-rate/{id}/delete', [RiskRateController::class, 'destroy'])->name('risk-rate.delete');
 
-//EXCEPTION SETUP
+/*
+|--------------------------------------------------------------------------
+| Exception Management Routes
+|--------------------------------------------------------------------------
+| Core exception CRUD operations, file management, and comments
+*/
+
+// Exception Listing Routes
 Route::get('/list-exception', [ExceptionController::class, 'index'])->name('exception.list');
 Route::get('/list-pending-exception', [ExceptionController::class, 'pendingExceptions'])->name('exception.pending');
 Route::get('/list-resolved-exception', [ExceptionController::class, 'resolvedExceptions'])->name('exception.resolved');
+
+// Exception CRUD Routes
 Route::get('/create-exception', [ExceptionController::class, 'create'])->name('exception.create');
 Route::post('/create-exception', [ExceptionController::class, 'store'])->name('exception.post');
 Route::get('/exception/{id}/open', [ExceptionController::class, 'edit2'])->name('exception.edit');
 Route::get('/exception/{id}/open-pending', [ExceptionController::class, 'edit2'])->name('exception.pending.edit');
 Route::post('/exception/{id}/update', [ExceptionController::class, 'update'])->name('exception.update');
 Route::post('/exception/{id}/delete', [ExceptionController::class, 'destroy'])->name('exception.delete');
+
+// Exception File Management
 Route::post('/exception/{id}/file-upload', [ExceptionController::class, 'exceptionFileUpload'])->name('exception.file.upload');
 Route::get('/exception/{id}/get-files', [ExceptionController::class, 'downloadExceptionFile'])->name('exception.file.download');
 Route::delete('/exception/{id}/file-delete', [ExceptionController::class, 'deleteExceptionFile'])->name('exception.file.delete');
+
+// Exception Status Management
 Route::post('/exception/{id}/close', [ExceptionController::class, 'closeException'])->name('exception.close');
 Route::post('/exception/{id}/auditee-resolution', [ExceptionController::class, 'recommendExceptionForResolution'])->name('exception.resolution');
 
-//EXCEPTION COMMENTS
+// Exception Comments Management
 Route::post('/exception/{id}/comment', [ExceptionController::class, 'storeComment'])->name('exception.comment.post');
 Route::post('/exception/{id}/comment-delete', [ExceptionController::class, 'deleteComment'])->name('exception.comment.delete');
 Route::post('/exception/{id}/comment-edit', [ExceptionController::class, 'updateComment'])->name('exception.comment.edit');
 
-//EXCEPTION APPROVALS
+/*
+|--------------------------------------------------------------------------
+| Exception Approval Workflow Routes
+|--------------------------------------------------------------------------
+| Routes for supervisor, auditor, and auditee exception approvals
+*/
+
+// Supervisor Approval Routes
 Route::get('/exception/supervisor-approval-list', [ExceptionApprovalController::class, 'exceptionSupList'])->name('exception.supervisor.list');
 Route::get('/exception/supervisor/show-exception-list-for-approval/{batchId}/{status}', [ExceptionApprovalController::class, 'showExceptionListWithStatusForApproval'])->name('show.supervisor.exception.for.approval');
 Route::get('/exception/{id}/open-supervisor-approval', [ExceptionApprovalController::class, 'supEditException'])->name('exception.supervisor.edit');
+
+// Auditor Approval Routes
 Route::get('/exception/auditor-approval-list', [ExceptionApprovalController::class, 'exceptionAuditorList'])->name('exception.auditor.list');
 Route::get('/exception/auditor/show-exception-list-for-approval/{batchId}/{status}', [ExceptionApprovalController::class, 'showAuditorExceptionListForApproval'])->name('show.auditor.exception.list.for.approval');
+
+// Auditee Routes
 Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
 // Route::get('/exception/auditee/open-exception-list', [ExceptionApprovalController::class, 'auditeeExceptionView'])->name('auditee.exception.view');
 
-//EXCEPTION APPROVALS ACTIONS - APPROVE OR DECLINE
+/*
+|--------------------------------------------------------------------------
+| Exception Approval Actions
+|--------------------------------------------------------------------------
+| Routes for approval/decline actions and responses
+*/
+
+// Supervisor Approval Actions
 Route::post('/exception/supervisor-approve-or-decline-single', [ExceptionApprovalController::class, 'supervisorApproveOrDeclineSingleException'])->name('exception.supervisor.approve-decline');
 Route::post('/exception/supervisor-action', [ExceptionApprovalController::class, 'supervisorActionOnBatchException'])->name('exception.supervisor.action');
 
-//AUDITEE SUBMIT RESPONSE
+// Auditee Response Submission
 Route::post('/exception/auditee-response', [ExceptionApprovalController::class, 'auditeeResponse'])->name('auditee.submit.response');
 
-//AUDITOR ANALYSE EXCEPTION
+/*
+|--------------------------------------------------------------------------
+| Auditor Exception Analysis Routes
+|--------------------------------------------------------------------------
+| Routes for auditor analysis and exception review
+*/
+
 Route::post('/exception/auditor/push-exception-for-analysis', [ExceptionApprovalController::class, 'auditorPushForAnalysis'])->name('auditor.analysis.push');
 Route::get('/exception/auditor/analysis-exception-list', [ExceptionApprovalController::class, 'auditorAnalysisExceptionList'])->name('auditor.analysis.exception');
 Route::get('/exception/auditor/analysis-exception-view', [ExceptionApprovalController::class, 'auditorAnalysisExceptionView'])->name('auditor.analysis.exception.view');
 
-//REPORTS
+/*
+|--------------------------------------------------------------------------
+| Reports and Export Routes
+|--------------------------------------------------------------------------
+| Routes for generating and downloading reports
+*/
+
 Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
 Route::get('/auditor-reports', [ReportsController::class, 'auditorReport'])->name('auditor.report');
 Route::get('/reports/{id}/download', [ReportsController::class, 'download'])->name('reports.download');
 Route::post('/reports/export-pdf', [ReportsController::class, 'exportPdf'])->name('reports.export.pdf');
 Route::post('/reports/export-pdf', [ReportsController::class, 'exportWord'])->name('reports.export-word');
 
+/*
+|--------------------------------------------------------------------------
+| Audit Creation and Management Routes
+|--------------------------------------------------------------------------
+| Routes for creating and managing audits
+*/
 
-//AUDIT CREATE
 Route::get('/audit/create', [AuditCreateController::class, 'index'])->name('audit.create');
 Route::post('/audit/bulk-exceptions/create', [AuditCreateController::class, 'store'])->name('bulk.exception.create');
 Route::post('/audit/create', [AuditCreateController::class, 'store'])->name('audit.post');
@@ -153,5 +260,5 @@ Route::post('/audit/{id}/delete', [AuditCreateController::class, 'destroyAudit']
 
 
 
+
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-// });

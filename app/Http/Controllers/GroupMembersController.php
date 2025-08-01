@@ -22,7 +22,9 @@ class GroupMembersController extends Controller
         $sortedMembers = collect($groupMembersData)->sortByDesc('createdAt');
         $groupMembers = ExceptionController::paginate($sortedMembers, 15, $request);
 
-        $employees = $this->getEmployeeData();
+        $employees = collect($this->getEmployeeData())->map(function ($employee) {
+            return (object) $employee;
+        });
         $groups = GroupController::getActivityGroups();
 
         // Group the already paginated members
@@ -49,7 +51,9 @@ class GroupMembersController extends Controller
 
     public function create()
     {
-        $employees = $this->getEmployeeData();
+        $employees = collect($this->getEmployeeData())->map(function ($employee) {
+            return (object) $employee;
+        });
         $all_groups = GroupController::getActivityGroups();
         $groups = collect($all_groups)->filter(fn($group) => $group->active == true); //active groups
 
@@ -144,6 +148,8 @@ class GroupMembersController extends Controller
     public function edit($id)
     {
         $employees = $this->getEmployeeData();
+
+        // dd($employees);
         $groups = GroupController::getActivityGroups();
 
         try {

@@ -34,7 +34,8 @@ class ReportsController extends Controller
     /**
      * Display the auditor's report.
      */
-    public function auditorReport(){
+    public function auditorReport()
+    {
         // Validate session
         $sessionValidation = $this->validateSession();
         if ($sessionValidation) {
@@ -126,46 +127,138 @@ class ReportsController extends Controller
      */
     public function exportWord(Request $request)
     {
-        $filters = json_decode($request->input('filters'), true);
-        $data = json_decode($request->input('data'), true);
+        try {
+            // Validate input
+            if (!$request->has('data')) {
+                throw new \Exception('No data provided');
+            }
 
-        if (empty($data)) {
-            return back()->with('error', 'No data to export');
+            $data = json_decode($request->input('data'), true);
+            $filters = json_decode($request->input('filters', '{}'), true) ?? [];
+
+            if (empty($data)) {
+                return back()->with('error', 'No data to export');
+            }
+
+            // Create new Word document
+            $phpWord = new \PhpOffice\PhpWord\PhpWord();
+            $phpWord->setDefaultFontName('Arial');
+            $phpWord->setDefaultFontSize(11);
+
+            // Add document properties
+            $properties = $phpWord->getDocInfo();
+            $properties->setCreator('Internal Audit System');
+            $properties->setTitle('Audit Exception Report');
+
+            // Add styles
+            $this->addDocumentStyles($phpWord);
+
+            // Process data
+            $branchGroups = $this->groupDataByBranch($data);
+            $this->addContentToDocument($phpWord, $branchGroups, $filters);
+
+            // Create writer and save to memory
+            $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+
+            // Generate filename
+            $filename = 'Exception_Report_' . ($filters['year'] ?? date('Y')) . '_' . date('Ymd_His') . '.docx';
+
+            // Stream the file to the browser
+            return response()->streamDownload(
+                function () use ($objWriter) {
+                    $objWriter->save('php://output');
+                },
+                $filename,
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                    'Expires' => '0'
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('Document generation failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to generate document: ' . $e->getMessage());
+        }
+    }
+
+    private function addDocumentStyles(PhpWord $phpWord)
+    {
+        // Title styles
+        $phpWord->addTitleStyle(1, ['bold' => true, 'size' => 16, 'color' => '1F4E79']);
+
+        // Paragraph styles
+        $phpWord->addFontStyle('headerMain', ['bold' => true, 'size' => 16, 'alignment' => 'center']);
+        $phpWord->addFontStyle('headerSub', ['bold' => true, 'size' => 14, 'alignment' => 'center']);
+        $phpWord->addFontStyle('headerBranch', ['bold' => true, 'size' => 12, 'alignment' => 'center']);
+        $phpWord->addFontStyle('exceptionTitle', ['bold' => true, 'size' => 12, 'underline' => 'single']);
+        $phpWord->addFontStyle('metadata', ['size' => 10, 'color' => '555555']);
+        $phpWord->addFontStyle('normalText', ['size' => 11]);
+        $phpWord->addFontStyle('boldText', ['size' => 11, 'bold' => true]);
+    }
+
+    private function addContentToDocument(PhpWord $phpWord, array $branchGroups, array $filters)
+    {
+        foreach ($branchGroups as $branchName => $reports) {
+            $section = $phpWord->addSection();
+
+            // Add document header
+            $section->addText('BESTPOINT SAVINGS AND LOANS LIMITED', 'headerMain');
+            $section->addText('INTERNAL AUDIT DEPARTMENT EXCEPTION SHEET', 'headerSub');
+
+            $batchYear = $filters['year'] ?? date('Y');
+            $section->addText("FOR $branchName BRANCH DURING THE $batchYear AUDIT", 'headerBranch');
+            $section->addTextBreak(2);
+
+            // Add exceptions
+            foreach ($reports as $report) {
+                $this->addExceptionSection($section, $report);
+                $section->addTextBreak(1);
+            }
+
+            if ($branchName !== array_key_last($branchGroups)) {
+                $section->addPageBreak();
+            }
+        }
+    }
+
+    private function addExceptionSection($section, $report)
+    {
+        $section->addText($report['exceptionTitle'] ?? 'Exception', 'exceptionTitle');
+
+        $metaText = sprintf(
+            "Process: %s | Department: %s | Risk: %s | Status: %s | Auditor: %s | Date: %s",
+            $report['processType'] ?? 'N/A',
+            $report['department'] ?? 'N/A',
+            $report['riskRate'] ?? 'N/A',
+            $report['status'] ?? 'N/A',
+            $report['auditorName'] ?? 'N/A',
+            substr($report['occurrenceDate'] ?? '', 0, 10) ?: 'N/A'
+        );
+        $section->addText($metaText, 'metadata');
+
+        $section->addText('Description:', 'boldText');
+        $section->addText($report['exception'] ?? 'No description provided', 'normalText');
+
+        if (!empty($report['recommendation'])) {
+            $section->addText('Recommendation:', 'boldText');
+            $section->addText($report['recommendation'], 'normalText');
         }
 
-        // Group data by branch
-        $branchGroups = $this->groupDataByBranch($data);
-
-        // Create Word document
-        $phpWord = new PhpWord();
-
-        // Set document properties
-        $properties = $phpWord->getDocInfo();
-        $properties->setCreator('Audit System');
-        $properties->setTitle('Audit Exception Report');
-        $properties->setDescription('Generated audit exception report');
-
-        // Define styles
-        $this->defineStyles($phpWord);
-
-        // Add content
-        $this->addDocumentHeader($phpWord, $filters, count($data));
-        $this->addExecutiveSummary($phpWord, $data, $branchGroups);
-        $this->addBranchDetails($phpWord, $branchGroups);
-
-        // Generate filename
-        $filename = $this->generateFilename($filters);
-
-        // Save and download
-        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
-
-        header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
-        header('Cache-Control: max-age=0');
-
-        $objWriter->save('php://output');
-        exit;
+        $section->addText(str_repeat('_', 80), ['size' => 8, 'color' => 'CCCCCC']);
     }
+
+    private function defineDocumentStyles(PhpWord $phpWord)
+    {
+        $phpWord->addFontStyle('headerMain', ['bold' => true, 'size' => 16]);
+        $phpWord->addFontStyle('headerSub', ['bold' => true, 'size' => 14]);
+        $phpWord->addFontStyle('headerBranch', ['bold' => true, 'size' => 12]);
+        $phpWord->addFontStyle('exceptionTitle', ['bold' => true, 'size' => 12, 'underline' => 'single']);
+        $phpWord->addFontStyle('metadata', ['size' => 10, 'color' => '555555']);
+        $phpWord->addFontStyle('sectionLabel', ['bold' => true, 'size' => 11]);
+        $phpWord->addFontStyle('normalText', ['size' => 11]);
+        $phpWord->addFontStyle('separator', ['color' => 'AAAAAA', 'size' => 8]);
+    }
+
 
     private function groupDataByBranch($data)
     {
@@ -196,382 +289,6 @@ class ReportsController extends Controller
         return 'Unknown Branch';
     }
 
-    private function defineStyles($phpWord)
-    {
-        // Title style
-        $phpWord->addTitleStyle(0, ['size' => 20, 'bold' => true, 'color' => '1F4E79']);
-        $phpWord->addTitleStyle(1, ['size' => 16, 'bold' => true, 'color' => '2F5597']);
-        $phpWord->addTitleStyle(2, ['size' => 14, 'bold' => true, 'color' => '2F5597']);
-        $phpWord->addTitleStyle(3, ['size' => 12, 'bold' => true]);
-
-        // Header style
-        $phpWord->addFontStyle('headerStyle', ['bold' => true, 'size' => 14, 'color' => '1F4E79']);
-
-        // Normal text style
-        $phpWord->addFontStyle('normalText', ['size' => 11]);
-
-        // Bold text style
-        $phpWord->addFontStyle('boldText', ['size' => 11, 'bold' => true]);
-
-        // Risk styles
-        $phpWord->addFontStyle('highRisk', ['size' => 11, 'bold' => true, 'color' => 'DC3545']);
-        $phpWord->addFontStyle('mediumRisk', ['size' => 11, 'bold' => true, 'color' => 'FFC107']);
-        $phpWord->addFontStyle('lowRisk', ['size' => 11, 'bold' => true, 'color' => '28A745']);
-
-        // Paragraph styles
-        // $phpWord->addParagraphStyle('justified', ['alignment' => \PhpOffice\PhpWord\Style\Alignment::ALIGN_BOTH, 'spaceAfter' => 200]);
-        // $phpWord->addParagraphStyle('centered', ['alignment' => \PhpOffice\PhpWord\Style\Alignment::ALIGN_CENTER]);
-    }
-
-    private function addDocumentHeader($phpWord, $filters, $totalRecords)
-    {
-        $section = $phpWord->addSection();
-
-        // Document title
-        $section->addTitle('AUDIT EXCEPTION REPORT', 0);
-        $section->addTextBreak(1);
-
-        // Report metadata
-        $section->addText('Report Generated: ' . Carbon::now()->format('F d, Y \a\t H:i A'), 'boldText');
-        $section->addText('Total Exceptions: ' . $totalRecords, 'boldText');
-        $section->addTextBreak(1);
-
-        // Applied filters
-        if (!empty(array_filter($filters))) {
-            $section->addTitle('Applied Filters', 2);
-            foreach ($filters as $key => $value) {
-                if (!empty($value)) {
-                    $label = ucfirst(str_replace(['_', 'Filter'], [' ', ''], $key));
-                    $section->addText($label . ': ' . $value, 'normalText');
-                }
-            }
-            $section->addTextBreak(1);
-        }
-
-        $section->addTextBreak(2);
-    }
-
-    private function addExecutiveSummary($phpWord, $data, $branchGroups)
-    {
-        $section = $phpWord->addSection();
-
-        $section->addTitle('EXECUTIVE SUMMARY', 1);
-        $section->addTextBreak(1);
-
-        // Calculate statistics
-        $totalExceptions = count($data);
-        $branchCount = count($branchGroups);
-        $riskStats = $this->calculateRiskStats($data);
-        $statusStats = $this->calculateStatusStats($data);
-        $processStats = $this->calculateProcessStats($data);
-
-        // Create summary text
-        $summaryText = "This audit exception report covers {$totalExceptions} exceptions across {$branchCount} branches. ";
-
-        // Add risk information
-        if ($riskStats['High'] > 0) {
-            $summaryText .= "The report identifies {$riskStats['High']} high-risk exceptions that require immediate attention. ";
-        }
-
-        if ($riskStats['Medium'] > 0) {
-            $summaryText .= "Additionally, {$riskStats['Medium']} medium-risk exceptions have been documented for management review. ";
-        }
-
-        if ($riskStats['Low'] > 0) {
-            $summaryText .= "There are {$riskStats['Low']} low-risk exceptions that have been noted for process improvement. ";
-        }
-
-        // Add status information
-        $resolvedCount = $statusStats['RESOLVED'] ?? 0;
-        $pendingCount = $statusStats['PENDING'] ?? 0;
-
-        if ($resolvedCount > 0) {
-            $percentage = round(($resolvedCount / $totalExceptions) * 100, 1);
-            $summaryText .= "Of the total exceptions, {$resolvedCount} ({$percentage}%) have been successfully resolved. ";
-        }
-
-        if ($pendingCount > 0) {
-            $summaryText .= "{$pendingCount} exceptions remain pending resolution. ";
-        }
-
-        // Add process information
-        $topProcesses = array_slice($processStats, 0, 3);
-        $processList = implode(', ', array_keys($topProcesses));
-        $summaryText .= "The exceptions span across multiple process areas including {$processList}, indicating the need for comprehensive control improvements across various operational areas.";
-
-        // Add visual statistics
-        $section->addText($summaryText, 'normalText', 'justified');
-        $section->addTextBreak(1);
-
-        // Add statistics tables side by side
-        $table = $section->addTable([
-            'layout' => \PhpOffice\PhpWord\Style\Table::LAYOUT_FIXED,
-            'cellMargin' => 50,
-            'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER
-        ]);
-
-        $table->addRow();
-
-        // Risk Distribution table
-        $cell = $table->addCell(8000);
-        $this->addStatisticsTableToCell($cell, 'Risk Distribution', $riskStats, [
-            'High' => 'highRisk',
-            'Medium' => 'mediumRisk',
-            'Low' => 'lowRisk'
-        ]);
-
-        // Status Overview table
-        $cell = $table->addCell(8000);
-        $this->addStatisticsTableToCell($cell, 'Status Overview', $statusStats, [
-            'RESOLVED' => 'normalText',
-            'PENDING' => 'boldText',
-            'OPEN' => 'normalText',
-            'CLOSED' => 'normalText'
-        ]);
-
-        $section->addTextBreak(2);
-
-        // Add top processes chart
-        $section->addTitle('Top Process Areas', 2);
-        $this->addProcessChart($section, $processStats);
-
-        $section->addPageBreak();
-    }
-
-    private function addStatisticsTableToCell($cell, $title, $stats, $styleMap = [])
-    {
-        $innerTable = $cell->addTable([
-            'borderSize' => 6,
-            'borderColor' => 'DDDDDD',
-            'cellMargin' => 50
-        ]);
-
-        // Header row
-        $innerTable->addRow();
-        $headerCell = $innerTable->addCell(5000, ['bgColor' => 'F2F2F2']);
-        $headerCell->addText($title, 'boldText');
-        $headerCell = $innerTable->addCell(3000, ['bgColor' => 'F2F2F2']);
-        $headerCell->addText('Count', 'boldText');
-        $headerCell = $innerTable->addCell(2000, ['bgColor' => 'F2F2F2']);
-        $headerCell->addText('%', 'boldText');
-
-        // Data rows
-        $total = array_sum($stats);
-        foreach ($stats as $key => $value) {
-            $innerTable->addRow();
-            $dataCell = $innerTable->addCell(5000);
-
-            $style = $styleMap[$key] ?? 'normalText';
-            $dataCell->addText($key, $style);
-
-            $countCell = $innerTable->addCell(3000);
-            $countCell->addText($value, 'normalText');
-
-            $percentCell = $innerTable->addCell(2000);
-            $percentage = $total > 0 ? round(($value / $total) * 100, 1) : 0;
-            $percentCell->addText($percentage . '%', 'normalText');
-        }
-    }
-
-    private function addProcessChart($section, $processStats)
-    {
-        // Limit to top 5 processes
-        $topProcesses = array_slice($processStats, 0, 5);
-        $totalExceptions = array_sum($processStats);
-
-        $table = $section->addTable([
-            'borderSize' => 1,
-            'borderColor' => 'FFFFFF',
-            'cellMargin' => 50,
-            'width' => 100 * 50
-        ]);
-
-        $table->addRow();
-
-        // Add chart bars
-        foreach ($topProcesses as $process => $count) {
-            $percentage = round(($count / $totalExceptions) * 100);
-            $barWidth = $percentage * 5; // Scale factor for visual representation
-
-            $table->addRow();
-            $cell = $table->addCell(2000);
-            $cell->addText($process, 'boldText');
-
-            $cell = $table->addCell(1000);
-            $cell->addText($count, 'normalText');
-
-            $cell = $table->addCell(10000);
-            $cell->addText(str_repeat(' ', 10), null, [
-                'shading' => [
-                    'fill' => $this->getProcessChartColor($percentage),
-                    'start' => 0,
-                    'end' => $barWidth
-                ]
-            ]);
-
-            $cell = $table->addCell(1000);
-            $cell->addText($percentage . '%', 'normalText');
-        }
-
-        $section->addTextBreak(1);
-        $section->addText('Figure 1: Distribution of exceptions across top process areas', ['size' => 9, 'italic' => true]);
-    }
-
-    private function addBranchDetails($phpWord, $branchGroups)
-    {
-        foreach ($branchGroups as $branchName => $reports) {
-            $section = $phpWord->addSection();
-
-            // Branch header
-            $section->addTitle($branchName, 1);
-            $section->addTextBreak(1);
-
-            // Branch statistics
-            $riskStats = $this->calculateRiskStats($reports);
-            $statusStats = $this->calculateStatusStats($reports);
-
-            // Add statistics tables
-            $this->addStatisticsTable($section, 'Risk Distribution', $riskStats, [
-                'High' => 'highRisk',
-                'Medium' => 'mediumRisk',
-                'Low' => 'lowRisk'
-            ]);
-
-            $this->addStatisticsTable($section, 'Status Overview', $statusStats, [
-                'RESOLVED' => 'normalText',
-                'PENDING' => 'boldText'
-            ]);
-
-            // Detailed exceptions
-            $section->addTextBreak(1);
-            $section->addTitle('Exception Details', 2);
-
-            foreach ($reports as $report) {
-                $this->addExceptionDetails($section, $report);
-                $section->addTextBreak(1);
-            }
-        }
-    }
-
-    private function addStatisticsTable($section, $title, $stats, $styleMap = [])
-    {
-        $table = $section->addTable([
-            'borderSize' => 6,
-            'borderColor' => 'DDDDDD',
-            'cellMargin' => 50
-        ]);
-
-        // Header row
-        $table->addRow();
-        $cell = $table->addCell(5000, ['bgColor' => 'F2F2F2']);
-        $cell->addText($title, 'boldText');
-        $cell = $table->addCell(5000, ['bgColor' => 'F2F2F2']);
-        $cell->addText('Count', 'boldText');
-
-        // Data rows
-        foreach ($stats as $key => $value) {
-            $table->addRow();
-            $cell = $table->addCell(5000);
-
-            $style = $styleMap[$key] ?? 'normalText';
-            $cell->addText($key, $style);
-
-            $cell = $table->addCell(5000);
-            $cell->addText($value, 'normalText');
-        }
-
-        $section->addTextBreak(1);
-    }
-
-    private function addExceptionDetails($section, $report)
-    {
-        // Exception header
-        $riskStyle = strtolower($report['riskRate']) . 'Risk';
-        $section->addText($report['exceptionTitle'] ?? 'Exception', ['bold' => true, 'size' => 12]);
-
-        // Metadata line
-        $metaText = "Process: {$report['processType']} | Department: {$report['department']} | ";
-        $metaText .= "Risk: {$report['riskRate']} | Status: {$report['status']} | ";
-        $metaText .= "Auditor: {$report['auditorName']} | Occurrence Date: " . substr($report['occurrenceDate'], 0, 10);
-        $section->addText($metaText, ['size' => 10, 'color' => '666666']);
-
-        // Exception description
-        $section->addText('Description:', 'boldText');
-        $section->addText($report['exception'], 'normalText', 'justified');
-
-        // Recommendation if exists
-        if (!empty($report['recommendation'])) {
-            $section->addText('Recommendation:', 'boldText');
-            $section->addText($report['recommendation'], 'normalText', 'justified');
-        }
-    }
-
-    private function calculateRiskStats($data)
-    {
-        $stats = ['High' => 0, 'Medium' => 0, 'Low' => 0];
-
-        foreach ($data as $report) {
-            $risk = $report['riskRate'] ?? 'Low';
-            $stats[$risk]++;
-        }
-
-        return $stats;
-    }
-
-    private function calculateStatusStats($data)
-    {
-        $stats = [];
-
-        foreach ($data as $report) {
-            $status = $report['status'] ?? 'UNKNOWN';
-            $stats[$status] = ($stats[$status] ?? 0) + 1;
-        }
-
-        return $stats;
-    }
-
-    private function calculateProcessStats($data)
-    {
-        $stats = [];
-
-        foreach ($data as $report) {
-            $process = $report['processType'] ?? 'Unknown Process';
-            $stats[$process] = ($stats[$process] ?? 0) + 1;
-        }
-
-        arsort($stats);
-        return $stats;
-    }
-
-    private function getProcessChartColor($percentage)
-    {
-        if ($percentage > 60) return 'C00000'; // Dark red
-        if ($percentage > 40) return 'FF0000'; // Red
-        if ($percentage > 20) return 'FFC000'; // Orange
-        return 'FFFF00'; // Yellow
-    }
-
-    private function generateFilename($filters)
-    {
-        $baseName = 'Audit_Exception_Report_';
-
-        // Add date range if specified
-        if (!empty($filters['dateFrom']) || !empty($filters['dateTo'])) {
-            $from = $filters['dateFrom'] ?? 'start';
-            $to = $filters['dateTo'] ?? 'end';
-            $baseName .= $from . '_to_' . $to . '_';
-        }
-
-        // Add branch if specified
-        if (!empty($filters['batch'])) {
-            $baseName .= str_replace(' ', '_', $filters['batch']) . '_';
-        }
-
-        // Add current timestamp
-        $baseName .= Carbon::now()->format('Ymd_His');
-
-        return $baseName . '.docx';
-    }
 
 
 
@@ -611,5 +328,4 @@ class ReportsController extends Controller
         }
         return null;
     }
-
 }
