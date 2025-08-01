@@ -147,9 +147,11 @@ class GroupMembersController extends Controller
 
     public function edit($id)
     {
-        $employees = $this->getEmployeeData();
+        $employees = collect($this->getEmployeeData())->map(function ($employee) {
+            return (object) $employee;
+        });
 
-        // dd($employees);
+        
         $groups = GroupController::getActivityGroups();
 
         try {
