@@ -77,13 +77,15 @@
                             <div class="card">
                                 <div class="card-body">
                                     <div class="mb-3">
-                                        <label class="form-label">Exception Title<span class="required">*</span></label>
-                                        <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ old('exceptionTitle') }}</textarea>
+                                        <label class="form-label">Exception Title <span
+                                                class="required">*</span></label>
+                                        <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ $exception->exceptionTitle }}</textarea>
                                         <div class="invalid-feedback">Please enter exception title.</div>
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Exception<span class="required">*</span></label>
+                                        <label class="form-label">Exception Description <span
+                                                class="required">*</span></label>
                                         <textarea @disabled(!$canEdit) class="form-control" rows="3" id="exception" name="exception"
                                             placeholder="Enter exception description......" required>{{ $exception->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>

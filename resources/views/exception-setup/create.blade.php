@@ -22,8 +22,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Exception Title<span class="required">*</span></label>
-                                <textarea class="form-control" rows="3"  name="exceptionTitle"
-                                    placeholder="Enter exception title......" required>{{ old('exceptionTitle') }}</textarea>
+                                <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ old('exceptionTitle') }}</textarea>
                                 <div class="invalid-feedback">Please enter exception title.</div>
                             </div>
 
@@ -43,7 +42,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Batch<span class="required">*</span></label>
                                 <select class="form-select select2" name="exceptionBatchId" required>
-                                    <option >Select.....</option>
+                                    <option>Select.....</option>
                                     @foreach ($batches as $batch)
                                         <option value="{{ $batch->id }}"
                                             {{ $batch->id === old('exceptionBatchId') ? 'selected' : '' }}>
@@ -66,10 +65,8 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Occurrence Date<span class="required">*</span></label>
-                                <input type="text" class="form-control" placeholder="Select occurrence date"
-                                    name="occurrenceDate" value="{{ old('occurrenceDate') }}"
-                                    data-date-format="dd/mm/yyyy" data-provide="datepicker" data-date-autoclose="true"
-                                    required />
+                                <input type="date" class="form-control" name="occurrenceDate" required
+                                    value="{{ old('occurrenceDate') }}" placeholder="Select occurrence date" />
                                 <div class="invalid-feedback">Please select occurrence date.</div>
                             </div>
 
@@ -101,7 +98,7 @@
                             <div class="mb-3">
                                 <label class="form-label" for="project-visibility-input">Risk Rate</label>
                                 <select class="form-select select2" name="riskRateId">
-                                    {{--  <option value="">Select.....</option>  --}}
+                                    <option value="">Not Determined...</option>
                                     @foreach ($riskRates as $riskRate)
                                         <option value="{{ $riskRate->id }}"
                                             {{ $riskRate->id === old('riskRateId') ? 'selected' : '' }}>
@@ -115,7 +112,7 @@
                                 <label class="form-label" for="project-visibility-input">Process Type/Scope<span
                                         class="required">*</span></label>
                                 <select class="form-select select2" name="processTypeId" required>
-                                    <option >Select.....</option>
+                                    <option>Select.....</option>
                                     @foreach ($processTypes as $processType)
                                         <option value="{{ $processType->id }}"
                                             {{ $processType->id === old('processTypeId') ? 'selected' : '' }}>
@@ -145,10 +142,9 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Resolution Date</label>
-                                <input type="text" class="form-control" placeholder="Select resolution date"
-                                    name="resolutionDate" value="{{ old('resolutionDate') }}"
-                                    data-date-format="dd/mm/yyyy" data-provide="datepicker"
-                                    data-date-autoclose="true" />
+                                <input type="date" class="form-control" name="resolutionDate"
+                                    value="{{ old('resolutionDate') }}" placeholder="Select resolution date" />
+
                                 <div class="invalid-feedback">Please select resolution date.</div>
                             </div>
                         </div>

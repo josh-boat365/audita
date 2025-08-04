@@ -38,12 +38,12 @@
                     @forelse ($exceptions as $exception)
                         <tr>
                             <th scope="row"><a href="#">{!! $exception->exception !!}</a></th>
-                            <td> {{ $exception->rootCause }} </td>
-                            <td> {{ $exception->auditorName }} </td>
+                            <td> {{ $exception->rootCause ?? 'Not Determined' }} </td>
+                            <td> {{ $exception->auditorName ?? 'N/A' }} </td>
 
                             <td>
                                 <span class="dropdown badge rounded-pill bg-primary">
-                                    {{ $exception->processType }}
+                                    {{ $exception->processType ?? 'N/A' }}
                                 </span>
                             </td>
                             <td>
@@ -51,14 +51,14 @@
                                 <span
                                     class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : 'bg-success') }}">
 
-                                    {{ $exception->riskRate }}
+                                    {{ $exception->riskRate ?? 'Not Determined' }}
                                 </span>
 
                             </td>
                             <td> {{ $exception->department }} </td>
                             <td> <span
                                     class="dropdown badge rounded-pill {{ $exception->status == 'PENDING' ? 'bg-dark' : 'bg-success' }}">
-                                    {{ $exception->status }}
+                                    {{ $exception->status ?? 'N/A' }}
                                 </span>
                             </td>
                             <td> {{ Carbon\Carbon::parse($exception->occurrenceDate)->format('jS F, Y ') }}
