@@ -133,10 +133,9 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Proposed Resolution Date</label>
-                                <input type="text" class="form-control" placeholder="Select due date"
-                                    name="proposeResolutionDate" value="{{ old('proposeResolutionDate') }}"
-                                    data-date-format="dd/mm/yyyy" data-provide="datepicker"
-                                    data-date-autoclose="true" />
+
+                                <input type="date" class="form-control" name="proposeResolutionDate"
+                                    value="{{ old('proposeResolutionDate') }}" placeholder="Select resolution date" />
                                 <div class="invalid-feedback">Please select proposed resolution date.</div>
                             </div>
 
