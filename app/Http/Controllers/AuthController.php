@@ -34,6 +34,8 @@ class AuthController extends Controller
             'password' => 'required|string|max:255',
         ]);
 
+        // dd($request->all());
+
         // Prepare data for the API request
         $data = [
             'appName' => 'Auditor',
@@ -42,13 +44,13 @@ class AuthController extends Controller
             'validateAppAcess' => true
         ];
 
+        // dd($data);
 
         try {
-            //http://bp-ho-gcupdate.Bestpointgh.com:8093/verification/LocalAccount/UserNameOrPhoneOrEmailAndPassword
-            //http://192.168.1.200:5126/Auditor/Login
-            // Send the POST request to the API
-            $response = Http::withoutVerifying()->post('http://bp-ho-gcupdate.Bestpointgh.com:8093/verification/LocalAccount/UserNameOrPhoneOrEmailAndPassword', $data);
 
+            // Send the POST request to the API
+            $response = Http::withoutVerifying()->post('http://192.168.1.200:5123/Auditor/Login', $data);
+                // dd($response->json());
             // Check for a successful response and the presence of access token
             if ($response->successful() && isset($response['access_token'])) {
                 $data = $response->object();
@@ -66,6 +68,8 @@ class AuthController extends Controller
                 ]);
 
 
+
+
                 // Clear rate limit on success
                 RateLimiter::clear($throttleKey);
 
@@ -76,6 +80,7 @@ class AuthController extends Controller
                 $topManagers = [1, 2, 4];
                 $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
                 $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+                // dd($employeeRoleId);
 
                 if (in_array($employeeRoleId, $topManagers)) {
                     return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');
