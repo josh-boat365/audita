@@ -109,10 +109,17 @@
                             <canvas id="statusChart"></canvas>
                         </div>
                         <div class="mt-3 text-center small">
+                            @php
+                                $statusColors = [
+                                    'RESOLVED' => 'success',
+                                    'APPROVED' => 'primary',
+                                    'PENDING' => 'warning',
+                                ];
+                            @endphp
+
                             @foreach ($statusData as $status => $count)
                                 <span class="me-3">
-                                    <i
-                                        class="fas fa-circle text-{{ $status === 'RESOLVED' ? 'success' : 'warning' }}"></i>
+                                    <i class="fas fa-circle text-{{ $statusColors[$status] ?? 'secondary' }}"></i>
                                     {{ $status }} ({{ $count }})
                                 </span>
                             @endforeach
@@ -221,8 +228,9 @@
                             datasets: [{
                                 data: {!! json_encode($statusData->values()) !!},
                                 backgroundColor: [
-                                    '#198754', // RESOLVED - Bootstrap success
-                                    '#ffc107' // PENDING - Bootstrap warning
+                                    '#198754', // RESOLVED - Bootstrap success (green)
+                                    '#0d6efd', // APPROVED - Bootstrap primary (blue)
+                                    '#ffc107' // PENDING - Bootstrap warning (yellow)
                                 ],
                                 hoverBorderColor: "rgba(234, 236, 244, 1)",
                             }],
