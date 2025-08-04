@@ -11,8 +11,7 @@
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     @if (URL::current() == route('exception.edit', $exception->id))
                         <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('exception.list') }}">
-                                List of Exceptions </a> > Update Exception > <a
-                                href="#">exception</a>
+                                List of Exceptions </a> > Update Exception > <a href="#">exception</a>
                         </h4>
                     @else
                         <h4 class="mb-sm-0 font-size-18"> <a href="{{ route('exception.pending') }}">
@@ -77,11 +76,16 @@
                         <div class="col-lg-8">
                             <div class="card">
                                 <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Exception Title<span class="required">*</span></label>
+                                        <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ old('exceptionTitle') }}</textarea>
+                                        <div class="invalid-feedback">Please enter exception title.</div>
+                                    </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Exception<span class="required">*</span></label>
                                         <textarea @disabled(!$canEdit) class="form-control" rows="3" id="exception" name="exception"
-                                            placeholder="Enter exception details......" required>{{ $exception->exception }}</textarea>
+                                            placeholder="Enter exception description......" required>{{ $exception->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
 
@@ -166,7 +170,7 @@
                                             Type/Scope<span class="required">*</span></label>
                                         <select @disabled(!$canEdit)class="form-select select2"
                                             name="processTypeId" required>
-                                            <option >Select.....</option>
+                                            <option>Select.....</option>
                                             @foreach ($processTypes as $processType)
                                                 <option value="{{ $processType->id }}" @selected($processType->id === $exception->processTypeId)>
                                                     {{ $processType->name }}</option>
@@ -202,7 +206,7 @@
                                             placeholder="Select resolution date" name="resolutionDate"
                                             value="{{ $exception->resolutionDate == null ? '' : Carbon\Carbon::parse($exception->resolutionDate)->format('d/m/Y') }}"
                                             data-date-format="d/m/yy" data-provide="datepicker"
-                                            data-date-autoclose="true"  />
+                                            data-date-autoclose="true" />
                                         <div class="invalid-feedback">Please select resolution date.</div>
                                     </div>
                                 </div>

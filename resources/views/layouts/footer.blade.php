@@ -61,8 +61,8 @@
 
 @push('scripts')
 
-    <script src="https://cdn.tiny.cloud/1/ynbajxrf957pph9rrymxt50tc689r3r3ccj4iyfnlr7j0n6p/tinymce/7/tinymce.min.js"
-        referrerpolicy="origin"></script>
+    {{--  <script src="https://cdn.tiny.cloud/1/ynbajxrf957pph9rrymxt50tc689r3r3ccj4iyfnlr7j0n6p/tinymce/7/tinymce.min.js"
+        referrerpolicy="origin"></script>  --}}
     <script>
         tinymce.init({
             selector: 'textarea#exception_description',

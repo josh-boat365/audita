@@ -22,15 +22,15 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Exception Title<span class="required">*</span></label>
-                                <textarea class="form-control" rows="3"  name="title"
-                                    placeholder="Enter exception title......" required>{{ old('title') }}</textarea>
+                                <textarea class="form-control" rows="3"  name="exceptionTitle"
+                                    placeholder="Enter exception title......" required>{{ old('exceptionTitle') }}</textarea>
                                 <div class="invalid-feedback">Please enter exception title.</div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Exception Description<span class="required">*</span></label>
-                                <textarea class="form-control" rows="3" id="exception_description" name="description"
-                                    placeholder="Enter exception description......" required>{{ old('description') }}</textarea>
+                                <textarea class="form-control" rows="3" id="exception_description" name="exception"
+                                    placeholder="Enter exception description......" required>{{ old('exception') }}</textarea>
                                 <div class="invalid-feedback">Please enter an exception description.</div>
                             </div>
 

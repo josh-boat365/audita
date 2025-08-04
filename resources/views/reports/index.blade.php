@@ -87,7 +87,8 @@
                                     placeholder="Select end date">
                             </div>
                             <div class="col-md-3 d-flex align-items-end">
-                                <button type="button" id="resetFilters" class="btn btn-secondary">Reset Filters</button>
+                                <button type="button" id="resetFilters" class="btn btn-secondary">Reset
+                                    Filters</button>
                             </div>
                         </div>
                     </form>
@@ -124,7 +125,7 @@
                                 @forelse ($reports as $report)
                                     <tr data-batch="{{ $report->exceptionBatchId }}"
                                         data-branch="@php
-                                            $branchName = 'N/A';
+$branchName = 'N/A';
                                             foreach ($batches as $batch) {
                                                 if ($batch->id == $report->exceptionBatchId) {
                                                     foreach ($groups as $group) {
@@ -136,10 +137,8 @@
                                                     break;
                                                 }
                                             }
-                                            echo $branchName;
-                                        @endphp"
-                                        data-auditor="{{ $report->auditorName }}"
-                                        data-status="{{ $report->status }}"
+                                            echo $branchName; @endphp"
+                                        data-auditor="{{ $report->auditorName }}" data-status="{{ $report->status }}"
                                         data-risk-rate="{{ $report->riskRate }}"
                                         data-occurrence-date="{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : '' }}">
                                         <td>{{ $report->exceptionTitle ?? 'N/A' }}</td>
@@ -156,8 +155,10 @@
                                         <td>{{ $report->statusComment ?? 'N/A' }}</td>
                                         <td>{{ $report->department ?? 'N/A' }}</td>
                                         <td>{{ $report->status ?? 'N/A' }}</td>
-                                        <td>{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : 'N/A' }}</td>
-                                        <td>{{ $report->resolutionDate ? \Carbon\Carbon::parse($report->resolutionDate)->format('Y-m-d') : 'N/A' }}</td>
+                                        <td>{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : 'N/A' }}
+                                        </td>
+                                        <td>{{ $report->resolutionDate ? \Carbon\Carbon::parse($report->resolutionDate)->format('Y-m-d') : 'N/A' }}
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -181,6 +182,8 @@
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
         <script>
             $(document).ready(function() {
@@ -193,8 +196,7 @@
                 // Initialize DataTable
                 var table = $('#reportsTable').DataTable({
                     dom: 'Bfrtip',
-                    buttons: [
-                        {
+                    buttons: [{
                             extend: 'excelHtml5',
                             text: 'Export to Excel',
                             title: 'Exceptions Report',
@@ -214,7 +216,8 @@
                                 if (filterInfo) {
                                     // Insert filter information before the table
                                     $('row:first', sheet).before(
-                                        '<row r="1"><c r="A1" t="inlineStr"><is><t>Applied Filters: ' + filterInfo + '</t></is></c></row>'
+                                        '<row r="1"><c r="A1" t="inlineStr"><is><t>Applied Filters: ' +
+                                        filterInfo + '</t></is></c></row>'
                                     );
                                 }
 
@@ -246,7 +249,7 @@
                         },
                         {
                             text: 'Export to PDF',
-                            action: function (e, dt, button, config) {
+                            action: function(e, dt, button, config) {
                                 // Get current filter values
                                 const filters = {
                                     batch: $('#batchFilter').val(),
@@ -260,7 +263,9 @@
 
                                 // Get filtered data
                                 const filteredData = [];
-                                dt.rows({ search: 'applied' }).every(function() {
+                                dt.rows({
+                                    search: 'applied'
+                                }).every(function() {
                                     const rowData = this.data();
                                     filteredData.push(rowData);
                                 });
@@ -308,13 +313,13 @@
                         [10, 25, 50, 100, -1],
                         [10, 25, 50, 100, "All"]
                     ],
-                    columnDefs: [
-                        {
+                    columnDefs: [{
                             // Exception Title and Exception columns - truncate long text
                             targets: [0, 1, 2],
                             render: function(data, type, row) {
                                 if (type === 'display' && data && data.length > 50) {
-                                    return '<span title="' + data + '">' + data.substr(0, 50) + '...</span>';
+                                    return '<span title="' + data + '">' + data.substr(0, 50) +
+                                        '...</span>';
                                 }
                                 return data || 'N/A';
                             }
@@ -324,7 +329,8 @@
                             targets: [8],
                             render: function(data, type, row) {
                                 if (type === 'display' && data && data.length > 30) {
-                                    return '<span title="' + data + '">' + data.substr(0, 30) + '...</span>';
+                                    return '<span title="' + data + '">' + data.substr(0, 30) +
+                                        '...</span>';
                                 }
                                 return data || 'N/A';
                             }
@@ -340,7 +346,9 @@
                             }
                         }
                     ],
-                    order: [[11, 'desc']], // Sort by occurrence date descending
+                    order: [
+                        [11, 'desc']
+                    ], // Sort by occurrence date descending
                     searching: true,
                     ordering: true,
                     info: true,
@@ -420,9 +428,10 @@
                 }
 
                 // Apply filters on change
-                $('#batchFilter, #branchFilter, #auditorFilter, #statusFilter, #riskRateFilter').on('change', function() {
-                    applyCustomFilters();
-                });
+                $('#batchFilter, #branchFilter, #auditorFilter, #statusFilter, #riskRateFilter').on('change',
+                    function() {
+                        applyCustomFilters();
+                    });
 
                 // Date filter validation and application
                 $('#dateFromFilter, #dateToFilter').on('change', function() {
