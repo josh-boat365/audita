@@ -84,7 +84,7 @@
                     statusComment: responseText.trim()
                 };
 
-                const save_response_url = "{{ url('/exception/auditee-response') }}/"; // Adjust URL as needed
+                const save_response_url = "{{ url('/exception/auditee-response') }}"; // Adjust URL as needed
 
                 $.ajax({
                     url: save_response_url,
