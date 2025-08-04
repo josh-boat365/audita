@@ -174,11 +174,6 @@
                     return isValid;
                 }
 
-                // Function to get sub-process types for a given process type
-                {{--  function getSubProcessTypes(processTypeId) {
-                    return groupedSubProcessTypes[processTypeId] || [];
-                }  --}}
-
                 // Function to show validation error
                 function showValidationError() {
                     const missingFields = [];
@@ -218,14 +213,18 @@
                 function loadSubProcessTypes(processTypeId, callback) {
                     if (!processTypeId) return;
 
+                    // Use Laravel's url() helper instead of hardcoded path
+                    const url = "{{ url('/get-sub-process-types') }}/" + processTypeId;
+
                     $.ajax({
-                        url: '/get-sub-process-types/' + processTypeId,
+                        url: url,
                         type: 'GET',
                         success: function(data) {
                             if (callback) callback(data);
                         },
                         error: function(xhr) {
                             console.error('Error loading sub-process types:', xhr.responseText);
+                            console.error('Request URL:', url); // Add this for debugging
                             Swal.fire('Error', 'Failed to load sub-process types', 'error');
                         }
                     });
