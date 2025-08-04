@@ -29,7 +29,7 @@
                                 <select class="select2 form-control select2-multiple" data-toggle="select2"
                                     multiple="multiple" data-placeholder="Select member........"  id="customSelect" name="employeeId[]">
                                     {{--  <option> Select member......</option>  --}}
-                                    @foreach ($employees->get('data') as $employee)
+                                    @foreach ($employees as $employee)
                                         <option value="{{ $employee->id }}">{{ $employee->firstName }},
                                             {{ $employee->surname }} - {{ $employee->empRoleName }}</option>
                                     @endforeach

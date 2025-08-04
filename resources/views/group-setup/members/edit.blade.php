@@ -29,7 +29,7 @@
                             <div>
                                 <select class="select2 form-control" id="customSelect" name="employeeId">
                                     <option value="">Select member...</option>
-                                    @foreach ($employees->get('data') as $employee)
+                                    @foreach ($employees as $employee)
                                         <option value="{{ $employee->id }}"
                                             {{ $employee->id === $groupMember->employeeId ? 'selected' : '' }}>
                                             {{ $employee->firstName }}, {{ $employee->surname }} -

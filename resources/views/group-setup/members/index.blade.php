@@ -161,7 +161,7 @@
                             {{--  {{ dd($employees) }}  --}}
                             <select class="select2 form-control select2-multiple" multiple="multiple"
                                 data-placeholder="Choose ..." id="customSelect" name="employeeId">
-                                @foreach ($employees->get('data') as $employee)
+                                @foreach ($employees as $employee)
                                     <option value="{{ $employee->id ?? '' }}">{{ $employee->firstName }},
                                         {{ $employee->surname }} - {{ $employee->empRoleName }}</option>
                                 @endforeach
