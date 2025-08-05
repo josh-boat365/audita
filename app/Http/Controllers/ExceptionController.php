@@ -238,7 +238,7 @@ class ExceptionController extends Controller
             'exceptionTitle' => 'required|string|max:255',
             'exception' => 'required|string|max:255',
             'rootCause' => 'nullable|string|max:255',
-            'status' => 'nullable|string|max:8',
+            'status' => 'nullable|string',
             'statusComment' => 'nullable|string|max:255',
             'occurrenceDate' => 'required|date_format:Y-m-d',
             'proposeResolutionDate' => 'nullable|date_format:Y-m-d',

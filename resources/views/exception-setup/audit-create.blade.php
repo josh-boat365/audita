@@ -290,8 +290,7 @@
                     </td>
                     <td>
                         <select class="form-select sub-process-type"
-                                name="exceptions[${rowCount}][subProcessTypeId]"
-                                required>
+                                name="exceptions[${rowCount}][subProcessTypeId]">
                             <option value="">Loading...</option>
                         </select>
                     </td>

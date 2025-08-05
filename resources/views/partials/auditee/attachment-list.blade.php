@@ -1,3 +1,4 @@
+{{--  attachment-list.blade.php  --}}
 @forelse($attachments as $file)
     <div class="col-xl-4 mb-3" id="file-{{ $file->id }}">
 

@@ -32,6 +32,7 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {{--  {{ dd($pendingExceptions) }}  --}}
                     @forelse ($pendingExceptions as $exception)
                         <tr>
                             <th scope="row"><a href="#">{{ $exception['submittedBy'] }}</a></th>
@@ -48,11 +49,21 @@
                                         {{ $exception['exceptionCount'] }}
                                     </span>
                                 </div>
-                                <div>
+                                <div class="">
                                     <p class="badge badge-soft-secondary">
                                         <b>{{ $exception['countForRespondedExceptionsByAuditee'] }}</b> responded
                                         exception(s) of <b>{{ $exception['exceptionCount'] }}</b> total exception(s)
                                     </p>
+                                    <br>
+                                    @if ($exception['countForNotResolvedExceptionsByAuditee'] > 0)
+                                        {
+                                        <p class="badge badge-soft-danger">
+                                            <b>{{ $exception['countForNotResolvedExceptionsByAuditee'] }}</b> not
+                                            resolved
+                                            exception(s) of <b>{{ $exception['exceptionCount'] }}</b> total exception(s)
+                                        </p>
+                                        }
+                                    @endif
                                 </div>
                             </td>
                             <td> {{ Carbon\Carbon::parse($exception['submittedAt'])->format('jS F, Y ') }} </td>
@@ -68,12 +79,15 @@
                                         <span class="badge round bg-primary font-size-13"><i
                                                 class="bx bxs-pencil"></i>open</span>
                                     </a>
+
+                                    {{--  CHECK IF USER IS AN AUDITOR IN THE SAME GROUP THEN SHOW THIS  --}}
                                     @if (in_array($exception['auditorDepartmentId'], [7, 8]) &&
                                             $exception['countForRespondedExceptionsByAuditee'] === $exception['exceptionCount']
                                     )
                                         {{--  7 = audit department, 8 = internal control  --}}
-                                        <form class="exception-form" action="{{ route('exception.supervisor.action') }}"
-                                            method="POST" data-exception-id="{{ $exception['id'] }}"
+                                        <form class="exception-form"
+                                            action="{{ route('exception.supervisor.action') }}" method="POST"
+                                            data-exception-id="{{ $exception['id'] }}"
                                             data-department="{{ $exception['department'] }}"
                                             data-branch="{{ $exception['groupName'] }}">
                                             @csrf

@@ -197,12 +197,50 @@ class ExceptionApprovalController extends Controller
                     'auditorDepartmentId' => '---', //current logged in user's department id (auditor department check)
                 ]];
             } else {
+
+                $batches = BatchController::getBatches();
+                $groups = GroupController::getActivityGroups();
+                $groupMembers = GroupMembersController::getGroupMembers();
+                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+
+
+                // Filter active batches with status 'OPEN' and map them by ID
+                $validBatches = collect($batches)
+                    ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+                    ->keyBy('id');
+
+                // Filter active groups and map them by ID
+                $validGroups = collect($groups)
+                    ->filter(fn($group) => $group->active)
+                    ->keyBy('id');
+
+                // Get groups where the specified employee belongs
+                $employeeGroups = collect($groupMembers)
+                    ->where('employeeId', $employeeId)
+                    ->pluck('activityGroupId')
+                    ->unique();
+
+                // dd($employeeGroups);
+
+                // Map batch IDs to their corresponding activity group IDs
+                $batchGroupMap = collect($batches)
+                    ->pluck('activityGroupId', 'id');
+
+                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+
+                // top managers
+                // 1 - Managing Director
+                // 2 - Head of Internal Audit
+                // 4 - Head of Internal Control & Compliance
+                $topManagers = [1, 2, 4];
+
+
                 $pendingExceptions = collect($exceptions)
                     // Filter top-level exceptions by status
-                    ->filter(function ($exception) {
-                        $validParentStatuses = ['APPROVED'];
-                        return isset($exception['status']) &&
-                            in_array($exception['status'], $validParentStatuses);
+                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+                        $groupId = $batchGroupMap[$exception['exceptionBatchId']] ?? null;
+                        return $validBatches->has($exception['exceptionBatchId']) &&
+                            $validGroups->has($groupId) && (in_array($exception['status'], ['APPROVED', 'ANALYSIS'])) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
                     })
                     // Transform and count nested exceptions
                     ->map(function ($exception) use ($loggedInUser) {
@@ -212,6 +250,9 @@ class ExceptionApprovalController extends Controller
                             ->count();
                         $countForRespondedExceptionsByAuditee = collect($exception['exceptions'] ?? [])
                             ->where('recommendedStatus', 'RESOLVED')
+                            ->count();
+                        $countForNotResolvedExceptionsByAuditee = collect($exception['exceptions'] ?? [])
+                            ->where('recommendedStatus', 'NOT-RESOLVED')
                             ->count();
 
                         return [
@@ -223,7 +264,8 @@ class ExceptionApprovalController extends Controller
                             'department' => $exception['departmentName'] ?? 'Unknown Department',
                             'exceptionCount' => $pendingCount,
                             'auditorDepartmentId' =>  $loggedInUser->departmentId,
-                            'countForRespondedExceptionsByAuditee' => $countForRespondedExceptionsByAuditee
+                            'countForRespondedExceptionsByAuditee' => $countForRespondedExceptionsByAuditee,
+                            'countForNotResolvedExceptionsByAuditee' => $countForNotResolvedExceptionsByAuditee
                         ];
                     })
                     // Only include if at least 1 nested exception matches
@@ -354,15 +396,59 @@ class ExceptionApprovalController extends Controller
             // Ensure responseObject is iterable
             $responseCollection = collect($responseObject ?? []);
 
+            $batches = BatchController::getBatches();
+            $groups = GroupController::getActivityGroups();
+            $groupMembers = GroupMembersController::getGroupMembers();
+            $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+
+
+            // Filter active batches with status 'OPEN' and map them by ID
+            $validBatches = collect($batches)
+                ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+                ->keyBy('id');
+
+            // Filter active groups and map them by ID
+            $validGroups = collect($groups)
+                ->filter(fn($group) => $group->active)
+                ->keyBy('id');
+
+            // Get groups where the specified employee belongs
+            $employeeGroups = collect($groupMembers)
+                ->where('employeeId', $employeeId)
+                ->pluck('activityGroupId')
+                ->unique();
+
+            // dd($employeeGroups);
+
+            // Map batch IDs to their corresponding activity group IDs
+            $batchGroupMap = collect($batches)
+                ->pluck('activityGroupId', 'id');
+
+            $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+
+            // top managers
+            // 1 - Managing Director
+            // 2 - Head of Internal Audit
+            // 4 - Head of Internal Control & Compliance
+            $topManagers = [1, 2, 4];
+
             // Process main exceptions
             $exception = $responseCollection
-                ->filter(function ($item) use ($status) {
+                ->filter(function ($item) use ($status, $validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+                    // $groupId = $batchGroupMap[$item->exceptionBatchId] ?? null;
+                    // return $validBatches->has($item->exceptionBatchId) &&
+                    //     $validGroups->has($groupId) && (in_array($item->status, $status)) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+
                     return is_object($item) && property_exists($item, 'status') && $item->status == $status;
                 })
-                ->map(function ($item) use ($status) {
+                ->map(function ($item) use ($status, $validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
                     if (!is_object($item) || !property_exists($item, 'exceptions')) {
                         return $item;
                     }
+                    // $groupId = $batchGroupMap[$item->exceptionBatchId] ?? null;
+                    // $item = $validBatches->has($item->exceptionBatchId) &&
+                    //     $validGroups->has($groupId) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+                    // return $item;
 
                     // Handle different filtering logic based on parent status
                     if ($status == 'ANALYSIS') {
@@ -378,6 +464,7 @@ class ExceptionApprovalController extends Controller
                             ->values()
                             ->toArray();
                     } else {
+                        
                         // Original logic for other statuses
                         $item->exceptions = collect($item->exceptions ?? [])
                             ->where('status', $status)
@@ -632,7 +719,7 @@ class ExceptionApprovalController extends Controller
                 'statusComment' => 'nullable|string|max:255',
             ]);
 
-            $exceptionId = $request->input('singleExceptionId');
+            $exceptionId = $request->input('batchExceptionId');
             $data = [
                 'batchExceptionId' => $request->input('batchExceptionId'),
                 'status' => $request->input('status'),
@@ -780,12 +867,48 @@ class ExceptionApprovalController extends Controller
                     'exceptionCount' => '---',
                 ]];
             } else {
+                $batches = BatchController::getBatches();
+                $groups = GroupController::getActivityGroups();
+                $groupMembers = GroupMembersController::getGroupMembers();
+                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+
+
+                // Filter active batches with status 'OPEN' and map them by ID
+                $validBatches = collect($batches)
+                    ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+                    ->keyBy('id');
+
+                // Filter active groups and map them by ID
+                $validGroups = collect($groups)
+                    ->filter(fn($group) => $group->active)
+                    ->keyBy('id');
+
+                // Get groups where the specified employee belongs
+                $employeeGroups = collect($groupMembers)
+                    ->where('employeeId', $employeeId)
+                    ->pluck('activityGroupId')
+                    ->unique();
+
+                // dd($employeeGroups);
+
+                // Map batch IDs to their corresponding activity group IDs
+                $batchGroupMap = collect($batches)
+                    ->pluck('activityGroupId', 'id');
+
+                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+
+                // top managers
+                // 1 - Managing Director
+                // 2 - Head of Internal Audit
+                // 4 - Head of Internal Control & Compliance
+                $topManagers = [1, 2, 4];
+
                 $pendingExceptions = collect($exceptions)
                     // Filter top-level exceptions by status
-                    ->filter(function ($exception) {
-                        $validParentStatuses = ['DECLINED', 'AMENDMENT', 'APPROVED'];
-                        return isset($exception['status']) &&
-                            in_array($exception['status'], $validParentStatuses);
+                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+                        $groupId = $batchGroupMap[$exception['exceptionBatchId']] ?? null;
+                        return $validBatches->has($exception['exceptionBatchId']) &&
+                            $validGroups->has($groupId) && (in_array($exception['status'], ['DECLINED', 'AMENDMENT', 'APPROVED'])) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
                     })
                     // Transform and count nested exceptions
                     ->map(function ($exception) {
@@ -914,11 +1037,51 @@ class ExceptionApprovalController extends Controller
                     'exceptionCount' => '---',
                 ]];
             } else {
+
+                $batches = BatchController::getBatches();
+                $groups = GroupController::getActivityGroups();
+                $groupMembers = GroupMembersController::getGroupMembers();
+                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+
+
+                // Filter active batches with status 'OPEN' and map them by ID
+                $validBatches = collect($batches)
+                    ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+                    ->keyBy('id');
+
+                // Filter active groups and map them by ID
+                $validGroups = collect($groups)
+                    ->filter(fn($group) => $group->active)
+                    ->keyBy('id');
+
+                // Get groups where the specified employee belongs
+                $employeeGroups = collect($groupMembers)
+                    ->where('employeeId', $employeeId)
+                    ->pluck('activityGroupId')
+                    ->unique();
+
+                // dd($employeeGroups);
+
+                // Map batch IDs to their corresponding activity group IDs
+                $batchGroupMap = collect($batches)
+                    ->pluck('activityGroupId', 'id');
+
+                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+
+                // top managers
+                // 1 - Managing Director
+                // 2 - Head of Internal Audit
+                // 4 - Head of Internal Control & Compliance
+                $topManagers = [1, 2, 4];
+
                 $pendingExceptions = collect($exceptions)
                     // Filter top-level exceptions by status
-                    ->filter(function ($exception) {
-                        return isset($exception['status']) && $exception['status'] === 'ANALYSIS';
+                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+                        $groupId = $batchGroupMap[$exception['exceptionBatchId']] ?? null;
+                        return $validBatches->has($exception['exceptionBatchId']) &&
+                            $validGroups->has($groupId) && (in_array($exception['status'], ['ANALYSIS'])) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
                     })
+
                     // Transform and count nested exceptions
                     ->map(function ($exception) {
                         $pendingCount = collect($exception['exceptions'] ?? [])

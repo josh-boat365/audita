@@ -212,7 +212,7 @@
                                                             <input type="hidden" name="exceptionBatchId"
                                                                 value="{{ $batchItem->exceptionBatchId ?? '' }}">
                                                             <input type="hidden" name="occurrenceDate"
-                                                                value="{{ isset($exceptionItem->occurrenceDate) ? \Carbon\Carbon::parse($exceptionItem->occurrenceDate)->format('d/m/Y') : '' }}">
+                                                                value="{{ isset($exceptionItem->occurrenceDate) ? \Carbon\Carbon::parse($exceptionItem->occurrenceDate)->format('Y-m-d') : '' }}">
                                                             <input type="hidden" name="status" value="PENDING">
                                                             <input type="hidden" name="statusComment"
                                                                 value="{{ $exceptionItem->statusComment ?? '' }}">

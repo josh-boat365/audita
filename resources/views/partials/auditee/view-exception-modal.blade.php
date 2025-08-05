@@ -36,7 +36,7 @@
                                         <textarea class="form-control" rows="3" name="exception" placeholder="Enter exception details......" required>{{ $exceptionItem->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
-                                    
+
                                     <div class="mb-3">
                                         <label class="form-label">Root Cause</label>
                                         <textarea class="form-control" rows="3" name="rootCause" placeholder="Enter root cause details......">{{ $exceptionItem->rootCause }}</textarea>
@@ -87,6 +87,7 @@
                                             <option value="">Select.....</option>
                                             <option value="APPROVED" @selected($exceptionItem->status === 'APPROVED')>Approved</option>
                                             <option value="RESOLVED" @selected($exceptionItem->status === 'RESOLVED')>Resolved</option>
+                                            <option value="NOT-RESOLVED" @selected($exceptionItem->status === 'NOT-RESOLVED')>Not-Resolved</option>
                                         </select>
                                         <div class="invalid-feedback">Please select exception status.</div>
                                     </div>
