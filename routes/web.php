@@ -197,9 +197,10 @@ Route::get('/exception/{id}/open-supervisor-approval', [ExceptionApprovalControl
 Route::get('/exception/auditor-approval-list', [ExceptionApprovalController::class, 'exceptionAuditorList'])->name('exception.auditor.list');
 Route::get('/exception/auditor/show-exception-list-for-approval/{batchId}/{status}', [ExceptionApprovalController::class, 'showAuditorExceptionListForApproval'])->name('show.auditor.exception.list.for.approval');
 
-// Auditee Routes
+// Auditee [Branch Exception] Routes
 Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
-// Route::get('/exception/auditee/open-exception-list', [ExceptionApprovalController::class, 'auditeeExceptionView'])->name('auditee.exception.view');
+Route::get('/exception/auditee/pending-exception-list', [ExceptionApprovalController::class, 'auditeePendingExceptionList'])->name('auditee.pending.exception.list');
+Route::get('/exception/group-exception-status-list', [ExceptionApprovalController::class, 'groupExceptionStatus'])->name('group.exception.status');
 
 /*
 |--------------------------------------------------------------------------

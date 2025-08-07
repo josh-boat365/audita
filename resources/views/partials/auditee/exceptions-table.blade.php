@@ -34,11 +34,13 @@
             @forelse ($sortedExceptions as $key => $exceptionItem)
                 @if (!empty($exceptionItem))
                     <tr data-exception-id="{{ $exceptionItem->id ?? '' }}"
-                        class="{{
-                            $pendingException->status === 'ANALYSIS'
-                                ? ($exceptionItem->status === 'RESOLVED' ? 'table-success' : '')
-                                : ($exceptionItem->recommendedStatus === 'RESOLVED' ? 'table-success' : '')
-                        }}">
+                        class="{{ $pendingException->status === 'ANALYSIS'
+                            ? ($exceptionItem->status === 'RESOLVED'
+                                ? 'table-success'
+                                : '')
+                            : ($exceptionItem->recommendedStatus === 'RESOLVED'
+                                ? 'table-success'
+                                : '') }}">
                         <input type="hidden" name="singleExceptionId" value="{{ $exceptionItem->id ?? '' }}">
                         <input type="hidden" name="status" id="status">
 
@@ -96,5 +98,26 @@
             @endforelse
         </tbody>
     </table>
-    
+    {{--  <h1>{{ dd($pendingException) }}</h1>  --}}
+    @php
+        // Check if all recommendedStatus values are 'RESOLVED'
+        $allResolved = collect($sortedExceptions)->every(function ($exception) {
+            return $exception->recommendedStatus === 'RESOLVED';
+        });
+    @endphp
+
+    @if ($allResolved && $pendingException->status !== 'ANALYSIS')
+        <div class="mt-3  mb-4 float-end">
+            {{-- Action Button for Pushing to Resolved --}}
+            <form class="exception-form" action="{{ route('exception.supervisor.action') }}" method="POST">
+                @csrf
+                <input type="hidden" name="batchExceptionId" value="{{ $pendingException->id ?? '' }}">
+                <input type="hidden" name="status" value="ANALYSIS">
+                <button type="submit" class="btn btn-success">
+                    <i class="bx bx-analyse"></i> Push to Auditor Analysis
+                </button>
+            </form>
+        </div>
+    @endif
+
 </div>

@@ -57,12 +57,9 @@
                         <span key="t-dashboards">Branch Exceptions</span>
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        <li>
-                            <a href="{{ route('auditee.exception.list') }}">List
-
-                            </a>
-                        </li>
-                        {{--  <li><a href="{{ route('exception.auditor.list') }}">Status</a></li>  --}}
+                        <li><a href="{{ route('auditee.exception.list') }}">List</a></li>
+                        <li><a href="{{ route('auditee.pending.exception.list') }}">Pending</a></li>
+                        <li><a href="{{ route('group.exception.status') }}">Exception Enquiry</a></li>
                     </ul>
                 </li>
 

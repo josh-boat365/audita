@@ -18,9 +18,25 @@
                 : [];
     @endphp
 
+    {{--  @php
+        use Illuminate\Support\Str;
+    @endphp  --}}
+
     <div class="container-fluid px-1">
         {{-- ========== PAGE HEADER SECTION ========== --}}
         @include('partials.auditee.page-header')
+
+        <div class="mb-3">
+            {{-- Page Title --}}
+            @if (Str::contains(request()->url(), 'APPROVED'))
+                <h1 class="mb-0">Exception Response View</h1>
+                <p class="text-muted mb-0">Respond to all exceptions and push them to the auditor for resolution.</p>
+            @else
+                <h1 class="mb-0">Exception Analysis View</h1>
+                <p class="text-muted mb-0">Perform your final analysis on these exceptions and push for completion.</p>
+            @endif
+        </div>
+
 
         {{-- ========== FILTER SECTION ========== --}}
         @if (!empty($pendingException) && count($exceptions) > 0)
