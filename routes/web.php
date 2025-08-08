@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\AuditCreateController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UnitController;
@@ -11,6 +10,8 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RiskRateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExceptionController;
+use App\Http\Controllers\AuditCreateController;
+use App\Http\Controllers\GroupExceptionsFilter;
 use App\Http\Controllers\ProcessTypeController;
 use App\Http\Controllers\GroupMembersController;
 use App\Http\Controllers\ExceptionApprovalController;
@@ -201,6 +202,14 @@ Route::get('/exception/auditor/show-exception-list-for-approval/{batchId}/{statu
 Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
 Route::get('/exception/auditee/pending-exception-list', [ExceptionApprovalController::class, 'auditeePendingExceptionList'])->name('auditee.pending.exception.list');
 Route::get('/exception/group-exception-status-list', [ExceptionApprovalController::class, 'groupExceptionStatus'])->name('group.exception.status');
+
+// New filtering route
+Route::get('/exception/group-filter-exceptions', [GroupExceptionsFilter::class, 'filterExceptions'])
+    ->name('exceptions.filter');
+
+// Optional: Route to get filter options dynamically
+Route::get('/exception/group-filter-options', [GroupExceptionsFilter::class, 'getFilterOptions'])
+    ->name('exceptions.filter-options');
 
 /*
 |--------------------------------------------------------------------------

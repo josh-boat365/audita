@@ -2,7 +2,6 @@
 
 @php
     // Sort exceptions: non-RESOLVED items first, then RESOLVED items
-
     $status = $pendingException->status;
     $sortedExceptions = collect($exceptions ?? [])
         ->sortBy(function ($exception) use ($status) {
@@ -15,7 +14,6 @@
         })
         ->values()
         ->all();
-
 @endphp
 
 <div class="table-responsive">
@@ -33,14 +31,28 @@
         <tbody>
             @forelse ($sortedExceptions as $key => $exceptionItem)
                 @if (!empty($exceptionItem))
-                    <tr data-exception-id="{{ $exceptionItem->id ?? '' }}"
-                        class="{{ $pendingException->status === 'ANALYSIS'
-                            ? ($exceptionItem->status === 'RESOLVED'
-                                ? 'table-success'
-                                : '')
-                            : ($exceptionItem->recommendedStatus === 'RESOLVED'
-                                ? 'table-success'
-                                : '') }}">
+                    @php
+                        // Determine row color class based on status
+                        $rowColorClass = '';
+
+                        if ($pendingException->status === 'ANALYSIS') {
+                            // For ANALYSIS status, check exception status
+                            if ($exceptionItem->status === 'RESOLVED') {
+                                $rowColorClass = 'table-success';
+                            } elseif ($exceptionItem->status === 'NOT-RESOLVED') {
+                                $rowColorClass = 'table-danger';
+                            }
+                        } else {
+                            // For non-ANALYSIS status, check recommendedStatus and status
+                            if ($exceptionItem->recommendedStatus === 'RESOLVED') {
+                                $rowColorClass = 'table-success';
+                            } elseif ($exceptionItem->status === 'NOT-RESOLVED') {
+                                $rowColorClass = 'table-danger';
+                            }
+                        }
+                    @endphp
+
+                    <tr data-exception-id="{{ $exceptionItem->id ?? '' }}" class="{{ $rowColorClass }}">
                         <input type="hidden" name="singleExceptionId" value="{{ $exceptionItem->id ?? '' }}">
                         <input type="hidden" name="status" id="status">
 
@@ -98,7 +110,7 @@
             @endforelse
         </tbody>
     </table>
-    {{--  <h1>{{ dd($pendingException) }}</h1>  --}}
+
     @php
         // Check if all recommendedStatus values are 'RESOLVED'
         $allResolved = collect($sortedExceptions)->every(function ($exception) {
@@ -107,7 +119,7 @@
     @endphp
 
     @if ($allResolved && $pendingException->status !== 'ANALYSIS')
-        <div class="mt-3  mb-4 float-end">
+        <div class="mt-3 mb-4 float-end">
             {{-- Action Button for Pushing to Resolved --}}
             <form class="exception-form" action="{{ route('exception.supervisor.action') }}" method="POST">
                 @csrf
