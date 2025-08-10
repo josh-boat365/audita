@@ -1,7 +1,5 @@
 <x-base-layout>
-
     <div class="container-fluid px-1">
-
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
@@ -23,25 +21,19 @@
                         <h4 class="card-title mb-4">Filters</h4>
                         <form id="exportFilters">
                             <div class="row">
-                                {{--  <div class="col-md-2">
+                                <div class="col-md-3">
                                     <label for="batchFilter" class="form-label">Batch</label>
                                     <select id="batchFilter" class="form-select">
                                         <option value="">All Batches</option>
                                     </select>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-3">
                                     <label for="branchFilter" class="form-label">Branch</label>
                                     <select id="branchFilter" class="form-select">
                                         <option value="">All Branches</option>
                                     </select>
-                                </div>  --}}
-                                <div class="col-md-2">
-                                    <label for="auditorFilter" class="form-label">Auditor</label>
-                                    <select id="auditorFilter" class="form-select">
-                                        <option value="">All Auditors</option>
-                                    </select>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-3">
                                     <label for="statusFilter" class="form-label">Status</label>
                                     <select id="statusFilter" class="form-select">
                                         <option value="">All Statuses</option>
@@ -51,19 +43,10 @@
                                         <option value="RESOLVED">RESOLVED</option>
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <label for="riskRateFilter" class="form-label">Risk Rate</label>
-                                    <select id="riskRateFilter" class="form-select">
-                                        <option value="">All Risk Rates</option>
-                                        <option value="High">High</option>
-                                        <option value="Medium">Medium</option>
-                                        <option value="Low">Low</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="searchFilter" class="form-label">Search</label>
+                                <div class="col-md-3">
+                                    <label for="searchFilter" class="form-label">Global Search</label>
                                     <input type="text" id="searchFilter" class="form-control"
-                                        placeholder="Search exceptions...">
+                                        placeholder="Search batch code, name, branch...">
                                 </div>
                             </div>
                             <div class="row mt-3">
@@ -100,20 +83,20 @@
             <p class="mt-2 text-muted">Loading exceptions...</p>
         </div>
 
-        <!-- Results section -->
+        <!-- Results section - Initially Hidden -->
         <div id="resultsSection" style="display: none;">
             <div class="table-responsive">
-                <table id="reportsTable" class="table table-bordered table-hover mb-0">
+                <table class="table table-bordered table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Exception Title</th>
-                            <th>Exception Description</th>
+                            <th>Batch Code</th>
+                            <th>Batch Name</th>
                             <th>Auditor</th>
                             <th>Branch</th>
                             <th>Department</th>
-                            <th>Risk Rate</th>
-                            <th>Date</th>
+                            <th>Submission Date</th>
                             <th>Status</th>
+                            <th>Exception Count</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -122,10 +105,8 @@
                     </tbody>
                 </table>
 
-                <!-- Pagination will be handled dynamically -->
-                <nav aria-label="Page navigation" class="mt-3" id="paginationContainer">
-                    <!-- Dynamic pagination will be inserted here -->
-                </nav>
+                <!-- Pagination container -->
+                <div id="paginationContainer" class="mt-3"></div>
             </div>
         </div>
 
@@ -134,6 +115,13 @@
             <i class="bx bx-filter fs-1 text-muted"></i>
             <h5 class="text-muted mt-3">Use the filters above to search for exceptions</h5>
             <p class="text-muted">Select your criteria and click "Apply Filters" to view results</p>
+        </div>
+
+        <!-- No Results message -->
+        <div id="noResultsMessage" class="text-center py-5" style="display: none;">
+            <i class="bx bx-search fs-1 text-muted"></i>
+            <h5 class="text-muted mt-3">No exceptions match your filter criteria</h5>
+            <p class="text-muted">Try adjusting your filters or search terms</p>
         </div>
 
     </div>
@@ -151,20 +139,27 @@
                         url: '{{ route('exceptions.filter-options') }}',
                         method: 'GET',
                         success: function(response) {
+                            console.log('Filter options response:', response);
+
+                            // Populate batch dropdown
+                            const batchSelect = $('#batchFilter');
+                            batchSelect.find('option:not(:first)').remove();
+                            if (response.batches && response.batches.length > 0) {
+                                response.batches.forEach(batch => {
+                                    batchSelect.append(
+                                    `<option value="${batch}">${batch}</option>`);
+                                });
+                            }
+
                             // Populate branch dropdown
                             const branchSelect = $('#branchFilter');
-                            branchSelect.find('option:not(:first)').remove(); // Keep "All Branches" option
-                            response.branches.forEach(branch => {
-                                branchSelect.append(`<option value="${branch}">${branch}</option>`);
-                            });
-
-                            // Populate auditor dropdown
-                            const auditorSelect = $('#auditorFilter');
-                            auditorSelect.find('option:not(:first)').remove(); // Keep "All Auditors" option
-                            response.auditors.forEach(auditor => {
-                                auditorSelect.append(
-                                    `<option value="${auditor}">${auditor}</option>`);
-                            });
+                            branchSelect.find('option:not(:first)').remove();
+                            if (response.branches && response.branches.length > 0) {
+                                response.branches.forEach(branch => {
+                                    branchSelect.append(
+                                        `<option value="${branch}">${branch}</option>`);
+                                });
+                            }
                         },
                         error: function(xhr) {
                             console.error('Failed to load filter options:', xhr);
@@ -178,10 +173,9 @@
                 // Function to apply filters and load data
                 function applyFilters(page = 1) {
                     const filters = {
+                        batch: $('#batchFilter').val(),
                         branch: $('#branchFilter').val(),
-                        auditor: $('#auditorFilter').val(),
                         status: $('#statusFilter').val(),
-                        riskRate: $('#riskRateFilter').val(),
                         search: $('#searchFilter').val(),
                         dateFrom: $('#dateFromFilter').val(),
                         dateTo: $('#dateToFilter').val(),
@@ -189,31 +183,40 @@
                         perPage: perPage
                     };
 
-                    // Show loading indicator
+                    console.log('Applying filters:', filters);
+
+                    // Show loading indicator, hide other sections
                     $('#loadingIndicator').show();
                     $('#resultsSection').hide();
                     $('#initialMessage').hide();
+                    $('#noResultsMessage').hide();
 
                     $.ajax({
                         url: '{{ route('exceptions.filter') }}',
                         method: 'GET',
                         data: filters,
                         success: function(response) {
-                            displayResults(response.data);
-                            updatePagination(response.pagination);
-                            updateResultsInfo(response.summary);
-
+                            console.log('Filter response:', response);
                             $('#loadingIndicator').hide();
-                            $('#resultsSection').show();
-                            $('.results-info').show();
 
-                            currentPage = response.pagination.current_page;
+                            if (response.data && response.data.length > 0) {
+                                displayResults(response.data);
+                                updatePagination(response.pagination);
+                                updateResultsInfo(response.summary);
+                                $('#resultsSection').show();
+                                $('.results-info').show();
+                            } else {
+                                $('#noResultsMessage').show();
+                                $('.results-info').hide();
+                            }
+
+                            currentPage = response.pagination ? response.pagination.current_page : 1;
                         },
                         error: function(xhr) {
+                            console.error('Filter request failed:', xhr);
                             $('#loadingIndicator').hide();
 
                             if (xhr.status === 401) {
-                                // Session expired
                                 window.location.href = '{{ route('login') }}';
                                 return;
                             }
@@ -233,42 +236,19 @@
                     const tbody = $('#tableBody');
                     tbody.empty();
 
-                    if (data.length === 0) {
-                        tbody.append(`
-                <tr>
-                    <td colspan="9" class="text-center text-muted py-4">
-                        <i class="bx bx-search fs-1 text-muted"></i>
-                        <p class="mb-0">No exceptions match your filter criteria</p>
-                        <small>Try adjusting your filters</small>
-                    </td>
-                </tr>
-            `);
-                        return;
-                    }
-
                     data.forEach(batchException => {
-                        if (batchException.exceptions) {
-                            batchException.exceptions.forEach(exception => {
-                                const row = createTableRow(batchException, exception);
-                                tbody.append(row);
-                            });
-                        }
+                        const row = createTableRow(batchException);
+                        tbody.append(row);
                     });
                 }
 
                 // Function to create table row
-                function createTableRow(batchException, exception) {
-                    const riskClass = {
-                        'high': 'bg-danger',
-                        'medium': 'bg-warning',
-                        'low': 'bg-primary'
-                    } [exception.riskRate?.toLowerCase()] || 'bg-secondary';
-
+                function createTableRow(batchException) {
                     const statusClass = {
                         'resolved': 'bg-success',
-                        'analysis': 'bg-dark',
+                        'analysis': 'bg-warning',
                         'approved': 'bg-primary',
-                        'amendment': 'bg-warning'
+                        'amendment': 'bg-info'
                     } [batchException.status?.toLowerCase()] || 'bg-secondary';
 
                     // Format date
@@ -276,62 +256,74 @@
                     if (batchException.submittedAt) {
                         try {
                             const date = new Date(batchException.submittedAt);
-                            formattedDate = date.toLocaleDateString('en-GB', {
-                                day: 'numeric',
+                            const day = date.getDate();
+                            const suffix = getDaySuffix(day);
+                            formattedDate = `${day}${suffix} ${date.toLocaleDateString('en-GB', {
                                 month: 'long',
                                 year: 'numeric'
-                            });
+                            })}`;
                         } catch (e) {
                             console.warn('Date formatting error:', e);
                         }
                     }
 
-                    // Get branch name
-                    let branchName = 'N/A';
-                    if (batchException.exceptionBatch && batchException.exceptionBatch.activityGroupName) {
-                        branchName = batchException.exceptionBatch.activityGroupName;
-                    }
+                    // Get batch and branch info
+                    const batchCode = batchException.exceptionBatch?.code || 'N/A';
+                    const batchName = batchException.exceptionBatch?.name || 'N/A';
+                    const branchName = batchException.exceptionBatch?.activityGroupName || 'N/A';
+                    const submittedBy = batchException.submittedBy || 'N/A';
+                    const departmentName = batchException.departmentName || 'N/A';
+                    const status = batchException.status || 'N/A';
+                    const exceptionCount = batchException.exceptions?.length || 0;
 
                     return `
-            <tr>
-                <th scope="row"><a href="#">${exception.exceptionTitle || 'N/A'}</a></th>
-                <th scope="row"><a href="#">${exception.exception || 'N/A'}</a></th>
-                <th scope="row"><a href="#">${batchException.submittedBy || 'N/A'}</a></th>
-                <td>
-                    <span class="dropdown badge rounded-pill bg-primary">
-                        ${branchName}
-                    </span>
-                </td>
-                <td>
-                    <div>
-                        ${batchException.departmentName || 'N/A'}
-                        <span class="dropdown badge rounded-pill bg-dark">
-                            ${batchException.exceptions?.length || 0}
-                        </span>
-                    </div>
-                </td>
-                <td>
-                    <span class="badge rounded-pill ${riskClass}">
-                        ${exception.riskRate || 'Not Determined'}
-                    </span>
-                </td>
-                <td>${formattedDate}</td>
-                <td>
-                    <span class="dropdown badge rounded-pill ${statusClass}">
-                        ${batchException.status || 'Not Determined'}
-                    </span>
-                </td>
-                <td>
-                    <div class="d-flex gap-3">
-                        <a href="{{ url('/exception/supervisor/show-exception-list-for-approval') }}/${exception.id}/${exception.status || ''}">
-                            <span class="badge round bg-primary font-size-13">
-                                <i class="bx bxs-pencil"></i> open
-                            </span>
-                        </a>
-                    </div>
-                </td>
-            </tr>
-        `;
+                        <tr>
+                            <td><a href="#" class="text-primary">${batchCode}</a></td>
+                            <td>${batchName}</td>
+                            <td><a href="#" class="text-primary">${submittedBy}</a></td>
+                            <td>
+                                <span class="badge rounded-pill bg-primary">
+                                    ${branchName}
+                                </span>
+                            </td>
+                            <td>${departmentName}</td>
+                            <td>${formattedDate}</td>
+                            <td>
+                                <span class="badge rounded-pill ${statusClass}">
+                                    ${status}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill bg-dark">
+                                    ${exceptionCount}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url('/exception/group-exception-status-open/') }}/${batchException.id}/${batchException.status}">
+                                        <span class="badge bg-primary font-size-13">
+                                            <i class="bx bx-folder-open"></i> Open
+                                        </span>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                // Helper function for date suffix
+                function getDaySuffix(day) {
+                    if (day >= 11 && day <= 13) return 'th';
+                    switch (day % 10) {
+                        case 1:
+                            return 'st';
+                        case 2:
+                            return 'nd';
+                        case 3:
+                            return 'rd';
+                        default:
+                            return 'th';
+                    }
                 }
 
                 // Function to update pagination
@@ -339,8 +331,8 @@
                     const container = $('#paginationContainer');
                     container.empty();
 
-                    if (pagination.last_page <= 1) {
-                        return; // No pagination needed
+                    if (!pagination || pagination.last_page <= 1) {
+                        return;
                     }
 
                     let paginationHtml =
@@ -360,7 +352,7 @@
 
                     if (startPage > 1) {
                         paginationHtml +=
-                            '<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>';
+                        '<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>';
                         if (startPage > 2) {
                             paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
                         }
@@ -394,9 +386,11 @@
                     paginationHtml += '</ul></nav>';
 
                     // Add pagination info
-                    paginationHtml += `<div class="text-center mt-2 text-muted">
-            <small>Showing ${pagination.from} to ${pagination.to} of ${pagination.total} results</small>
-        </div>`;
+                    if (pagination.from && pagination.to && pagination.total) {
+                        paginationHtml += `<div class="text-center mt-2 text-muted">
+                            <small>Showing ${pagination.from} to ${pagination.to} of ${pagination.total} results</small>
+                        </div>`;
+                    }
 
                     container.html(paginationHtml);
                 }
@@ -412,34 +406,33 @@
                 function showErrorMessage(message) {
                     const tbody = $('#tableBody');
                     tbody.html(`
-            <tr>
-                <td colspan="9" class="text-center text-danger py-4">
-                    <i class="bx bx-error fs-1 text-danger"></i>
-                    <p class="mb-0">${message}</p>
-                    <small>Please try again or contact support if the problem persists</small>
-                </td>
-            </tr>
-        `);
+                        <tr>
+                            <td colspan="9" class="text-center text-danger py-4">
+                                <i class="bx bx-error fs-1 text-danger"></i>
+                                <p class="mb-0">${message}</p>
+                                <small>Please try again or contact support if the problem persists</small>
+                            </td>
+                        </tr>
+                    `);
 
                     $('#resultsSection').show();
                     $('.results-info').hide();
+                    $('#initialMessage').hide();
+                    $('#noResultsMessage').hide();
                 }
 
                 // Event listeners
                 $('#applyFilters').on('click', function() {
-                    currentPage = 1; // Reset to first page when applying new filters
+                    currentPage = 1;
                     applyFilters(1);
                 });
 
                 $('#resetFilters').on('click', function() {
-                    // Reset all form fields
                     $('#exportFilters')[0].reset();
-
-                    // Hide results and show initial message
                     $('#resultsSection').hide();
+                    $('#noResultsMessage').hide();
                     $('#initialMessage').show();
                     $('.results-info').hide();
-
                     currentPage = 1;
                 });
 
@@ -452,23 +445,18 @@
 
                 // Enter key support for search
                 $('#searchFilter').on('keypress', function(e) {
-                    if (e.which === 13) { // Enter key
+                    if (e.which === 13) {
                         currentPage = 1;
                         applyFilters(1);
                     }
                 });
 
-                // Auto-apply filters when dropdowns change (optional)
-                $('#branchFilter, #auditorFilter, #statusFilter, #riskRateFilter').on('change', function() {
-                    // Uncomment below for auto-filtering on dropdown change
-                    // currentPage = 1;
-                    // applyFilters(1);
-                });
-
                 // Initialize dropdowns on page load
                 populateDropdowns();
+
+                // Show initial message on load
+                $('#initialMessage').show();
             });
         </script>
     @endpush
-
 </x-base-layout>

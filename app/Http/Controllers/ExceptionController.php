@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\BatchController;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ExceptionController extends Controller
@@ -227,9 +228,231 @@ class ExceptionController extends Controller
         }
     }
 
+    public function exceptionPushBackToAuditor(Request $request)
+    {
+        try {
+            // Validate request data
+            // dd($request->all());
+            $validated = $request->validate([
+                'status' => 'nullable|string',
+                'statusComment' => 'nullable|string',
+                'exceptionId' => 'required|integer',
+                // 'requestTrackerId' => 'nullable|integer',
+                // 'requestType' => 'nullable|string',
+            ]);
+
+            $access_token = session('api_token');
+
+            $data = [
+                'singleExceptionId' => $validated['exceptionId'],
+                'status' => $validated['status'],
+                'statusComment' => $validated['statusComment'],
+                // 'requestTrackerId' => $validated['requestTrackerId'] ?? null,
+                // 'requestType' => $validated['requestType'] ?? null,
+            ];
+
+            // dd($validated);
+            $updateResponse = Http::withToken($access_token)->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-single-exception-status', $data);
+
+            if ($updateResponse->successful()) {
+                Log::info('Exception push back to auditor successful', ['exception_id' => $validated['exceptionId']]);
+                return redirect()->route('auditee.pending.exception.list')->with('toast_success', 'Exception pushed back to auditor successfully');
+            } else {
+                Log::error('Failed to push back Exception to auditor', [
+                    'status' => $updateResponse->status(),
+                    'exception_id' => $validated['exceptionId']
+                ]);
+                return redirect()->back()->with('toast_error', 'Sorry, failed to push back Exception to auditor ' . $updateResponse);
+            }
+        } catch (RequestException $e) {
+            Log::error('HTTP request failed for exception push back', [
+                'message' => $e->getMessage(),
+                'exception_id' => $request->input('exceptionId')
+            ]);
+            return redirect()->back()->with('toast_error', 'Network error occurred. Please try again later.');
+        } catch (\Exception $e) {
+            Log::error('Unexpected error in exception push back', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'exception_id' => $request->input('exceptionId')
+            ]);
+            return redirect()->back()->with('toast_error', 'An unexpected error occurred. Please try again.');
+        }
+    }
+
     /**
      * Update the specified resource in storage.
      */
+
+    // public function update(Request $request, string $id)
+    // {
+    //     // Validate request data
+    //     $validated = $request->validate([
+    //         'exceptionTitle' => 'required|string|max:255',
+    //         'exception' => 'required|string|max:255',
+    //         'rootCause' => 'nullable|string|max:255',
+    //         'status' => 'nullable|string',
+    //         'statusComment' => 'nullable|string|max:255',
+    //         'occurrenceDate' => 'required|date_format:Y-m-d',
+    //         'proposeResolutionDate' => 'nullable|date_format:Y-m-d',
+    //         'resolutionDate' => 'nullable|date_format:Y-m-d',
+    //         'processTypeId' => 'required|integer',
+    //         'subProcessTypeId' => 'required|integer',
+    //         'riskRateId' => 'nullable|integer',
+    //         'departmentId' => 'required|integer',
+    //         'exceptionBatchId' => 'required|integer',
+    //         'requestTrackerId' => 'nullable|integer',
+    //         'requestType' => 'nullable|string',
+    //     ]);
+
+    //     // Validate that the ID parameter is numeric
+    //     if (!is_numeric($id)) {
+    //         Log::error('Invalid ID parameter provided', ['id' => $id]);
+    //         return redirect()->back()->with('toast_error', 'Invalid exception identifier');
+    //     }
+
+    //     $accessToken = session('api_token');
+    //     $isBatchRequest = $validated['requestType'] === 'BATCH';
+
+    //     // Check for authentication
+    //     if (!$accessToken) {
+    //         Log::error('No API token found in session');
+    //         return redirect()->back()->with('toast_error', 'Authentication required. Please login again.');
+    //     }
+
+    //     try {
+    //         // Build update data with CSRF token
+    //         $data = array_merge([
+    //             'id' => $id,
+    //             '_token' => csrf_token(), // Add CSRF protection
+    //         ], $validated);
+
+    //         // Add requestTrackerId and requestType only for batch requests
+    //         if (!$isBatchRequest) {
+    //             unset($data['requestTrackerId'], $data['requestType']);
+    //         }
+
+    //         // Initialize variables for batch processing
+    //         $shouldUpdateBatchStatus = false;
+    //         $approvedCount = 0;
+    //         $resolvedCount = 0;
+
+    //         if ($isBatchRequest && isset($validated['requestTrackerId'])) {
+    //             // Rate limit batch status checks (max 5 per minute)
+    //             RateLimiter::attempt(
+    //                 'batch-status-check:' . $validated['requestTrackerId'],
+    //                 5,
+    //                 function () use ($accessToken, $validated, &$batchData) {
+    //                     $batchResponse = Http::withToken($accessToken)
+    //                         ->timeout(30)
+    //                         ->retry(3, 100) // Retry 3 times with 100ms delay
+    //                         ->get("http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/{$validated['requestTrackerId']}");
+
+    //                     if ($batchResponse->successful()) {
+    //                         $batchData = $batchResponse->object();
+    //                     }
+    //                 }
+    //             );
+
+    //             if (isset($batchData->exceptions)) {
+    //                 $currentExceptionStatus = null;
+
+    //                 // Count APPROVED and RESOLVED exceptions and find current exception status
+    //                 foreach ($batchData->exceptions as $exception) {
+    //                     if (isset($exception->status)) {
+    //                         if ($exception->status === 'APPROVED') {
+    //                             $approvedCount++;
+    //                         } elseif ($exception->status === 'RESOLVED') {
+    //                             $resolvedCount++;
+    //                         }
+
+    //                         // Find the current exception's status
+    //                         if (isset($exception->id) && $exception->id == $id) {
+    //                             $currentExceptionStatus = $exception->status;
+    //                         }
+    //                     }
+    //                 }
+
+    //                 // Only adjust counts if we're actually changing from APPROVED to RESOLVED
+    //                 if ($currentExceptionStatus === 'APPROVED' && $validated['status'] === 'RESOLVED') {
+    //                     $approvedCount--; // One less APPROVED
+    //                     $resolvedCount++; // One more RESOLVED
+    //                     Log::info('Exception status transition from APPROVED to RESOLVED', [
+    //                         'exception_id' => $id,
+    //                         'batch_id' => $validated['requestTrackerId']
+    //                     ]);
+    //                 }
+
+    //                 // Update batch status only if all APPROVED exceptions are now RESOLVED
+    //                 $shouldUpdateBatchStatus = ($approvedCount === 0 && $resolvedCount > 0);
+    //             }
+    //         }
+
+    //         // Update the exception with rate limiting
+    //         $updateResponse = RateLimiter::attempt(
+    //             'exception-update:' . $id,
+    //             5,
+    //             function () use ($accessToken, $data) {
+    //                 return Http::withToken($accessToken)
+    //                     ->timeout(30)
+    //                     ->retry(3, 100) // Retry 3 times with 100ms delay
+    //                     ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker', $data);
+    //             },
+    //             60 // 1 minute decay
+    //         );
+
+    //         if (!$updateResponse || !$updateResponse->successful()) {
+    //             Log::error('Failed to update Exception', [
+    //                 'status' => $updateResponse ? $updateResponse->status() : 'no-response',
+    //                 'exception_id' => $id,
+    //                 'batch_request' => $isBatchRequest
+    //             ]);
+    //             return redirect()->back()->with('toast_error', 'Sorry, failed to update Exception');
+    //         }
+
+    //         Log::info('Exception updated successfully', ['exception_id' => $id]);
+
+    //         // Update batch status if needed
+    //         if ($shouldUpdateBatchStatus) {
+    //             $batchStatusResponse = Http::withToken($accessToken)
+    //                 ->timeout(30)
+    //                 ->retry(3, 100)
+    //                 ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-batch-exception-status', [
+    //                     'batchExceptionId' => $validated['requestTrackerId'],
+    //                     'status' => 'RESOLVED',
+    //                     '_token' => csrf_token() // CSRF protection
+    //                 ]);
+
+    //             if ($batchStatusResponse->successful()) {
+    //                 Log::info('Batch status updated to RESOLVED', [
+    //                     'batch_id' => $validated['requestTrackerId'],
+    //                     'resolved_count' => $resolvedCount
+    //                 ]);
+
+    //                 return redirect()->route('auditor.analysis.exception')
+    //                     ->with('toast_success', 'Exception updated successfully. All batch exceptions have been resolved.');
+    //             } else {
+    //                 Log::warning('Exception updated but batch status update failed', [
+    //                     'request_tracker_id' => $validated['requestTrackerId'],
+    //                     'status' => $batchStatusResponse->status()
+    //                 ]);
+    //             }
+    //         }
+
+    //         return redirect()->back()->with('toast_success', 'Exception updated successfully');
+    //     } catch (\Exception $e) {
+    //         Log::error('Exception occurred while updating Exception', [
+    //             'exception_id' => $id,
+    //             'message' => $e->getMessage(),
+    //             'trace' => $e->getTraceAsString()
+    //         ]);
+
+    //         return redirect()->back()->with(
+    //             'toast_error',
+    //             'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>'
+    //         );
+    //     }
+    // }
 
     public function update(Request $request, string $id)
     {
@@ -271,7 +494,7 @@ class ExceptionController extends Controller
             // Build update data with CSRF token
             $data = array_merge([
                 'id' => $id,
-                '_token' => csrf_token(), // Add CSRF protection
+                '_token' => csrf_token(),
             ], $validated);
 
             // Add requestTrackerId and requestType only for batch requests
@@ -281,71 +504,19 @@ class ExceptionController extends Controller
 
             // Initialize variables for batch processing
             $shouldUpdateBatchStatus = false;
-            $approvedCount = 0;
-            $resolvedCount = 0;
+            $batchData = null;
 
-            if ($isBatchRequest && isset($validated['requestTrackerId'])) {
-                // Rate limit batch status checks (max 5 per minute)
-                RateLimiter::attempt(
-                    'batch-status-check:' . $validated['requestTrackerId'],
-                    5,
-                    function () use ($accessToken, $validated, &$batchData) {
-                        $batchResponse = Http::withToken($accessToken)
-                            ->timeout(30)
-                            ->retry(3, 100) // Retry 3 times with 100ms delay
-                            ->get("http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/{$validated['requestTrackerId']}");
-
-                        if ($batchResponse->successful()) {
-                            $batchData = $batchResponse->object();
-                        }
-                    }
-                );
-
-                if (isset($batchData->exceptions)) {
-                    $currentExceptionStatus = null;
-
-                    // Count APPROVED and RESOLVED exceptions and find current exception status
-                    foreach ($batchData->exceptions as $exception) {
-                        if (isset($exception->status)) {
-                            if ($exception->status === 'APPROVED') {
-                                $approvedCount++;
-                            } elseif ($exception->status === 'RESOLVED') {
-                                $resolvedCount++;
-                            }
-
-                            // Find the current exception's status
-                            if (isset($exception->id) && $exception->id == $id) {
-                                $currentExceptionStatus = $exception->status;
-                            }
-                        }
-                    }
-
-                    // Only adjust counts if we're actually changing from APPROVED to RESOLVED
-                    if ($currentExceptionStatus === 'APPROVED' && $validated['status'] === 'RESOLVED') {
-                        $approvedCount--; // One less APPROVED
-                        $resolvedCount++; // One more RESOLVED
-                        Log::info('Exception status transition from APPROVED to RESOLVED', [
-                            'exception_id' => $id,
-                            'batch_id' => $validated['requestTrackerId']
-                        ]);
-                    }
-
-                    // Update batch status only if all APPROVED exceptions are now RESOLVED
-                    $shouldUpdateBatchStatus = ($approvedCount === 0 && $resolvedCount > 0);
-                }
-            }
-
-            // Update the exception with rate limiting
+            // FIRST: Update the individual exception
             $updateResponse = RateLimiter::attempt(
                 'exception-update:' . $id,
                 5,
                 function () use ($accessToken, $data) {
                     return Http::withToken($accessToken)
                         ->timeout(30)
-                        ->retry(3, 100) // Retry 3 times with 100ms delay
+                        ->retry(3, 100)
                         ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker', $data);
                 },
-                60 // 1 minute decay
+                60
             );
 
             if (!$updateResponse || !$updateResponse->successful()) {
@@ -359,30 +530,116 @@ class ExceptionController extends Controller
 
             Log::info('Exception updated successfully', ['exception_id' => $id]);
 
-            // Update batch status if needed
-            if ($shouldUpdateBatchStatus) {
+            // SECOND: Check if we need to update batch status (only for batch requests)
+            if ($isBatchRequest && isset($validated['requestTrackerId'])) {
+                Log::info('Checking batch status for batch request', [
+                    'requestTrackerId' => $validated['requestTrackerId'],
+                    'exception_id' => $id
+                ]);
+
+                // Get updated batch data AFTER the individual exception was updated
+                $batchStatusCheckAttempt = RateLimiter::attempt(
+                    'batch-status-check:' . $validated['requestTrackerId'],
+                    5,
+                    function () use ($accessToken, $validated, &$batchData) {
+                        $batchResponse = Http::withToken($accessToken)
+                            ->timeout(30)
+                            ->retry(3, 100)
+                            ->get("http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/{$validated['requestTrackerId']}");
+
+                        if ($batchResponse->successful()) {
+                            $batchData = $batchResponse->object();
+                            return true;
+                        }
+                        return false;
+                    }
+                );
+
+                if ($batchStatusCheckAttempt && isset($batchData->exceptions)) {
+                    $totalExceptions = 0;
+                    $resolvedCount = 0;
+                    $approvedCount = 0;
+                    $notResolvedCount = 0;
+
+                    // Count all exception statuses in the batch
+                    foreach ($batchData->exceptions as $exception) {
+                        $totalExceptions++;
+
+                        if (isset($exception->status)) {
+                            if ($exception->status === 'RESOLVED') {
+                                $resolvedCount++;
+                            } elseif ($exception->status === 'APPROVED') {
+                                $approvedCount++;
+                            } elseif ($exception->status === 'NOT-RESOLVED') {
+                                $notResolvedCount++;
+                            }
+                        }
+                    }
+
+                    Log::info('Batch status analysis', [
+                        'requestTrackerId' => $validated['requestTrackerId'],
+                        'totalExceptions' => $totalExceptions,
+                        'resolvedCount' => $resolvedCount,
+                        'approvedCount' => $approvedCount,
+                        'notResolvedCount' => $notResolvedCount
+                    ]);
+
+                    // Determine if batch should be marked as RESOLVED
+                    // All exceptions must be RESOLVED (no APPROVED or NOT-RESOLVED remaining)
+                    $shouldUpdateBatchStatus = ($totalExceptions > 0 && $resolvedCount === $totalExceptions);
+
+                    if ($shouldUpdateBatchStatus) {
+                        Log::info('All exceptions in batch are RESOLVED, updating batch status', [
+                            'requestTrackerId' => $validated['requestTrackerId'],
+                            'totalExceptions' => $totalExceptions,
+                            'resolvedCount' => $resolvedCount
+                        ]);
+                    } else {
+                        Log::info('Batch not ready for RESOLVED status', [
+                            'requestTrackerId' => $validated['requestTrackerId'],
+                            'reason' => $resolvedCount < $totalExceptions ? 'Not all exceptions resolved' : 'No exceptions found'
+                        ]);
+                    }
+                } else {
+                    Log::warning('Failed to fetch batch data for status check', [
+                        'requestTrackerId' => $validated['requestTrackerId']
+                    ]);
+                }
+            }
+
+            // THIRD: Update batch status if all exceptions are resolved
+            if ($shouldUpdateBatchStatus && isset($validated['requestTrackerId'])) {
+                Log::info('Attempting to update batch status to RESOLVED', [
+                    'batchExceptionId' => $validated['requestTrackerId']
+                ]);
+
                 $batchStatusResponse = Http::withToken($accessToken)
                     ->timeout(30)
                     ->retry(3, 100)
                     ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-batch-exception-status', [
                         'batchExceptionId' => $validated['requestTrackerId'],
                         'status' => 'RESOLVED',
-                        '_token' => csrf_token() // CSRF protection
+                        '_token' => csrf_token()
                     ]);
 
                 if ($batchStatusResponse->successful()) {
-                    Log::info('Batch status updated to RESOLVED', [
+                    Log::info('Batch status updated to RESOLVED successfully', [
                         'batch_id' => $validated['requestTrackerId'],
-                        'resolved_count' => $resolvedCount
+                        'resolved_count' => $resolvedCount ?? 'unknown'
                     ]);
 
                     return redirect()->route('auditor.analysis.exception')
-                        ->with('toast_success', 'Exception updated successfully. All batch exceptions have been resolved.');
+                        ->with('toast_success', 'Exception updated successfully. All batch exceptions have been resolved and batch status updated.');
                 } else {
-                    Log::warning('Exception updated but batch status update failed', [
+                    Log::error('Exception updated but batch status update failed', [
                         'request_tracker_id' => $validated['requestTrackerId'],
-                        'status' => $batchStatusResponse->status()
+                        'status' => $batchStatusResponse->status(),
+                        'response' => $batchStatusResponse->body()
                     ]);
+
+                    // Still return success for the individual exception update
+                    return redirect()->back()
+                        ->with('toast_warning', 'Exception updated successfully, but failed to update batch status. Please contact support.');
                 }
             }
 

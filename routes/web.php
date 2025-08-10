@@ -34,19 +34,19 @@ Route::post('/getAuthAPIToken', [AuthController::class, 'getAuthToken']);
 
 // Route::middleware(['guest'])->group(
 // function () {
-    // Login Routes
-    Route::get('/', function () {
-        return view('auth.auth-login');
-    })->name('login');
+// Login Routes
+Route::get('/', function () {
+    return view('auth.auth-login');
+})->name('login');
 
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-    // Registration Routes
-    Route::get('/register', function () {
-        return view('auth.auth-register');
-    })->name('register');
+// Registration Routes
+Route::get('/register', function () {
+    return view('auth.auth-register');
+})->name('register');
 
-    Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 // }
 // );
 
@@ -58,11 +58,11 @@ Route::post('/getAuthAPIToken', [AuthController::class, 'getAuthToken']);
 */
 
 // Route::middleware(['auth'])->group(function () {
-    // Main Dashboard
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+// Main Dashboard
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Group Dashboard
-    Route::get('/my-dashboard/group/{id}', [DashboardController::class, 'groupDashboard'])->name('my.group.dashboard');
+// Group Dashboard
+Route::get('/my-dashboard/group/{id}', [DashboardController::class, 'groupDashboard'])->name('my.group.dashboard');
 
 /*
 |--------------------------------------------------------------------------
@@ -201,7 +201,9 @@ Route::get('/exception/auditor/show-exception-list-for-approval/{batchId}/{statu
 // Auditee [Branch Exception] Routes
 Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
 Route::get('/exception/auditee/pending-exception-list', [ExceptionApprovalController::class, 'auditeePendingExceptionList'])->name('auditee.pending.exception.list');
-Route::get('/exception/group-exception-status-list', [ExceptionApprovalController::class, 'groupExceptionStatus'])->name('group.exception.status');
+Route::post('/exception/auditee-push-back-to-auditor', [ExceptionController::class, 'exceptionPushBackToAuditor'])->name('auditee.push.back');
+Route::get('/exception/group-exception-status-list', [GroupExceptionsFilter::class, 'groupExceptionStatus'])->name('group.exception.status');
+Route::get('/exception/group-exception-status-open/{batchId}/{batchStatus}', [GroupExceptionsFilter::class, 'openBatch'])->name('group.exception.open');
 
 // New filtering route
 Route::get('/exception/group-filter-exceptions', [GroupExceptionsFilter::class, 'filterExceptions'])

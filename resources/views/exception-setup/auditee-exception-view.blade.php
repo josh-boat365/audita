@@ -2,6 +2,7 @@
 <x-base-layout>
     {{-- PHP Variables Setup with null checks --}}
     @php
+
         $pendingException = $exception;
         $batchId = $pendingException->exceptionBatchId ?? '';
         $processTypeId = $pendingException->processTypeId ?? '';
@@ -16,11 +17,41 @@
             isset($pendingException->exceptions) && is_iterable($pendingException->exceptions)
                 ? $pendingException->exceptions
                 : [];
+
+        // Pending Auditee Exception Check
+        $notResolvedCheck = collect($exceptions)->contains(function ($exception) {
+            return $exception->status === 'NOT-RESOLVED' && $exception->recommendedStatus === 'RESOLVED';
+        })
+            ? 1
+            : 0;
+
+        //Auditor Approved Analysis Check
+        $approvedAnalysisCheck = collect($exceptions)->contains(function ($exception) {
+            return $exception->status === 'APPROVED' && $exception->recommendedStatus !== 'RESOLVED';
+        })
+            ? 1
+            : 0;
+
+        $checkForApproved = collect($exceptions)->contains(function ($exception) {
+            return $exception->status === 'APPROVED';
+        })
+            ? 1
+            : 0;
+
+        $pushBackButtonCheck = false;
+        $auditorButtonCheck = true;
+
+        $employeeDepartmentId = App\Http\Controllers\ExceptionController::getLoggedInUserInformation()->departmentId;
+        // top managers
+        // 1 - Managing Director
+        // 2 - Head of Internal Audit
+        // 4 - Head of Internal Control & Compliance
+        $topManagers = [1, 2, 4];
+        $auditorDepartments = [7, 8];
+
     @endphp
 
-    {{--  @php
-        use Illuminate\Support\Str;
-    @endphp  --}}
+    {{--  {{ dd($pendingException) }}  --}}
 
     <div class="container-fluid px-1">
         {{-- ========== PAGE HEADER SECTION ========== --}}
@@ -59,6 +90,12 @@
             @include('partials.auditee.exceptions-table', [
                 'pendingException' => $pendingException,
                 'exceptions' => $exceptions,
+                'notResolvedCheck' => $notResolvedCheck,
+                'checkForApproved' => $checkForApproved,
+                'pushBackButtonCheck' => $pushBackButtonCheck,
+                'auditorButtonCheck' => $auditorButtonCheck,
+                'employeeDepartmentId' => $employeeDepartmentId,
+                'auditorDepartments' => $auditorDepartments,
                 'groupedSubProcessTypes' => $groupedSubProcessTypes ?? [],
             ])
         @else
@@ -68,7 +105,10 @@
         @endif
 
         {{-- ========== MODALS SECTION ========== --}}
-        @include('partials.auditee.modals')
+        @include('partials.auditee.modals', [
+            'exceptions' => $exceptions,
+            'pendingExceptionBatchStatusId' => $pendingException->id ?? null,
+        ])
     </div>
 
     {{-- ========== JAVASCRIPT SECTION ========== --}}

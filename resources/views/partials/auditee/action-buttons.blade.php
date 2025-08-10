@@ -1,4 +1,5 @@
 {{--  partials.auditee.action-buttons  --}}
+
 <div class="d-flex gap-3 justify-content-center">
     <!-- Comments Button -->
     <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
@@ -15,15 +16,22 @@
     </button>
 
     <!-- Save Button -->
-    @if ($pendingExceptionBatchStatus !== 'ANALYSIS' || $exceptionItem->status === 'NOT-RESOLVED')
+    @if ($pendingExceptionBatchStatus !== 'ANALYSIS')
         <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
             data-bs-target="#confirmSaveModal-{{ $exceptionItem->id }}" title="Save Response">
             <i class="bx bxs-save"></i>
         </button>
-    @else
+    @elseif(!in_array($employeeDepartmentId, $auditorDepartments))
+        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+            data-bs-target="#confirmSavePushBackModal-{{ $exceptionItem->id }}" title="Save Response">
+            <i class="bx bxs-save"></i>
+        </button>
+    @elseif(in_array($employeeDepartmentId, $auditorDepartments))
         <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal"
             data-bs-target="#viewExceptionModal-{{ $exceptionItem->id }}" title="Update Exception">
             <i class="bx bx-pencil"></i>
         </button>
+    @else
+        <div></div>
     @endif
 </div>

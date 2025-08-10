@@ -9,6 +9,195 @@ use Illuminate\Support\Facades\Http;
 class GroupExceptionsFilter extends Controller
 {
 
+    public function openBatch(Request $request, $batchId, $batchStatus){
+
+        // dd($request->all());
+
+        $accessToken = session('api_token');
+        if (empty($accessToken)) {
+            Log::warning('Session token missing in openBatch');
+            return redirect()->route('login')
+                ->with('toast_warning', 'Session expired, please login to continue');
+        }
+
+        $departments = ExceptionController::departmentData() ?? [];
+        $batches = BatchController::getBatches() ?? [];
+        $processTypes = ProcessTypeController::getProcessTypes() ?? [];
+        $subProcessTypes = collect(ProcessTypeController::getSubProcessTypes() ?? []);
+        $groupedSubProcessTypes = $subProcessTypes
+            ->filter(function ($item) {
+                return isset($item->processTypeId);
+            })
+            ->groupBy('processTypeId')
+            ->toArray();
+
+        $request = HTTP::withToken($accessToken)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/'. $batchId);
+        $exceptions = $request->object();
+        if (!$request->successful()) {
+            Log::error('Failed to fetch batch exception', [
+                'status' => $request->status(),
+                'response' => $request->body()
+            ]);
+            return redirect()->back()
+                ->with('toast_error', 'Failed to fetch batch exception. Please try again later.');
+        }
+
+        return view('exception-setup.group-exception-status-view', [
+            'pendingException' => $exceptions,
+            'batchStatus' => $batchStatus,
+            'departments' => $departments,
+            'batches' => $batches,
+            'processTypes' => $processTypes,
+            'groupedSubProcessTypes' => $groupedSubProcessTypes,
+
+        ]);
+
+    }
+
+
+    public function groupExceptionStatus(Request $request)
+    {
+
+        // 1. Session and Token Validation
+        $access_token = session('api_token');
+        if (empty($access_token)) {
+            Log::warning('Session token missing in exceptionSupList');
+            return redirect()->route('login')
+                ->with('toast_warning', 'Session expired, please login to continue');
+        }
+
+        try {
+            // 2. API Request Setup
+            $apiEndpoint = 'http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions';
+            Log::info('Fetching pending exceptions from API', ['endpoint' => $apiEndpoint]);
+
+            // 3. Make API Request with Retry Logic
+            $response = Http::withToken($access_token)
+                ->timeout(30)
+                ->retry(3, 100, function ($exception) {
+                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
+                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
+                })
+                ->get($apiEndpoint);
+
+            // 4. Handle API Response
+            if (!$response->successful()) {
+                Log::error('API (pending-batch-exceptions) request failed', [
+                    'status' => $response->status(),
+                    'response' => $response->body()
+                ]);
+
+                return redirect()->back()
+                    ->with('toast_error', 'Failed to fetch pending exceptions. Please try again later.');
+            }
+
+            // 5. Process Response Data
+            $exceptions = $response->json();
+            // dd($exceptions);
+
+            $loggedInUser = ExceptionController::getLoggedInUserInformation();
+            // dd($loggedInUser->departmentId);
+
+            if (!is_array($exceptions)) {
+                Log::error('Invalid API response format', ['response' => $exceptions]);
+                throw new \RuntimeException('Invalid data received from server');
+            }
+
+            // 6. Process Exceptions or Create Empty Dataset
+            if (empty($exceptions)) {
+                Log::info('No pending exceptions found');
+                $pendingExceptions = [[
+                    'id' => '---',
+                    'status' => '---',
+                    'submittedBy' => '---',
+                    'submittedAt' => '---',
+                    'groupName' => '---',
+                    'department' => '---',
+                    'exceptionCount' => '---',
+                    'auditorDepartmentId' =>  '---', //current logged in user's department id (auditor department check)
+                    'countForRespondedExceptionsByAuditee' => '---',
+                    'countForNotResolvedExceptionsByAuditee' => '---'
+                ]];
+            } else {
+
+                $batches = BatchController::getBatches();
+                $groups = GroupController::getActivityGroups();
+                $groupMembers = GroupMembersController::getGroupMembers();
+                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+
+
+                // Filter active batches with status 'OPEN' and map them by ID
+                $validBatches = collect($batches)
+                    ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+                    ->keyBy('id');
+
+                // Filter active groups and map them by ID
+                $validGroups = collect($groups)
+                    ->filter(fn($group) => $group->active)
+                    ->keyBy('id');
+
+                // Get groups where the specified employee belongs
+                $employeeGroups = collect($groupMembers)
+                    ->where('employeeId', $employeeId)
+                    ->pluck('activityGroupId')
+                    ->unique();
+
+                // dd($employeeGroups);
+
+                // Map batch IDs to their corresponding activity group IDs
+                $batchGroupMap = collect($batches)
+                    ->pluck('activityGroupId', 'id');
+
+                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+
+                // top managers
+                // 1 - Managing Director
+                // 2 - Head of Internal Audit
+                // 4 - Head of Internal Control & Compliance
+                $topManagers = [1, 2, 4];
+
+
+                $pendingExceptionsData = collect($exceptions)
+                    // Filter top-level exceptions by status
+                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+                        $groupId = $batchGroupMap[$exception['exceptionBatchId']] ?? null;
+                        return $validBatches->has($exception['exceptionBatchId']) &&
+                            $validGroups->has($groupId) && (!in_array($exception['status'], ['DECLINED', 'PENDING'])) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+                    })
+                    ->values()
+                    ->all();
+            }
+
+            $sortDescending = collect($pendingExceptionsData)->sortByDesc('createdAt');
+            //$request = new Request(); // Assuming you have a Request instance available
+            $pendingExceptions = ExceptionController::paginate($sortDescending, 15, $request);
+
+            // 7. Return View with Processed Data
+            return view('exception-setup.group-exception-status-list', [
+                'pendingExceptions' => $pendingExceptions,
+                'isEmpty' => empty($pendingExceptions) ||
+                    (count($pendingExceptions) === 1 && $pendingExceptions[0]['id'] === '---')
+            ]);
+        } catch (\Illuminate\Http\Client\RequestException $e) {
+            Log::error('HTTP request exception', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode()
+            ]);
+
+            return redirect()->back()
+                ->with('toast_error', 'Connection problem with the exception service. Please try again later.');
+        } catch (\Exception $e) {
+            Log::critical('Unexpected error in exceptionSupList', [
+                'message' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('toast_error', 'An unexpected error occurred. Our team has been notified.');
+        }
+    }
+
 
     public function filterExceptions(Request $request)
     {
@@ -23,17 +212,14 @@ class GroupExceptionsFilter extends Controller
         }
 
         try {
-            // 2. Get filter parameters
-
+            // 2. Get filter parameters - REMOVED auditor and riskRate
             $filters = [
                 'branch' => $request->get('branch'),
-                'auditor' => $request->get('auditor'),
                 'status' => $request->get('status'),
-                'riskRate' => $request->get('riskRate'),
                 'search' => $request->get('search'),
                 'dateFrom' => $request->get('dateFrom'),
                 'dateTo' => $request->get('dateTo'),
-                'batch' => $request->get('batch'), // Add batch filter
+                'batch' => $request->get('batch'),
                 'page' => $request->get('page', 1),
                 'perPage' => $request->get('perPage', 15)
             ];
@@ -75,7 +261,7 @@ class GroupExceptionsFilter extends Controller
                 ], 500);
             }
 
-            // 7. Process Exceptions (same logic as original method)
+            // 7. Process Exceptions
             if (empty($exceptions)) {
                 return response()->json([
                     'data' => [],
@@ -89,13 +275,13 @@ class GroupExceptionsFilter extends Controller
                 ]);
             }
 
-            // Get reference data (same as original)
+            // Get reference data
             $batches = BatchController::getBatches();
             $groups = GroupController::getActivityGroups();
             $groupMembers = GroupMembersController::getGroupMembers();
             $employeeId = ExceptionController::getLoggedInUserInformation()->id;
 
-            // Filter validation logic (same as original)
+            // Filter validation logic
             $validBatches = collect($batches)
                 ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
                 ->keyBy('id');
@@ -180,44 +366,82 @@ class GroupExceptionsFilter extends Controller
     }
 
     /**
-     * Apply filters to the exceptions collection
+     * Enhanced applyFilters method - REMOVED auditor and riskRate filters, FIXED batch and branch filters
      */
     private function applyFilters($exceptions, $filters, $batches, $groups)
     {
         return $exceptions->filter(function ($batchException) use ($filters, $batches, $groups) {
 
-            // Branch filter - FIXED
+            // FIXED Branch filter - more robust matching
             if (!empty($filters['branch'])) {
-                $batchId = $batchException['exceptionBatchId'] ?? null;
-                $batch = collect($batches)->firstWhere('id', $batchId);
-                $group = $batch ? collect($groups)->firstWhere('id', $batch->activityGroupId) : null;
-                $branchName = $group ? $group->groupName : null;
+                $branchMatched = false;
 
-                if (!$branchName || stripos($branchName, $filters['branch']) === false) {
+                // Check from exceptionBatch object first (most reliable)
+                if (isset($batchException['exceptionBatch']['activityGroupName'])) {
+                    $branchName = $batchException['exceptionBatch']['activityGroupName'];
+                    if (strcasecmp($branchName, $filters['branch']) === 0) {
+                        $branchMatched = true;
+                    }
+                }
+
+                // Fallback: check via batch and group lookup
+                if (!$branchMatched) {
+                    $batchId = $batchException['exceptionBatchId'] ?? null;
+                    if ($batchId) {
+                        $batch = collect($batches)->firstWhere('id', $batchId);
+                        if ($batch && $batch->activityGroupId) {
+                            $group = collect($groups)->firstWhere('id', $batch->activityGroupId);
+                            if ($group && strcasecmp($group->groupName, $filters['branch']) === 0) {
+                                $branchMatched = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!$branchMatched) {
                     return false;
                 }
             }
 
-            // Batch filter - NEW
+            // FIXED Batch filter - more robust matching with both name and code
             if (!empty($filters['batch'])) {
-                $batchId = $batchException['exceptionBatchId'] ?? null;
-                $batch = collect($batches)->firstWhere('id', $batchId);
-                $batchName = $batch ? $batch->batchName : null;
+                $batchMatched = false;
 
-                if (!$batchName || stripos($batchName, $filters['batch']) === false) {
+                // Check from exceptionBatch object (most reliable)
+                if (isset($batchException['exceptionBatch']['name'])) {
+                    $batchName = $batchException['exceptionBatch']['name'];
+                    if (strcasecmp($batchName, $filters['batch']) === 0) {
+                        $batchMatched = true;
+                    }
+                }
+
+                // Also check batch code
+                if (!$batchMatched && isset($batchException['exceptionBatch']['code'])) {
+                    $batchCode = $batchException['exceptionBatch']['code'];
+                    if (strcasecmp($batchCode, $filters['batch']) === 0) {
+                        $batchMatched = true;
+                    }
+                }
+
+                // Fallback: check via batch lookup
+                if (!$batchMatched) {
+                    $batchId = $batchException['exceptionBatchId'] ?? null;
+                    if ($batchId) {
+                        $batch = collect($batches)->firstWhere('id', $batchId);
+                        if ($batch) {
+                            if (strcasecmp($batch->batchName, $filters['batch']) === 0) {
+                                $batchMatched = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!$batchMatched) {
                     return false;
                 }
             }
 
-            // Auditor filter
-            if (!empty($filters['auditor'])) {
-                $submittedBy = $batchException['submittedBy'] ?? '';
-                if (stripos($submittedBy, $filters['auditor']) === false) {
-                    return false;
-                }
-            }
-
-            // Status filter
+            // Status filter (unchanged)
             if (!empty($filters['status'])) {
                 $status = strtoupper($batchException['status'] ?? '');
                 if ($status !== strtoupper($filters['status'])) {
@@ -225,59 +449,66 @@ class GroupExceptionsFilter extends Controller
                 }
             }
 
-            // Risk rate filter (check within exceptions array)
-            if (!empty($filters['riskRate'])) {
-                $exceptions = $batchException['exceptions'] ?? [];
-                $hasMatchingRisk = false;
+            // ENHANCED GLOBAL SEARCH - Updated without auditor and risk rate fields
+            if (!empty($filters['search'])) {
+                $searchTerm = strtolower($filters['search']);
+                $searchableFields = [];
 
+                // 1. Batch Code (from exceptionBatch)
+                if (isset($batchException['exceptionBatch']['code'])) {
+                    $searchableFields[] = $batchException['exceptionBatch']['code'];
+                }
+
+                // 2. Batch Name (from exceptionBatch)
+                if (isset($batchException['exceptionBatch']['name'])) {
+                    $searchableFields[] = $batchException['exceptionBatch']['name'];
+                }
+
+                // 3. Branch Name (activityGroupName)
+                if (isset($batchException['exceptionBatch']['activityGroupName'])) {
+                    $searchableFields[] = $batchException['exceptionBatch']['activityGroupName'];
+                }
+
+                // 4. Status
+                if (isset($batchException['status'])) {
+                    $searchableFields[] = $batchException['status'];
+                }
+
+                // 5. Department
+                if (isset($batchException['departmentName'])) {
+                    $searchableFields[] = $batchException['departmentName'];
+                }
+
+                // 6. Process Type Name
+                if (isset($batchException['processTypeName'])) {
+                    $searchableFields[] = $batchException['processTypeName'];
+                }
+
+                // 7. Exception titles and descriptions (from individual exceptions)
+                $exceptions = $batchException['exceptions'] ?? [];
                 foreach ($exceptions as $exception) {
-                    $riskRate = $exception['riskRate'] ?? '';
-                    if (strcasecmp($riskRate, $filters['riskRate']) === 0) {
-                        $hasMatchingRisk = true;
-                        break;
+                    if (isset($exception['exceptionTitle'])) {
+                        $searchableFields[] = $exception['exceptionTitle'];
+                    }
+                    if (isset($exception['exception'])) {
+                        $searchableFields[] = $exception['exception'];
                     }
                 }
 
-                if (!$hasMatchingRisk) {
-                    return false;
-                }
-            }
-
-            // Search filter (search across multiple fields) - FIXED
-            if (!empty($filters['search'])) {
-                $searchTerm = strtolower($filters['search']);
-
-                // Search in main fields
-                $searchableFields = [
-                    $batchException['submittedBy'] ?? '',
-                    $batchException['departmentName'] ?? '',
-                    $batchException['status'] ?? ''
-                ];
-
-                // Search in exceptions
-                $exceptions = $batchException['exceptions'] ?? [];
-                foreach ($exceptions as $exception) {
-                    $searchableFields[] = $exception['exceptionTitle'] ?? '';
-                    $searchableFields[] = $exception['exception'] ?? '';
-                    $searchableFields[] = $exception['riskRate'] ?? '';
+                // 8. Reference Number
+                if (isset($batchException['refNum'])) {
+                    $searchableFields[] = $batchException['refNum'];
                 }
 
-                // Search in branch name
-                $batchId = $batchException['exceptionBatchId'] ?? null;
-                $batch = collect($batches)->firstWhere('id', $batchId);
-                $group = $batch ? collect($groups)->firstWhere('id', $batch->activityGroupId) : null;
-                if ($group && isset($group->groupName)) {
-                    $searchableFields[] = $group->groupName;
-                }
+                // Remove duplicates and empty values
+                $searchableFields = array_unique(array_filter($searchableFields, function ($field) {
+                    return is_string($field) && !empty(trim($field));
+                }));
 
-                // Search in batch name
-                if ($batch && isset($batch->batchName)) {
-                    $searchableFields[] = $batch->batchName;
-                }
-
+                // Perform the search
                 $foundMatch = false;
                 foreach ($searchableFields as $field) {
-                    if (is_string($field) && stripos($field, $searchTerm) !== false) {
+                    if (stripos($field, $searchTerm) !== false) {
                         $foundMatch = true;
                         break;
                     }
@@ -288,7 +519,7 @@ class GroupExceptionsFilter extends Controller
                 }
             }
 
-            // Date range filters
+            // Date range filters (unchanged)
             $submittedAt = $batchException['submittedAt'] ?? null;
             if ($submittedAt) {
                 try {
@@ -321,7 +552,9 @@ class GroupExceptionsFilter extends Controller
         });
     }
 
-    // Fixed getFilterOptions method - Replace your existing getFilterOptions method with this:
+    /**
+     * Enhanced getFilterOptions method - REMOVED auditor, batch codes, and risk rates
+     */
     public function getFilterOptions(Request $request)
     {
         // Session validation
@@ -347,7 +580,6 @@ class GroupExceptionsFilter extends Controller
             if (!is_array($exceptions) || empty($exceptions)) {
                 return response()->json([
                     'branches' => [],
-                    'auditors' => [],
                     'batches' => []
                 ]);
             }
@@ -356,37 +588,76 @@ class GroupExceptionsFilter extends Controller
             $batches = BatchController::getBatches();
             $groups = GroupController::getActivityGroups();
 
+            // Apply same filtering logic as main method for user permissions
+            $loggedInUser = ExceptionController::getLoggedInUserInformation();
+            $groupMembers = GroupMembersController::getGroupMembers();
+            $employeeId = $loggedInUser->id;
+            $employeeRoleId = $loggedInUser->empRoleId;
+            $topManagers = [1, 2, 4];
+
+            $validBatches = collect($batches)
+                ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+                ->keyBy('id');
+
+            $validGroups = collect($groups)
+                ->filter(fn($group) => $group->active)
+                ->keyBy('id');
+
+            $employeeGroups = collect($groupMembers)
+                ->where('employeeId', $employeeId)
+                ->pluck('activityGroupId')
+                ->unique();
+
+            $batchGroupMap = collect($batches)
+                ->pluck('activityGroupId', 'id');
+
+            // Filter exceptions based on user permissions
+            $filteredExceptions = collect($exceptions)
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+                    $groupId = $batchGroupMap[$exception['exceptionBatchId']] ?? null;
+                    return $validBatches->has($exception['exceptionBatchId']) &&
+                        $validGroups->has($groupId) &&
+                        (!in_array($exception['status'], ['DECLINED', 'PENDING'])) &&
+                        ($employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers));
+                });
+
             // Extract unique values
             $branches = [];
-            $auditors = [];
             $batchNames = [];
 
-            foreach ($exceptions as $exception) {
-                // Add auditor
-                if (!empty($exception['submittedBy'])) {
-                    $auditors[] = $exception['submittedBy'];
+            foreach ($filteredExceptions as $exception) {
+                // Add branch from exceptionBatch (most reliable source)
+                if (isset($exception['exceptionBatch']['activityGroupName']) && !empty($exception['exceptionBatch']['activityGroupName'])) {
+                    $branches[] = $exception['exceptionBatch']['activityGroupName'];
+                } else {
+                    // Fallback: Add branch from group lookup
+                    $batchId = $exception['exceptionBatchId'] ?? null;
+                    $batch = collect($batches)->firstWhere('id', $batchId);
+                    $group = $batch ? collect($groups)->firstWhere('id', $batch->activityGroupId) : null;
+
+                    if ($group && !empty($group->groupName)) {
+                        $branches[] = $group->groupName;
+                    }
                 }
 
-                // Add branch
-                $batchId = $exception['exceptionBatchId'] ?? null;
-                $batch = collect($batches)->firstWhere('id', $batchId);
-                $group = $batch ? collect($groups)->firstWhere('id', $batch->activityGroupId) : null;
-                if ($group && !empty($group->groupName)) {
-                    $branches[] = $group->groupName;
-                }
-
-                // Add batch name
-                if ($batch && !empty($batch->batchName)) {
-                    $batchNames[] = $batch->batchName;
+                // Add batch name from exceptionBatch (most reliable source)
+                if (isset($exception['exceptionBatch']['name']) && !empty($exception['exceptionBatch']['name'])) {
+                    $batchNames[] = $exception['exceptionBatch']['name'];
+                } else {
+                    // Fallback: Add batch name from batch lookup
+                    $batchId = $exception['exceptionBatchId'] ?? null;
+                    $batch = collect($batches)->firstWhere('id', $batchId);
+                    if ($batch && !empty($batch->batchName)) {
+                        $batchNames[] = $batch->batchName;
+                    }
                 }
             }
 
+            // Sort and return unique values
             return response()->json([
-                'branches' => array_values(array_unique($branches)),
-                'auditors' => array_values(array_unique($auditors)),
-                'batches' => array_values(array_unique($batchNames)), // Add batches
-                'statuses' => ['APPROVED', 'AMENDMENT', 'ANALYSIS', 'RESOLVED'],
-                'riskRates' => ['High', 'Medium', 'Low']
+                'branches' => array_values(array_unique(array_filter($branches))),
+                'batches' => array_values(array_unique(array_filter($batchNames))),
+                'statuses' => ['APPROVED', 'AMENDMENT', 'ANALYSIS', 'RESOLVED']
             ]);
         } catch (\Exception $e) {
             Log::error('Error in getFilterOptions', [
