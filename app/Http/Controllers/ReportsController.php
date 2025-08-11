@@ -23,7 +23,9 @@ class ReportsController extends Controller
             return $sessionValidation;
         }
 
-        $reports = $this->getAllReports();
+        $reports = collect($this->getAllReports())->filter(function ($report) {
+            return !in_array($report->status, ['DECLINED']);
+        })->values()->all();
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
 

@@ -445,7 +445,7 @@ class ExceptionApprovalController extends Controller
                     ->values()
                     ->all();
 
-                    // dd($pendingExceptions);
+                // dd($pendingExceptions);
             }
 
 
@@ -1265,16 +1265,15 @@ class ExceptionApprovalController extends Controller
                     // Transform and count nested exceptions
                     ->map(function ($exception) {
                         $pendingCount = collect($exception['exceptions'] ?? [])
-                            ->where('status', 'RESOLVED')
-                            // ->orWhere('status', 'RESOLVED')
-                            ->where('recommendedStatus', 'RESOLVED') // Only count if recommendedStatus is RESOLVED
+                            ->whereIn('status', ['APPROVED', 'RESOLVED'])
+                            ->where('recommendedStatus', 'RESOLVED')
                             ->count();
 
-                    // $resolvedCount = collect($exception['exceptions'] ?? [])
-                    //     ->where('status', 'RESOLVED')
-                    //     // ->orWhere('status', 'RESOLVED')
-                    //     ->where('recommendedStatus', 'RESOLVED') // Only count if recommendedStatus is RESOLVED
-                    //     ->count();
+                        // $resolvedCount = collect($exception['exceptions'] ?? [])
+                        //     ->where('status', 'RESOLVED')
+                        //     // ->orWhere('status', 'RESOLVED')
+                        //     ->where('recommendedStatus', 'RESOLVED') // Only count if recommendedStatus is RESOLVED
+                        //     ->count();
 
 
                         return [

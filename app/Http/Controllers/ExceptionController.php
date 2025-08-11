@@ -1325,7 +1325,7 @@ class ExceptionController extends Controller
 
         $employeeRoleId = $instance->getLoggedInUserInformation()->empRoleId;
 
-        // top managers
+        // top managers role
         // 1 - Managing Director
         // 2 - Head of Internal Audit
         // 4 - Head of Internal Control & Compliance
