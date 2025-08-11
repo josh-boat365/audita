@@ -32,7 +32,10 @@ class GroupExceptionsFilter extends Controller
             ->toArray();
 
         $request = HTTP::withToken($accessToken)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/'. $batchId);
-        $exceptions = $request->object();
+        $exceptions = collect($request->object())->filter(function ($item) {
+            return isset($item->exceptionBatchId) && in_array($item->status, ['APPROVED', 'AMENDMENT', 'ANALYSIS', 'RESOLVED']);
+        })->values()->all();
+
         if (!$request->successful()) {
             Log::error('Failed to fetch batch exception', [
                 'status' => $request->status(),

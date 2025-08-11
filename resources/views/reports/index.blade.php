@@ -176,9 +176,12 @@ $branchName = 'N/A';
     @push('scripts')
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/2.2.2/js/dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+        <!-- Alternative JSZip -->
+        <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
+
+        <!-- Alternative DataTables Buttons -->
+        <script src="https://unpkg.com/datatables.net-buttons@2.4.1/js/dataTables.buttons.min.js"></script>
+        <script src="https://unpkg.com/datatables.net-buttons@2.4.1/js/buttons.html5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -197,7 +200,7 @@ $branchName = 'N/A';
                 var table = $('#reportsTable').DataTable({
                     dom: 'Bfrtip',
                     buttons: [{
-                            extend: 'excelHtml5',
+                            extend: 'excel', // <- This line was commented out - uncomment it!
                             text: 'Export to Excel',
                             title: 'Exceptions Report',
                             exportOptions: {
@@ -244,62 +247,6 @@ $branchName = 'N/A';
                                 if (dateTo) filename += `_To-${dateTo}`;
 
                                 return filename;
-
-                            }
-                        },
-                        {
-                            text: 'Export to PDF',
-                            action: function(e, dt, button, config) {
-                                // Get current filter values
-                                const filters = {
-                                    batch: $('#batchFilter').val(),
-                                    branch: $('#branchFilter').val(),
-                                    auditor: $('#auditorFilter').val(),
-                                    status: $('#statusFilter').val(),
-                                    riskRate: $('#riskRateFilter').val(),
-                                    dateFrom: $('#dateFromFilter').val(),
-                                    dateTo: $('#dateToFilter').val()
-                                };
-
-                                // Get filtered data
-                                const filteredData = [];
-                                dt.rows({
-                                    search: 'applied'
-                                }).every(function() {
-                                    const rowData = this.data();
-                                    filteredData.push(rowData);
-                                });
-
-                                // Create form to submit data
-                                const form = $('<form>', {
-                                    'method': 'POST',
-                                    'action': '/reports/export-pdf',
-                                    'target': '_blank'
-                                });
-
-                                // Add CSRF token
-                                form.append($('<input>', {
-                                    'type': 'hidden',
-                                    'name': '_token',
-                                    'value': $('meta[name="csrf-token"]').attr('content')
-                                }));
-
-                                // Add filters
-                                form.append($('<input>', {
-                                    'type': 'hidden',
-                                    'name': 'filters',
-                                    'value': JSON.stringify(filters)
-                                }));
-
-                                // Add data
-                                form.append($('<input>', {
-                                    'type': 'hidden',
-                                    'name': 'data',
-                                    'value': JSON.stringify(filteredData)
-                                }));
-
-                                // Submit form
-                                form.appendTo('body').submit().remove();
                             }
                         },
                         {

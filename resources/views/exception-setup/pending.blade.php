@@ -51,9 +51,9 @@
                             <td>
 
                                 <span
-                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : 'bg-success') }}">
+                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : ($exception->riskRate == 'Low' ? 'bg-success':'bg-secondary')) }}">
 
-                                    {{ $exception->riskRate }}
+                                    {{ $exception->riskRate ?? 'Not Determined' }}
                                 </span>
 
                             </td>

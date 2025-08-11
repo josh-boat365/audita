@@ -125,11 +125,10 @@
                                     <div class="mb-3">
                                         <label class="form-label">Occurrence Date<span
                                                 class="required">*</span></label>
-                                        <input @disabled(!$canEdit)type="text" class="form-control"
-                                            placeholder="Select occurrence date" name="occurrenceDate"
+                                        <input @disabled(!$canEdit)type="date" class="form-control"
+                                            name="occurrenceDate"
                                             value="{{ $exception->occurrenceDate == null ? '' : Carbon\Carbon::parse($exception->occurrenceDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/yy" data-provide="datepicker"
-                                            data-date-autoclose="true" required />
+                                            required />
                                         <div class="invalid-feedback">Please select occurrence date.</div>
                                     </div>
                                 </div>
@@ -193,22 +192,18 @@
                                     <div class="mb-3">
                                         <label class="form-label">Proposed Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input @disabled(!$canEdit)type="text" class="form-control"
-                                            placeholder="Select due date" name="proposeResolutionDate"
-                                            value="{{ $exception->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exception->proposeResolutionDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/yy" data-provide="datepicker"
-                                            data-date-autoclose="true" />
+                                        <input @disabled(!$canEdit)type="date" class="form-control"
+                                            name="proposeResolutionDate"
+                                            value="{{ $exception->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exception->proposeResolutionDate)->format('d/m/Y') }}" />
                                         <div class="invalid-feedback">Please select proposed resolution date.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Resolution Date</label>
                                         <small>(optional)</small>
-                                        <input @disabled(!$canEdit) type="text" class="form-control"
-                                            placeholder="Select resolution date" name="resolutionDate"
-                                            value="{{ $exception->resolutionDate == null ? '' : Carbon\Carbon::parse($exception->resolutionDate)->format('d/m/Y') }}"
-                                            data-date-format="d/m/yy" data-provide="datepicker"
-                                            data-date-autoclose="true" />
+                                        <input @disabled(!$canEdit) type="date" class="form-control"
+                                            name="resolutionDate"
+                                            value="{{ $exception->resolutionDate == null ? '' : Carbon\Carbon::parse($exception->resolutionDate)->format('d/m/Y') }}" />
                                         <div class="invalid-feedback">Please select resolution date.</div>
                                     </div>
                                 </div>
