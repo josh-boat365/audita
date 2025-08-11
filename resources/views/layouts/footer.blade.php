@@ -58,24 +58,3 @@
 
 <script src="{{ asset('assets/libs/bootstrap-datepicker/js/bootstrap-datepicker.min.js') }}"></script>
 
-
-@push('scripts')
-
-    {{--  <script src="https://cdn.tiny.cloud/1/ynbajxrf957pph9rrymxt50tc689r3r3ccj4iyfnlr7j0n6p/tinymce/7/tinymce.min.js"
-        referrerpolicy="origin"></script>  --}}
-    <script>
-        tinymce.init({
-            selector: 'textarea#exception_description',
-            plugins: 'table lists',
-            toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | indent outdent | bullist numlist',
-            setup: function(editor) {
-                // This ensures the content is synced on submit
-                editor.on('change', function() {
-                    editor.save();
-                });
-            }
-        });
-    </script>
-
-
-@endpush

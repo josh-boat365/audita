@@ -10,7 +10,11 @@
         $requestDate = isset($pendingException->requestDate)
             ? Carbon\Carbon::parse($pendingException->requestDate)->format('Y-m-d')
             : '';
-        $employeeName = session('user_name') ?? 'Unknown User';
+
+        $user_firstName =
+            App\Http\Controllers\ExceptionController::getLoggedInUserInformation()->firstName ?? 'Unknown';
+        $user_surname = App\Http\Controllers\ExceptionController::getLoggedInUserInformation()->surname ?? 'Unknown';
+        $employeeName = $user_firstName . ' ' . $user_surname;
 
         // Ensure exceptions property exists
         $exceptions =
@@ -107,6 +111,7 @@
         {{-- ========== MODALS SECTION ========== --}}
         @include('partials.auditee.modals', [
             'exceptions' => $exceptions,
+            'employeeName' => $employeeName,
             'pendingExceptionBatchStatusId' => $pendingException->id ?? null,
         ])
     </div>
