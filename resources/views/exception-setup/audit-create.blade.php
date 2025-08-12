@@ -30,7 +30,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form action="{{ route('sub.process.type') }}" method="POST" id="addSubProcessTypeForm">
+                        <form id="addSubProcessTypeForm">
                             @csrf
                             <div class="mb-3">
                                 <label for="subProcessTypeName" class="form-label">Sub Process Type Name</label>
@@ -48,7 +48,10 @@
                             </div>
                             <input type="hidden" name="active" value="1">
                             <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Add Sub Process Type</button>
+                                <button type="submit" class="btn btn-primary" id="submitSubProcessType">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                    Add Sub Process Type
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -146,11 +149,95 @@
                     '#occurrenceDateFilter'
                 ];
 
-                // Store the grouped sub-process types from PHP
-                {{--  const groupedSubProcessTypes = @json($groupedSubProcessTypes);  --}}
-
                 // Initially disable the add row button
                 addRowBtn.disabled = true;
+
+                // AJAX Sub Process Type Form Submission
+                $('#addSubProcessTypeForm').on('submit', function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+                    const submitBtn = $('#submitSubProcessType');
+                    const spinner = submitBtn.find('.spinner-border');
+                    const btnText = submitBtn.text().trim();
+
+                    // Show loading state
+                    spinner.show();
+                    submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Adding...');
+
+                    $.ajax({
+                        url: "{{ route('sub.process.type') }}",
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            // Show success message
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: 'Sub Process Type added successfully',
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                timerProgressBar: true,
+                            });
+
+                            // Clear form
+                            $('#addSubProcessTypeForm')[0].reset();
+
+                            // Close modal
+                            $('#addSubProcessTypeModal').modal('hide');
+
+                            // Update the process type select in modal if needed
+                            // You can also refresh sub-process types for current process type
+                            const currentProcessTypeId = $('#processTypeFilter').val();
+                            if (currentProcessTypeId && currentProcessTypeId === response.processTypeId) {
+                                // Refresh sub-process types for existing rows
+                                loadSubProcessTypes(currentProcessTypeId, function(subProcessTypes) {
+                                    document.querySelectorAll('#exceptionsTable tbody tr').forEach(row => {
+                                        updateRowSubProcessTypes(row, subProcessTypes);
+                                    });
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = 'An error occurred while adding the sub process type';
+
+                            if (xhr.responseJSON) {
+                                if (xhr.responseJSON.message) {
+                                    errorMessage = xhr.responseJSON.message;
+                                } else if (xhr.responseJSON.errors) {
+                                    const errors = Object.values(xhr.responseJSON.errors).flat();
+                                    errorMessage = errors.join(', ');
+                                }
+                            }
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: errorMessage,
+                                confirmButtonText: 'OK'
+                            });
+                        },
+                        complete: function() {
+                            // Reset button state
+                            spinner.hide();
+                            submitBtn.prop('disabled', false).text(btnText);
+                        }
+                    });
+                });
+
+                // Reset form when modal is closed
+                $('#addSubProcessTypeModal').on('hidden.bs.modal', function() {
+                    $('#addSubProcessTypeForm')[0].reset();
+                    $('#submitSubProcessType').prop('disabled', false).text('Add Sub Process Type');
+                    $('#submitSubProcessType').find('.spinner-border').hide();
+                });
 
                 // Function to validate filters
                 function validateFilters() {
@@ -208,12 +295,10 @@
                     });
                 });
 
-
                 // Function to load sub-process types for a process type
                 function loadSubProcessTypes(processTypeId, callback) {
                     if (!processTypeId) return;
 
-                    // Use Laravel's url() helper instead of hardcoded path
                     const url = "{{ url('/get-sub-process-types') }}/" + processTypeId;
 
                     $.ajax({
@@ -224,7 +309,7 @@
                         },
                         error: function(xhr) {
                             console.error('Error loading sub-process types:', xhr.responseText);
-                            console.error('Request URL:', url); // Add this for debugging
+                            console.error('Request URL:', url);
                             Swal.fire('Error', 'Failed to load sub-process types', 'error');
                         }
                     });
@@ -318,27 +403,7 @@
                     });
                 });
 
-                // When process type filter changes, update all existing rows' sub-process type dropdowns
-                {{--  document.getElementById('processTypeFilter').addEventListener('change', function() {
-                    const processTypeId = this.value;
-                    const subProcessTypes = getSubProcessTypes(processTypeId);
-
-                    document.querySelectorAll('.sub-process-type').forEach(select => {
-                        // Only update selects that belong to this process type or haven't been assigned yet
-                        if (!select.dataset.processType || select.dataset.processType ===
-                            processTypeId) {
-                            select.innerHTML = `
-                        <option value="">Select...</option>
-                        ${subProcessTypes.map(subType =>
-                            `<option value="${subType.id}">${subType.name}</option>`
-                        ).join('')}
-                    `;
-                            select.dataset.processType = processTypeId;
-                        }
-                    });
-                });  --}}
-
-                // Rest of your existing code (delete row, form submission, etc.)
+                // Delete row functionality
                 tableBody.addEventListener('click', function(e) {
                     if (e.target.closest('.delete-row')) {
                         if (confirm('Are you sure you want to delete this row?')) {
@@ -354,12 +419,12 @@
                     }
                 });
 
+                // Form submission validation
                 form.addEventListener('submit', function(e) {
-                    {{--  e.preventDefault();  --}}
-
                     // Validate form
                     const rows = tableBody.querySelectorAll('tr');
                     if (rows.length === 0) {
+                        e.preventDefault();
                         Swal.fire({
                             icon: 'error',
                             title: 'No Exceptions Added',
@@ -373,10 +438,9 @@
                     const invalidRows = [];
 
                     rows.forEach((row, index) => {
-                        const title = row.querySelector('[name*="[title]"]').value;
-                        const description = row.querySelector('[name*="[description]"]').value;
-                        const subProcessType = row.querySelector('[name*="[sub_process_type_id]"]')
-                            .value;
+                        const title = row.querySelector('[name*="[exceptionTitle]"]').value;
+                        const description = row.querySelector('[name*="[exception]"]').value;
+                        const subProcessType = row.querySelector('[name*="[subProcessTypeId]"]').value;
 
                         if (!title || !description || !subProcessType) {
                             isValid = false;
@@ -388,6 +452,7 @@
                     });
 
                     if (!isValid) {
+                        e.preventDefault();
                         Swal.fire({
                             icon: 'error',
                             title: 'Validation Error',
@@ -396,11 +461,9 @@
                         });
                         return;
                     }
-
-                    // If all valid, submit form
-                    form.submit();
                 });
 
+                // Auto-resize textareas
                 document.addEventListener('input', function(e) {
                     if (e.target.classList.contains('editable-textarea')) {
                         autoResizeTextarea(e.target);
@@ -428,6 +491,11 @@
             #addRowBtn:disabled {
                 opacity: 0.65;
                 cursor: not-allowed;
+            }
+
+            .spinner-border-sm {
+                width: 1rem;
+                height: 1rem;
             }
         </style>
     @endpush

@@ -202,8 +202,8 @@ Route::get('/exception/auditor/show-exception-list-for-approval/{batchId}/{statu
 Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
 Route::get('/exception/auditee/pending-exception-list', [ExceptionApprovalController::class, 'auditeePendingExceptionList'])->name('auditee.pending.exception.list');
 Route::post('/exception/auditee-push-back-to-auditor', [ExceptionController::class, 'exceptionPushBackToAuditor'])->name('auditee.push.back');
-Route::get('/exception/group-exception-status-list', [GroupExceptionsFilter::class, 'groupExceptionStatus'])->name('group.exception.status');
-Route::get('/exception/group-exception-status-open/{batchId}/{batchStatus}', [GroupExceptionsFilter::class, 'openBatch'])->name('group.exception.open');
+Route::get('/exception/group-exception-enquiry-list', [GroupExceptionsFilter::class, 'groupExceptionStatus'])->name('group.exception.enquiry.list');
+Route::get('/exception/group-exception-enquiry-open/{exceptionId}/{exceptionStatus}', [GroupExceptionsFilter::class, 'openBatch'])->name('group.exception.open');
 
 // New filtering route
 Route::get('/exception/group-filter-exceptions', [GroupExceptionsFilter::class, 'filterExceptions'])

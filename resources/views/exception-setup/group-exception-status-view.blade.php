@@ -26,7 +26,8 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18"><a href="{{ route('group.exception.status') }}">Exceptions</a> >
+                    <h4 class="mb-sm-0 font-size-18"><a href="{{ route('group.exception.enquiry.list') }}">Exceptions</a>
+                        >
                         {{ $pendingException->submittedBy ?? '' }} >
                         {{ $pendingException->exceptionBatch->activityGroupName ?? '' }} > <a
                             href="#">{{ $pendingException->departmentName ?? '' }}</a></h4>
@@ -90,7 +91,7 @@
         </div>
 
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
-        {{--  {{ dd($exceptions) }}  --}}
+        {{-- {{ dd($exceptions) }} --}}
         <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                 <thead class="table-light">
@@ -206,9 +207,9 @@
                 </div>
             </div>
 
-            {{--  VIEW EXCEPTION DETAILS MODAL  --}}
+            {{-- VIEW EXCEPTION DETAILS MODAL  --}}
 
-            {{--  partials.auditee.view-exception-modal  --}}
+            {{-- partials.auditee.view-exception-modal  --}}
             <div class="modal fade" id="viewExceptionModal-{{ $exceptionItem->id }}" tabindex="-1"
                 aria-labelledby="viewExceptionModalLabel-{{ $exceptionItem->id }}" aria-hidden="true">
                 <div class="modal-dialog modal-xl">

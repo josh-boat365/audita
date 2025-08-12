@@ -50,7 +50,7 @@
                         <li><a href="{{ route('auditee.exception.list') }}"> Audit List</a></li>
                         <li><a href="{{ route('exception.list') }}" key="list">Internal Cont. List</a></li>
                         <li><a href="{{ route('auditee.pending.exception.list') }}">Pending</a></li>
-                        <li><a href="{{ route('group.exception.status') }}">Exception Enquiry</a></li>
+                        <li><a href="{{ route('group.exception.enquiry.list') }}">Exception Enquiry</a></li>
                     </ul>
                 </li>
 

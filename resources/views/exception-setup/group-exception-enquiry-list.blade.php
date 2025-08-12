@@ -6,14 +6,17 @@
     <div class="container-fluid px-1">
         <div class="row">
             <div class="col-12">
-                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18">Overview of Exceptions Reports</h4>
+                <div class="page-title-box">
+                    <h1 class="mb-2">Exception Enquiry</h1>
+                    <p class="text-muted mb-4">List of exceptions raised in the branch/group, track and respond to them
+                        where necessary.
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
+    <div class="mb-4" style="background-color: gray; height: 1px;"></div>
 
     <!-- Filter Section -->
     <div class="row mb-4">
@@ -38,17 +41,6 @@
                                     <option value="">All Branches</option>
                                     @foreach (array_unique(array_column($groups, 'branchName')) as $branchName)
                                         <option value="{{ $branchName }}">{{ $branchName }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label for="auditorFilter" class="form-label">Auditor</label>
-                                <select id="auditorFilter" class="form-select">
-                                    <option value="">All Auditors</option>
-                                    @foreach (array_unique(array_column($reports, 'auditorName')) as $auditor)
-                                        @if ($auditor)
-                                            <option value="{{ $auditor }}">{{ $auditor }}</option>
-                                        @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -108,24 +100,20 @@
                                 <tr>
                                     <th>Exception Title</th>
                                     <th>Exception</th>
-                                    <th>Root Cause</th>
-                                    <th>Participants</th>
-                                    <th>Process Type</th>
-                                    <th>Sub Process Type</th>
                                     <th>Risk Rate</th>
                                     <th>Branch</th>
-                                    <th>Response</th>
                                     <th>Department</th>
                                     <th>Status</th>
                                     <th>Occurrence Date</th>
                                     <th>Resolution Date</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($reports as $report)
                                     <tr data-batch="{{ $report->exceptionBatchId }}"
                                         data-branch="@php
-$branchName = 'N/A';
+                                            $branchName = 'N/A';
                                             foreach ($batches as $batch) {
                                                 if ($batch->id == $report->exceptionBatchId) {
                                                     foreach ($groups as $group) {
@@ -138,31 +126,46 @@ $branchName = 'N/A';
                                                 }
                                             }
                                             echo $branchName; @endphp"
-                                        data-auditor="{{ $report->auditorName }}" data-status="{{ $report->status }}"
-                                        data-risk-rate="{{ $report->riskRate }}"
-                                        data-occurrence-date="{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : '' }}">
+                                        data-status="{{ $report->status }}" data-risk-rate="{{ $report->riskRate }}"
+                                        data-occurrence-date="{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : '' }}"
+                                        data-id="{{ $report->id }}">
                                         <td>{{ $report->exceptionTitle ?? 'N/A' }}</td>
                                         <td>{{ $report->exception ?? 'N/A' }}</td>
-                                        <td>{{ $report->rootCause ?? 'N/A' }}</td>
-                                        <td>
-                                            {{ $report->auditorName ?? 'N/A' }},
-                                            {{ $report->auditeeName ?? 'No Auditee' }}
-                                        </td>
-                                        <td>{{ $report->processType ?? 'N/A' }}</td>
-                                        <td>{{ $report->subProcessType ?? 'N/A' }}</td>
                                         <td>{{ $report->riskRate ?? 'N/A' }}</td>
                                         <td>{{ $branchName }}</td>
-                                        <td>{{ $report->statusComment ?? 'N/A' }}</td>
                                         <td>{{ $report->department ?? 'N/A' }}</td>
-                                        <td>{{ $report->status ?? 'N/A' }}</td>
+                                        <td>
+                                            @php
+                                                $status = $report->status ?? 'N/A';
+                                                $badgeClass = match ($status) {
+                                                    'PENDING' => 'bg-warning text-dark',
+                                                    'NOT-RESOLVED' => 'bg-danger',
+                                                    'APPROVED' => 'bg-primary',
+                                                    'RESOLVED' => 'bg-success',
+                                                    default => 'bg-secondary',
+                                                };
+                                            @endphp
+                                            <span
+                                                class="badge rounded-pill {{ $badgeClass }}">{{ $status }}</span>
+                                        </td>
                                         <td>{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : 'N/A' }}
                                         </td>
                                         <td>{{ $report->resolutionDate ? \Carbon\Carbon::parse($report->resolutionDate)->format('Y-m-d') : 'N/A' }}
                                         </td>
+                                        <td>
+                                            {{--  <a href="{{ route('exception.edit', $report->id) }}">
+                                                <span class="badge round bg-primary font-size-13"><i
+                                                        class="bx bxs-pencil"></i>open</span>
+                                            </a>  --}}
+                                            <a href="{{ url("/exception/group-exception-enquiry-open/{$report->id}/{$report->status}") }}">
+                                                <span class="badge round bg-primary font-size-13"><i
+                                                        class="bx bxs-pencil"></i>open</span>
+                                            </a>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="13" class="text-center">No data available</td>
+                                        <td colspan="9" class="text-center">No data available</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -200,11 +203,11 @@ $branchName = 'N/A';
                 var table = $('#reportsTable').DataTable({
                     dom: 'Bfrtip',
                     buttons: [{
-                            extend: 'excel', 
+                            extend: 'excel',
                             text: 'Export to Excel',
                             title: 'Exceptions Report',
                             exportOptions: {
-                                columns: ':visible',
+                                columns: ':visible:not(:last-child)', // Exclude the action column from export
                                 modifier: {
                                     search: 'applied',
                                     order: 'applied',
@@ -232,7 +235,6 @@ $branchName = 'N/A';
                                 let filename = 'Exceptions_Report';
                                 const batch = $('#batchFilter').val();
                                 const branch = $('#branchFilter').val();
-                                const auditor = $('#auditorFilter').val();
                                 const status = $('#statusFilter').val();
                                 const riskRate = $('#riskRateFilter').val();
                                 const dateFrom = $('#dateFromFilter').val();
@@ -240,7 +242,6 @@ $branchName = 'N/A';
 
                                 if (batch) filename += `_Batch-${batch}`;
                                 if (branch) filename += `_Branch-${branch}`;
-                                if (auditor) filename += `_Auditor-${auditor}`;
                                 if (status) filename += `_Status-${status}`;
                                 if (riskRate) filename += `_Risk-${riskRate}`;
                                 if (dateFrom) filename += `_From-${dateFrom}`;
@@ -251,7 +252,8 @@ $branchName = 'N/A';
                         },
                         {
                             extend: 'colvis',
-                            text: 'Column Visibility'
+                            text: 'Column Visibility',
+                            columns: ':not(:last-child)' // Exclude action column from column visibility
                         }
                     ],
                     responsive: true,
@@ -262,7 +264,7 @@ $branchName = 'N/A';
                     ],
                     columnDefs: [{
                             // Exception Title and Exception columns - truncate long text
-                            targets: [0, 1, 2],
+                            targets: [0, 1],
                             render: function(data, type, row) {
                                 if (type === 'display' && data && data.length > 50) {
                                     return '<span title="' + data + '">' + data.substr(0, 50) +
@@ -272,29 +274,24 @@ $branchName = 'N/A';
                             }
                         },
                         {
-                            // Response column - truncate long text
-                            targets: [8],
-                            render: function(data, type, row) {
-                                if (type === 'display' && data && data.length > 30) {
-                                    return '<span title="' + data + '">' + data.substr(0, 30) +
-                                        '...</span>';
-                                }
-                                return data || 'N/A';
-                            }
-                        },
-                        {
                             // Date columns - ensure proper formatting
-                            targets: [11, 12],
+                            targets: [6, 7],
                             render: function(data, type, row) {
                                 if (type === 'display' || type === 'type') {
                                     return data === 'N/A' ? 'N/A' : data;
                                 }
                                 return data;
                             }
+                        },
+                        {
+                            // Action column - disable sorting and searching
+                            targets: [8],
+                            orderable: false,
+                            searchable: false
                         }
                     ],
                     order: [
-                        [11, 'desc']
+                        [6, 'desc']
                     ], // Sort by occurrence date descending
                     searching: true,
                     ordering: true,
@@ -320,7 +317,6 @@ $branchName = 'N/A';
                             // Get filter values
                             const batch = $('#batchFilter').val();
                             const branch = $('#branchFilter').val();
-                            const auditor = $('#auditorFilter').val();
                             const status = $('#statusFilter').val();
                             const riskRate = $('#riskRateFilter').val();
                             const dateFrom = $('#dateFromFilter').val();
@@ -329,7 +325,6 @@ $branchName = 'N/A';
                             // Get row data
                             const rowBatch = $row.data('batch');
                             const rowBranch = $row.data('branch');
-                            const rowAuditor = $row.data('auditor');
                             const rowStatus = $row.data('status');
                             const rowRiskRate = $row.data('risk-rate');
                             const rowDate = $row.data('occurrence-date');
@@ -337,7 +332,6 @@ $branchName = 'N/A';
                             // Apply filters
                             if (batch && String(rowBatch) !== String(batch)) return false;
                             if (branch && String(rowBranch) !== String(branch)) return false;
-                            if (auditor && String(rowAuditor) !== String(auditor)) return false;
                             if (status && String(rowStatus) !== String(status)) return false;
                             if (riskRate && String(rowRiskRate) !== String(riskRate)) return false;
 
@@ -357,7 +351,6 @@ $branchName = 'N/A';
                     const filters = [];
                     const batch = $('#batchFilter').val();
                     const branch = $('#branchFilter').val();
-                    const auditor = $('#auditorFilter').val();
                     const status = $('#statusFilter').val();
                     const riskRate = $('#riskRateFilter').val();
                     const dateFrom = $('#dateFromFilter').val();
@@ -365,7 +358,6 @@ $branchName = 'N/A';
 
                     if (batch) filters.push(`Batch: ${$('#batchFilter option:selected').text()}`);
                     if (branch) filters.push(`Branch: ${branch}`);
-                    if (auditor) filters.push(`Auditor: ${auditor}`);
                     if (status) filters.push(`Status: ${status}`);
                     if (riskRate) filters.push(`Risk Rate: ${riskRate}`);
                     if (dateFrom) filters.push(`From: ${dateFrom}`);
@@ -375,7 +367,7 @@ $branchName = 'N/A';
                 }
 
                 // Apply filters on change
-                $('#batchFilter, #branchFilter, #auditorFilter, #statusFilter, #riskRateFilter').on('change',
+                $('#batchFilter, #branchFilter, #statusFilter, #riskRateFilter').on('change',
                     function() {
                         applyCustomFilters();
                     });
@@ -403,6 +395,24 @@ $branchName = 'N/A';
 
                     // Reset table
                     table.search('').columns().search('').draw();
+                });
+
+                // Handle open button click
+                $(document).on('click', '.open-exception', function() {
+                    const exceptionId = $(this).data('id');
+                    const exceptionTitle = $(this).data('title');
+
+                    // You can customize this action based on your needs
+                    // For example, redirect to a details page or open a modal
+                    console.log('Opening exception:', exceptionId, exceptionTitle);
+
+                    // Example: Redirect to exception details page
+                    // window.location.href = `/exceptions/${exceptionId}`;
+
+                    // Example: Open a modal
+                    // $('#exceptionModal').modal('show');
+
+                    alert(`Opening exception: ${exceptionTitle} (ID: ${exceptionId})`);
                 });
 
                 // Initialize with no custom filters
