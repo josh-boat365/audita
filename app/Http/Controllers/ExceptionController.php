@@ -81,6 +81,7 @@ class ExceptionController extends Controller
     {
         // dd($request->all());
         $request->validate([
+            'exceptionTitle' => 'required|string',
             'exception' => 'required|string',
             'rootCause' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:8',
@@ -96,6 +97,7 @@ class ExceptionController extends Controller
         $access_token = session('api_token');
 
         $data = [
+            'exceptionTitle' => $request->input('exceptionTitle'),
             'exception' => $request->input('exception'),
             'rootCause' => $request->input('rootCause'),
             'status' => $request->input('status'),
@@ -1324,6 +1326,12 @@ class ExceptionController extends Controller
             ->pluck('activityGroupId', 'id');
 
         $employeeRoleId = $instance->getLoggedInUserInformation()->empRoleId;
+        $employeeDepartmentId = $instance->getLoggedInUserInformation()->departmentId;
+        // dd($employeeDepartmentId);
+
+        //Internal Audit Department ID - 7
+        //Internal Control and Compliance Department ID - 8
+
 
         // top managers role
         // 1 - Managing Director

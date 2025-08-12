@@ -21,7 +21,8 @@
             <table class="table table-bordered  table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Exception</th>
+                        <th>Exception Title</th>
+                        <th>Exception Description</th>
                         <th>Root Cause</th>
                         <th>Auditor</th>
                         <th>Process Type</th>
@@ -37,7 +38,8 @@
                     {{--  {{ dd($exceptions) }}  --}}
                     @forelse ($exceptions as $exception)
                         <tr>
-                            <th scope="row"><a href="#">{!! $exception->exception !!}</a></th>
+                            <th scope="row"><a href="#">{{ $exception->exceptionTitle ?? '-----' }}</a></th>
+                            <th scope="row">{{ $exception->exception ?? '-----' }}</th>
                             <td> {{ $exception->rootCause ?? 'Not Determined' }} </td>
                             <td> {{ $exception->auditorName ?? 'N/A' }} </td>
 
@@ -125,7 +127,11 @@
 
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">No Batch Found</td>
+                            <td colspan="12" class="text-center text-muted py-4">
+                                <i class="bx bx-file fs-1 text-muted"></i>
+                                <p class="mb-0">No pending exceptions </p>
+                                <small>All exceptions have been processed</small>
+                            </td>
                         </tr>
                     @endforelse
 

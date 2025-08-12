@@ -79,7 +79,7 @@
                                     <div class="mb-3">
                                         <label class="form-label">Exception Title <span
                                                 class="required">*</span></label>
-                                        <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ $exception->exceptionTitle }}</textarea>
+                                        <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ $exception->exceptionTitle ?? '-----------' }}</textarea>
                                         <div class="invalid-feedback">Please enter exception title.</div>
                                     </div>
 
@@ -87,14 +87,14 @@
                                         <label class="form-label">Exception Description <span
                                                 class="required">*</span></label>
                                         <textarea @disabled(!$canEdit) class="form-control" rows="3" id="exception" name="exception"
-                                            placeholder="Enter exception description......" required>{{ $exception->exception }}</textarea>
+                                            placeholder="Enter exception description......" required>{{ $exception->exception ?? '-----------' }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label class="form-label">Root Cause</label>
                                         <textarea @disabled(!$canEdit) class="form-control" rows="3" name="rootCause"
-                                            placeholder="Enter root cause details......">{{ $exception->rootCause }}</textarea>
+                                            placeholder="Enter root cause details......">{{ $exception->rootCause ?? '-----------' }}</textarea>
                                         <div class="invalid-feedback">Please enter the root cause.</div>
                                     </div>
 
@@ -127,7 +127,7 @@
                                                 class="required">*</span></label>
                                         <input @disabled(!$canEdit)type="date" class="form-control"
                                             name="occurrenceDate"
-                                            value="{{ $exception->occurrenceDate == null ? '' : Carbon\Carbon::parse($exception->occurrenceDate)->format('d/m/Y') }}"
+                                            value="{{ $exception->occurrenceDate ? \Carbon\Carbon::parse($exception->occurrenceDate)->format('Y-m-d') : '' }}"
                                             required />
                                         <div class="invalid-feedback">Please select occurrence date.</div>
                                     </div>
@@ -194,7 +194,7 @@
                                         <small>(optional)</small>
                                         <input @disabled(!$canEdit)type="date" class="form-control"
                                             name="proposeResolutionDate"
-                                            value="{{ $exception->proposeResolutionDate == null ? '' : Carbon\Carbon::parse($exception->proposeResolutionDate)->format('d/m/Y') }}" />
+                                            value="{{ $exception->proposeResolutionDate ? \Carbon\Carbon::parse($exception->proposeResolutionDate)->format('Y-m-d') : '' }}" />
                                         <div class="invalid-feedback">Please select proposed resolution date.</div>
                                     </div>
 
@@ -203,7 +203,7 @@
                                         <small>(optional)</small>
                                         <input @disabled(!$canEdit) type="date" class="form-control"
                                             name="resolutionDate"
-                                            value="{{ $exception->resolutionDate == null ? '' : Carbon\Carbon::parse($exception->resolutionDate)->format('d/m/Y') }}" />
+                                            value="{{ $exception->resolutionDate ? \Carbon\Carbon::parse($exception->resolutionDate)->format('Y-m-d') : '' }}" />
                                         <div class="invalid-feedback">Please select resolution date.</div>
                                     </div>
                                 </div>
@@ -225,35 +225,65 @@
 
             {{-- FILE UPLOAD --}}
             <div class="tab-pane" id="file-attachments" role="tabpanel">
-                <div class="card">
-                    <div class="card-body">
-                        <form id="file-upload-form" action="{{ route('exception.file.upload', $exception->id) }}"
-                            method="POST" enctype="multipart/form-data">
-                            @csrf
-                            <label class="form-label">Attach Files</label>
-                            <div class="dropzone file-upload-dropzone">
-                                <div class="dz-message needsclick">
-                                    <div class="mb-3">
-                                        <i class="display-4 text-muted bx bxs-cloud-upload"></i>
-                                    </div>
-                                    <h4>Drop files here or click to upload.</h4>
-                                </div>
-                            </div>
-                            <div class="mt-4 text-end">
-                                <button type="button" id="upload-button" class="btn btn-primary">Upload
-                                    File</button>
-                            </div>
-                        </form>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">
+                            <i class="bx bx-file me-2"></i>Attached Files
+                            <span class="badge bg-secondary ms-2">
+                                {{ count($exception->fileAttached ?? []) }}
+                            </span>
+                        </h6>
                     </div>
+
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="file-upload-form-{{ $exception->id }}"
+                                action="{{ route('exception.file.upload', $exception->id) }}" method="POST"
+                                enctype="multipart/form-data">
+                                @csrf
+                                <label class="form-label">Attach Files</label>
+
+                                <!-- Hidden file input -->
+                                <input type="file" id="file-input-{{ $exception->id }}" name="files[]"
+                                    multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.txt,.zip,.rar"
+                                    style="display: none;">
+
+                                <!-- Dropzone area -->
+                                <div id="file-upload-dropzone-{{ $exception->id }}" class="dropzone"
+                                    style="border: 2px dashed #0087F7; border-radius: 5px; background: white; cursor: pointer; min-height: 150px;"
+                                    onclick="document.getElementById('file-input-{{ $exception->id }}').click();">
+                                    <div class="dz-message needsclick" style="margin: 2em 0; text-align: center;">
+                                        <div class="mb-3">
+                                            <i class="display-4 text-muted bx bxs-cloud-upload"></i>
+                                        </div>
+                                        <h4 style="margin-bottom: 10px;">Drop files here or click to upload.</h4>
+                                        <span class="text-muted">Maximum file size: 5MB</span>
+                                    </div>
+                                    <!-- File preview area -->
+                                    <div id="file-preview-{{ $exception->id }}" class="mt-3"></div>
+                                </div>
+                                <div class="mt-4 text-end">
+                                    <!-- Made button ID unique and initially hidden -->
+                                    <button type="button" id="upload-button-{{ $exception->id }}"
+                                        class="btn btn-primary" style="display: none;">Upload
+                                        File</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                 </div>
 
                 {{-- FILE PREVIEWS --}}
+
                 <div class="card">
                     <div class="card-body">
                         <h4>Files</h4>
                         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
                         <div class="row">
-                            @forelse ($exception->fileAttached as $file)
+                            <!-- Fixed: Use consistent variable name -->
+                            @forelse ($exception->fileAttached ?? [] as $file)
                                 <div class="col-xl-4 mb-3" id="file-{{ $file->id }}">
                                     <div class="file-info p-3 border rounded">
                                         <p><strong>{{ $file->fileName }}</strong></p>
@@ -281,12 +311,15 @@
                                     </div>
                                 </div>
                             @empty
-                                <p>No files uploaded Yet</p>
+                                <div class="text-center text-muted py-4">
+                                    <i class="bx bx-file fs-1 text-muted"></i>
+                                    <p class="mb-0">No files attached yet</p>
+                                    <small>Upload files to share with your team</small>
+                                </div>
                             @endforelse
                         </div>
                     </div>
                 </div>
-
             </div>
 
 
@@ -640,100 +673,218 @@
 
 
     </div>
+
+
+    @push('styles')
+    <style>
+        .dropzone {
+            border: 2px dashed #0087F7 !important;
+            border-radius: 5px !important;
+            background: white !important;
+            cursor: pointer !important;
+            min-height: 150px !important;
+            transition: all 0.3s ease;
+        }
+
+        .dropzone:hover {
+            border-color: #0056b3 !important;
+            background: #f8f9fa !important;
+        }
+
+        .dropzone.dz-drag-hover {
+            border-color: #28a745 !important;
+            background: #d4edda !important;
+        }
+
+        .dropzone .dz-message {
+            margin: 2em 0 !important;
+            text-align: center !important;
+        }
+
+        .dropzone .dz-message .needsclick {
+            cursor: pointer !important;
+        }
+
+        .dropzone .dz-preview {
+            margin: 10px;
+        }
+
+        .dropzone .dz-preview .dz-remove {
+            cursor: pointer;
+            color: #dc3545;
+        }
+
+        .dropzone .dz-preview .dz-remove:hover {
+            text-decoration: underline;
+        }
+    </style>
+@endpush
+
     @push('scripts')
-        {{--  <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>  --}}
-
         <script>
-            Dropzone.autoDiscover = false;
-            var myDropzone = new Dropzone("#file-upload-dropzone", {
-                url: "{{ route('exception.file.upload', $exception->id) }}",
-                paramName: "files[]",
-                maxFilesize: 5,
-                autoProcessQueue: false,
-                addRemoveLinks: true,
-                dictDefaultMessage: "Drop files here or click to upload",
-                headers: {
-                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
-                },
-                init: function() {
-                    var submitButton = document.querySelector("#upload-button");
-                    var myDropzone = this;
+        // Initialize dropzone when modal is shown
+        {{--  $('#fileAttachmentsModal-{{ $exception->id }}').on('shown.bs.modal', function () {
+            initializeFileUpload{{ $exception->id }}();
+        });  --}}
 
-                    submitButton.addEventListener("click", function() {
-                        myDropzone.processQueue();
+        {{--  function initializeFileUpload{{ $exception->id }}() {  --}}
+            var fileInput = document.getElementById('file-input-{{ $exception->id }}');
+            var dropzoneArea = document.getElementById('file-upload-dropzone-{{ $exception->id }}');
+            var previewArea = document.getElementById('file-preview-{{ $exception->id }}');
+            var uploadButton = document.getElementById('upload-button-{{ $exception->id }}');
+            var selectedFiles = [];
+
+            console.log("File upload initialized for exception {{ $exception->id }}");
+
+            // Handle file input change
+            fileInput.addEventListener('change', function(e) {
+                var files = Array.from(e.target.files);
+                console.log("Files selected:", files.length);
+
+                if (files.length > 0) {
+                    selectedFiles = files;
+                    displayFilePreview(files);
+                }
+            });
+
+            // Handle drag and drop
+            dropzoneArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropzoneArea.style.borderColor = '#28a745';
+                dropzoneArea.style.background = '#d4edda';
+            });
+
+            dropzoneArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                dropzoneArea.style.borderColor = '#0087F7';
+                dropzoneArea.style.background = 'white';
+            });
+
+            dropzoneArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropzoneArea.style.borderColor = '#0087F7';
+                dropzoneArea.style.background = 'white';
+
+                var files = Array.from(e.dataTransfer.files);
+                console.log("Files dropped:", files.length);
+
+                if (files.length > 0) {
+                    selectedFiles = files;
+                    displayFilePreview(files);
+                }
+            });
+
+            // Display file preview
+            function displayFilePreview(files) {
+                previewArea.innerHTML = '';
+
+                files.forEach(function(file, index) {
+                    var fileDiv = document.createElement('div');
+                    fileDiv.className = 'file-preview-item d-flex justify-content-between align-items-center p-2 mb-2 border rounded';
+                    fileDiv.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="bx bx-file me-2"></i>
+                            <span class="file-name">${file.name}</span>
+                            <span class="text-muted ms-2">(${formatFileSize(file.size)})</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile${{{ $exception->id }}}(${index})">
+                            <i class="bx bx-x"></i>
+                        </button>
+                    `;
+                    previewArea.appendChild(fileDiv);
+                });
+
+                // Show upload button
+                uploadButton.style.display = 'inline-block';
+            }
+
+            // Remove file from selection
+            window['removeFile{{ $exception->id }}'] = function(index) {
+                selectedFiles.splice(index, 1);
+                if (selectedFiles.length > 0) {
+                    displayFilePreview(selectedFiles);
+                } else {
+                    previewArea.innerHTML = '';
+                    uploadButton.style.display = 'none';
+                }
+            };
+
+            // Handle upload button click
+            uploadButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log("Upload button clicked, files to upload:", selectedFiles.length);
+
+                if (selectedFiles.length === 0) {
+                    Swal.fire({
+                        icon: "warning",
+                        title: "No Files",
+                        text: "Please select files to upload first",
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000
                     });
+                    return;
+                }
 
-                    this.on("success", function(file, response) {
+                uploadFiles(selectedFiles);
+            });
+
+            // Upload files function
+            function uploadFiles(files) {
+                var formData = new FormData();
+
+                // Add files to form data
+                files.forEach(function(file) {
+                    formData.append('files[]', file);
+                });
+
+                // Add CSRF token
+                formData.append('_token', '{{ csrf_token() }}');
+
+                // Show loading state
+                uploadButton.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Uploading...';
+                uploadButton.disabled = true;
+
+                $.ajax({
+                    url: "{{ route('exception.file.upload', $exception->id) }}",
+                    method: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        console.log("Upload success:", response);
+
+                        // Reset button
+                        uploadButton.innerHTML = 'Upload File';
+                        uploadButton.disabled = false;
+                        uploadButton.style.display = 'none';
+
                         if (response.status === "success") {
                             Swal.fire({
                                 icon: "success",
                                 title: "Success",
-                                text: response.message,
+                                text: response.message || "Files uploaded successfully",
                                 toast: true,
                                 position: "top-end",
                                 showConfirmButton: false,
                                 timer: 3000
                             });
 
-                            //refresh page manually
-                            window.location.reload();
+                            // Clear selections and refresh
+                            selectedFiles = [];
+                            previewArea.innerHTML = '';
+                            fileInput.value = '';
 
-
-                            {{--  fetchExceptionFiles(); // Reload files dynamically  --}}
-                            myDropzone.removeFile(file);
+                            // Refresh the page to show new files
+                            setTimeout(function() {
+                                window.location.reload();
+                            }, 1500);
                         } else {
                             Swal.fire({
                                 icon: "error",
                                 title: "Error",
-                                text: response.message,
-                                toast: true,
-                                position: "top-end",
-                                showConfirmButton: false,
-                                timer: 3000
-                            });
-                        }
-                    });
-
-                    this.on("error", function(file, response) {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Upload Failed",
-                            text: response.message || "An error occurred",
-                            toast: true,
-                            position: "top-end",
-                            showConfirmButton: false,
-                            timer: 3000
-                        });
-
-                        file.previewElement.classList.add("dz-error");
-                    });
-                }
-            });
-
-            // Fetch and download files
-            function downloadFile(fileId) {
-                $.ajax({
-                    url: "{{ route('exception.file.download', ':id') }}".replace(':id', fileId),
-                    method: "GET",
-                    headers: {
-                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content") // Include CSRF token
-                    },
-                    success: function(response) {
-                        {{--  console.log("Download response:", response); // Debugging  --}}
-
-                        if (response.status === "success") {
-                            let link = document.createElement("a");
-                            link.href = `data:application/octet-stream;base64,${response.fileData}`;
-                            link.download = response.fileName;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        } else {
-                            Swal.fire({
-                                icon: "error",
-                                title: "Download Failed",
-                                text: response.message,
+                                text: response.message || "Upload failed",
                                 toast: true,
                                 position: "top-end",
                                 showConfirmButton: false,
@@ -742,88 +893,158 @@
                         }
                     },
                     error: function(xhr) {
-                        {{--  console.error("Download Error:", xhr.responseText);  --}}
+                        console.log("Upload error:", xhr);
+
+                        // Reset button
+                        uploadButton.innerHTML = 'Upload File';
+                        uploadButton.disabled = false;
+
+                        var errorMessage = "An error occurred during upload";
+
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.message) {
+                                errorMessage = response.message;
+                            } else if (response.errors) {
+                                errorMessage = Object.values(response.errors).join(', ');
+                            }
+                        } catch (e) {
+                            if (xhr.responseText) {
+                                errorMessage = xhr.responseText;
+                            }
+                        }
+
                         Swal.fire({
                             icon: "error",
-                            title: "Error",
-                            text: "Failed to download file. Please try again.",
+                            title: "Upload Failed",
+                            text: errorMessage,
+                            toast: true,
+                            position: "top-end",
+                            showConfirmButton: false,
+                            timer: 5000
+                        });
+                    }
+                });
+            }
+
+            // Format file size helper
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+        {{--  }  --}}
+
+        // Download file function
+        function downloadFile(fileId) {
+            $.ajax({
+                url: "{{ route('exception.file.download', ':id') }}".replace(':id', fileId),
+                method: "GET",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
+                },
+                success: function(response) {
+                    if (response.status === "success") {
+                        // Create download link
+                        let link = document.createElement("a");
+                        link.href = `data:application/octet-stream;base64,${response.fileData}`;
+                        link.download = response.fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Download Failed",
+                            text: response.message,
                             toast: true,
                             position: "top-end",
                             showConfirmButton: false,
                             timer: 3000
                         });
                     }
-                });
-            }
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: "Failed to download file. Please try again.",
+                        toast: true,
+                        position: "top-end",
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
+            });
+        }
 
+        // Delete file function
+        function deleteFile(fileId) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: "This file will be permanently deleted!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Yes, delete it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ route('exception.file.delete', ':id') }}".replace(':id', fileId),
+                        method: "DELETE",
+                        headers: {
+                            "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                        },
+                        success: function(response) {
+                            if (response.status === "success") {
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Deleted!",
+                                    text: response.message,
+                                    toast: true,
+                                    position: "top-end",
+                                    showConfirmButton: false,
+                                    timer: 3000
+                                });
 
-            //Delete exception files
-            function deleteFile(fileId) {
-                Swal.fire({
-                    title: "Are you sure?",
-                    text: "This file will be permanently deleted!",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: "#d33",
-                    cancelButtonColor: "#3085d6",
-                    confirmButtonText: "Yes, delete it!"
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: "{{ route('exception.file.delete', ':id') }}".replace(':id', fileId),
-                            method: "DELETE", // Changed to DELETE
-                            headers: {
-                                "X-CSRF-TOKEN": "{{ csrf_token() }}" // CSRF token added
-                            },
-                            success: function(response) {
-                                {{--  console.log("Delete Success:", response); // Debugging log  --}}
-
-                                if (response.status === "success") {
-                                    Swal.fire({
-                                        icon: "success",
-                                        title: "Deleted!",
-                                        text: response.message,
-                                        toast: true,
-                                        position: "top-end",
-                                        showConfirmButton: false,
-                                        timer: 3000
-                                    });
-
-                                    // Remove file from UI
-                                    document.querySelector(`#file-${fileId}`).remove();
-                                } else {
-                                    Swal.fire({
-                                        icon: "error",
-                                        title: "Error",
-                                        text: response.message,
-                                        toast: true,
-                                        position: "top-end",
-                                        showConfirmButton: false,
-                                        timer: 3000
-                                    });
-                                }
-                            },
-                            error: function(xhr) {
-                                {{--  console.error("Delete Error:", xhr.responseText); // Log error for debugging  --}}
-
+                                // Remove file from UI with animation
+                                $(`#file-${fileId}`).fadeOut(300, function() {
+                                    $(this).remove();
+                                });
+                            } else {
                                 Swal.fire({
                                     icon: "error",
                                     title: "Error",
-                                    text: "Failed to delete file. Please try again.",
+                                    text: response.message,
                                     toast: true,
                                     position: "top-end",
                                     showConfirmButton: false,
                                     timer: 3000
                                 });
                             }
-                        });
-                    }
-                });
-            }
-        </script>
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Error",
+                                text: "Failed to delete file. Please try again.",
+                                toast: true,
+                                position: "top-end",
+                                showConfirmButton: false,
+                                timer: 3000
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+    @endpush
 
-
-
+    @push('scripts')
         <script>
             // Save the active tab state to local storage
             document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(function(tab) {
@@ -845,4 +1066,5 @@
             });
         </script>
     @endpush
+
 </x-base-layout>
