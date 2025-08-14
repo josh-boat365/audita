@@ -10,8 +10,11 @@
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
-                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18">List of Pending Exceptions For Branch</h4>
+                <div class="page-title-box ">
+                    <h4 class="mb-sm-0 font-size-18"></h4>
+                    <h1 class="mb-0">Pending Audit Control Exceptions For Branch</h1>
+                    <p class="text-muted mb-0">Respond to all pending exceptions and push them to the audit control
+                        officer for resolution.</p>
                 </div>
             </div>
         </div>

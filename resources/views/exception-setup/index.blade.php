@@ -5,7 +5,7 @@
         <div class="row">
             <div class="col-12">
                 <div class="page-title-box mt-2">
-                    <h1 class="mb-0">List of Exceptions</h1>
+                    <h1 class="mb-0">Internal Control Exceptions For Branch</h1>
                     <p class="text-muted mt-2 mb-0">Respond to exceptions raised by Internal Control Auditors</p>
                 </div>
             </div>
