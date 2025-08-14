@@ -27,14 +27,15 @@ class ExceptionController extends Controller
         }
 
         $employeeId = $this->getLoggedInUserInformation()->id;
+        $employeeDepartmentId = $this->getLoggedInUserInformation()->departmentId;
         $filteredExceptions = $this->getFilteredExceptions($employeeId);
         $sortDescending = collect($filteredExceptions)->sortByDesc('createdAt');
 
         $exceptions = $this->paginate($sortDescending, 15, $request);
 
-        // dd($exceptions);
+        // dd($employeeDepartmentId);
 
-        return view('exception-setup.index', compact('exceptions', 'employeeId'));
+        return view('exception-setup.index', compact('exceptions', 'employeeId', 'employeeDepartmentId'));
     }
 
 

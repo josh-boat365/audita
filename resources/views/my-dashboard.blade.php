@@ -114,6 +114,7 @@
                                     'RESOLVED' => 'success',
                                     'APPROVED' => 'primary',
                                     'PENDING' => 'warning',
+                                    'NOT-RESOLVED' => 'danger',
                                 ];
                             @endphp
 
@@ -176,7 +177,8 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Exception</th>
+                                        <th>Exception Title</th>
+                                        <th>Exception Description</th>
                                         <th>Department</th>
                                         <th>Status</th>
                                         <th>Due Date</th>
@@ -185,6 +187,7 @@
                                 <tbody>
                                     @forelse($highRiskExceptions as $exception)
                                         <tr>
+                                            <td>{{ Str::limit($exception->exceptionTitle, 40) }}</td>
                                             <td>{{ Str::limit($exception->exception, 40) }}</td>
                                             <td>{{ $exception->department }}</td>
                                             <td>
@@ -220,18 +223,26 @@
         @push('scripts')
             <script>
                 $(document).ready(function() {
-                    // Status Chart - Using Bootstrap colors
+                    // Status Chart
                     new Chart(document.getElementById('statusChart'), {
                         type: 'doughnut',
                         data: {
                             labels: {!! json_encode($statusData->keys()) !!},
                             datasets: [{
-                                data: {!! json_encode($statusData->values()) !!},
-                                backgroundColor: [
-                                    '#198754', // RESOLVED - Bootstrap success (green)
-                                    '#0d6efd', // APPROVED - Bootstrap primary (blue)
-                                    '#ffc107' // PENDING - Bootstrap warning (yellow)
-                                ],
+                                data: {!! json_encode($statusData->pluck('count')) !!},
+                                backgroundColor: function(context) {
+                                    const labels = {!! json_encode($statusData->keys()) !!};
+                                    const statusColors = {
+                                        'PENDING': '#ffc107', // warning - yellow
+                                        'APPROVED': '#0d6efd', // primary - blue
+                                        'NOT-RESOLVED': '#dc3545', // danger - red
+                                        'RESOLVED': '#198754' // success - green
+                                    };
+
+                                    // Map each label to its corresponding color
+                                    return labels.map(label => statusColors[label] ||
+                                        '#6c757d'); // default gray for unknown statuses
+                                }(),
                                 hoverBorderColor: "rgba(234, 236, 244, 1)",
                             }],
                         },
@@ -239,15 +250,14 @@
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    display: false,
+                                    display: false
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
                                             let label = context.label || '';
                                             let value = context.raw || 0;
-                                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            let percentage = Math.round((value / total) * 100);
+                                            let percentage = {!! json_encode($statusData->pluck('percentage')) !!}[context.dataIndex];
                                             return `${label}: ${value} (${percentage}%)`;
                                         }
                                     }

@@ -4,15 +4,21 @@
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
-                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18">List of Exceptions</h4>
+                <div class="page-title-box mt-2">
+                    <h1 class="mb-0">List of Exceptions</h1>
+                    <p class="text-muted mt-2 mb-0">Respond to exceptions raised by Internal Control Auditors</p>
                 </div>
             </div>
         </div>
         <!-- end page title -->
-
-        <a href="{{ route('exception.create') }}" class="btn btn-success btn-rounded waves-effect waves-light "><i
-                class="bx bxs-plus"></i>Create</a>
+        @if ($employeeDepartmentId === 8 || $employeeDepartmentId === 7)
+            {{--  IF USER IS IN THE INTERNAL CONTROL DEPARTMENT OR AUDIT CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 8 OR 7  --}}
+            {{--  Show Create Button  --}}
+            <a href="{{ route('exception.create') }}" class="btn btn-success btn-rounded waves-effect waves-light "><i
+                    class="bx bxs-plus"></i>Create</a>
+        @else
+            <div></div>
+        @endif
 
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
 
@@ -51,7 +57,7 @@
                             <td>
 
                                 <span
-                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : ($exception->riskRate == 'Low' ? 'bg-success':'bg-secondary')) }}">
+                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : ($exception->riskRate == 'Low' ? 'bg-success' : 'bg-secondary')) }}">
 
                                     {{ $exception->riskRate ?? 'Not Determined' }}
                                 </span>
@@ -79,11 +85,15 @@
                                     @if (
                                         ($exception->auditorId === $employeeId && (empty($exception->fileAttached) && empty($exception->comment))) ||
                                             ($exception->auditorId !== $employeeId && (empty($exception->fileAttached) && empty($exception->comment))))
-                                        <a href="" data-bs-toggle="modal"
-                                            data-bs-target=".bs-delete-modal-lg-{{ $exception->id }}">
-                                            <span class="badge round bg-danger font-size-13"><i
-                                                    class="bx bxs-trash"></i> delete</span>
-                                        </a>
+                                        @if ($employeeDepartmentId === 8 || $employeeDepartmentId === 7)
+                                            <a href="" data-bs-toggle="modal"
+                                                data-bs-target=".bs-delete-modal-lg-{{ $exception->id }}">
+                                                <span class="badge round bg-danger font-size-13"><i
+                                                        class="bx bxs-trash"></i> delete</span>
+                                            </a>
+                                        @else
+                                            <div></div>
+                                        @endif
                                         <!-- Modal for Delete Confirmation -->
                                         <div class="modal fade bs-delete-modal-lg-{{ $exception->id }}" tabindex="-1"
                                             role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">

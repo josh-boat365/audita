@@ -95,7 +95,9 @@ class AuthController extends Controller
             // Log the error if authentication fails
             Log::warning('Authentication failed for user', ['user' => $request->input('username')]);
             // Return error if authentication fails
-            return redirect()->back()->with('toast_error', 'Invalid credentials. Please try again.');
+            $userAccessMessage = ($response->json()['error'][0] ?? 'Invalid credentials. Please try again.');
+
+            return redirect()->back()->with('toast_error',  $userAccessMessage);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             // Log the exception details for connection issues
             Log::error('Connection error during authentication', [

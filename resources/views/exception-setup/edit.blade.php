@@ -68,7 +68,7 @@
 
         <div class="tab-content p-3 text-muted">
             <div class="tab-pane active" id="exception-creation" role="tabpanel">
-
+                @if($employeeDepartmentId === 7)
                 <form action="{{ route('exception.update', $exception->id) }}" method="POST"
                     enctype="multipart/form-data" autocomplete="on" class="needs-validation">
                     @csrf
@@ -149,6 +149,7 @@
                                             <option selected>Select.....</option>
                                             <option value="PENDING" @selected($exception->status === 'PENDING')>Pending</option>
                                             <option value="RESOLVED" @selected($exception->status === 'RESOLVED')>Resolved</option>
+                                            <option value="NOT-RESOLVED" @selected($exception->status === 'RESOLVED')>Not Resolved</option>
                                         </select>
                                         <div class="invalid-feedback">Please select exception status.</div>
                                     </div>
@@ -221,6 +222,170 @@
                     </div>
                     <!-- end row -->
                 </form>
+                @else
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card border border-primary-subtle">
+                            <div class="card-body">
+                                <h5 class="card-title mb-4">Exception Details</h5>
+                                <!-- Exception Title -->
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">Exception Title</h6>
+                                    <p class="mb-0">{{ $exception->exceptionTitle ?? 'N/A' }}</p>
+                                </div>
+
+                                <!-- Exception Description -->
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">Exception Description</h6>
+                                    <p class="mb-0">{{ $exception->exception ?? 'N/A' }}</p>
+                                </div>
+
+                                <!-- Root Cause -->
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">Root Cause</h6>
+                                    <p class="mb-0">{{ $exception->rootCause ?: 'Not specified' }}
+                                    </p>
+                                </div>
+
+                                <!-- Branch/Auditee Response -->
+                                <div class="mb-4">
+                                    <h6 class="text-muted mb-2">Branch/Auditee Response</h6>
+                                    <p class="mb-0">
+                                        {{ $exception->statusComment ?: 'No response has been provided' }}</p>
+                                </div>
+
+                                <!-- Department and Occurrence Date Row -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <h6 class="text-muted mb-2">Unit/Department</h6>
+                                            <p class="mb-0">{{ $exception->department ?? 'N/A' }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <h6 class="text-muted mb-2">Occurrence Date</h6>
+                                            <p class="mb-0">
+                                                {{ $exception->occurrenceDate ? \Carbon\Carbon::parse($exception->occurrenceDate)->format('M d, Y') : 'Not specified' }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <!-- Status Card -->
+                        <div class="card">
+                            <div class="card-body border border-primary-subtle">
+                                <h5 class="card-title mb-4">Exception Statuses</h5>
+
+                                <!-- Status -->
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Status</h6>
+                                    <span class="badge
+                                                        @if ($exception->status === 'APPROVED') bg-primary
+                                                        @elseif($exception->status === 'RESOLVED') bg-success
+                                                        @elseif($exception->status === 'NOT-RESOLVED') bg-warning
+                                                        @else bg-secondary @endif fs-6">
+                                        {{ $exception->status ?: 'Pending' }}
+                                    </span>
+                                </div>
+
+                                <!-- Risk Rate -->
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Risk Rate</h6>
+                                    <p class="mb-0">
+                                        @if ($exception->riskRate)
+                                        {{ $exception->riskRate }}
+                                        @else
+                                        Not specified
+                                        @endif
+                                    </p>
+                                </div>
+
+                                <!-- Batch -->
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Batch</h6>
+                                    <p class="mb-0">
+                                        @if ($exception->exceptionBatch)
+                                        {{ $exception->exceptionBatch ?? 'Not specified' }}
+                                        @else
+                                        Not specified
+                                        @endif
+                                    </p>
+                                </div>
+
+                                <!-- Process Type -->
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Process Type/Scope</h6>
+                                    <p class="mb-0">
+                                        @if ($exception->processType)
+                                        {{ $exception->processType }}
+                                        @else
+                                        Not specified
+                                        @endif
+                                    </p>
+                                </div>
+
+                                <!-- Sub Process Type -->
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Sub Process Type/Scope</h6>
+                                    <p class="mb-0">
+                                        @if ($exception->subProcessType)
+                                        {{ $exception->subProcessType }}
+                                        @else
+                                        Not specified
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dates Card -->
+                        <div class="card">
+                            <div class="card-body border border-primary-subtle">
+                                <h6 class="card-title mb-3">Important Dates</h6>
+
+                                <!-- Proposed Resolution Date -->
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Proposed Resolution Date</h6>
+                                    <p class="mb-0">
+                                        @if ($exception->proposeResolutionDate)
+                                        {{ \Carbon\Carbon::parse($exception->proposeResolutionDate)->format('M d, Y') }}
+                                        @else
+                                        <span class="text-muted">Not set</span>
+                                        @endif
+                                    </p>
+                                </div>
+
+                                <!-- Resolution Date -->
+                                <div class="mb-3">
+                                    <h6 class="text-muted mb-2">Resolution Date</h6>
+                                    <p class="mb-0">
+                                        @if ($exception->resolutionDate)
+                                        {{ \Carbon\Carbon::parse($exception->resolutionDate)->format('M d, Y') }}
+                                        @else
+                                        <span class="text-muted">Not resolved</span>
+                                        @endif
+                                    </p>
+                                </div>
+
+                                @if ($exception->createdAt)
+                                <!-- Created Date -->
+                                <div class="mb-0">
+                                    <h6 class="text-muted mb-2">Created</h6>
+                                    <p class="mb-0">
+                                        {{ \Carbon\Carbon::parse($exception->createdAt)->format('M d, Y \a\t g:i A') }}
+                                    </p>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
 
             {{-- FILE UPLOAD --}}

@@ -55,21 +55,25 @@
                 </li>
 
                 <li>
-                    <a href="#" class="has-arrow waves-effect" aria-label="Setup Menu">
-                        <i class="bx bxs-file"></i>
-                        <span key="setup">Exception Setup</span>
-                    </a>
-                    <ul class="sub-menu" aria-expanded="false">
-                        @if ($employeeDepartmentId === 8)
-                            {{--  IF USER IS IN THE INTERNAL CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 8  --}}
-                            <li><a href="{{ route('exception.create') }}" key="create">Internal Control Create</a>
-                            </li>
-                        @else
-                            {{--  IF USER IS IN THE AUDIT CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 7  --}}
-                            <li><a href="{{ route('audit.create') }}" key="create">Audit Create</a></li>
-                        @endif
+                    @if ($employeeDepartmentId === 8 || $employeeDepartmentId === 7)
+                        <a href="#" class="has-arrow waves-effect" aria-label="Setup Menu">
+                            <i class="bx bxs-file"></i>
+                            <span key="setup">Exception Setup</span>
+                        </a>
+                        <ul class="sub-menu" aria-expanded="false">
+                            @if ($employeeDepartmentId === 8)
+                                {{--  IF USER IS IN THE INTERNAL CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 8  --}}
+                                <li><a href="{{ route('exception.create') }}" key="create">Internal Control
+                                        Create</a>
+                                </li>
+                            @elseif($employeeDepartmentId === 7)
+                                {{--  IF USER IS IN THE AUDIT CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 7  --}}
+                                <li><a href="{{ route('audit.create') }}" key="create">Audit Create</a></li>
+                            @else
+                                <div></div>
+                            @endif
 
-                        {{--  <li>
+                            {{--  <li>
                             <a href="{{ route('exception.pending') }}" key="create">
                                 Pending
                                 @if ($pending_exception_count >= 0)
@@ -80,8 +84,11 @@
                             </a>
                         </li>  --}}
 
-                        <li><a href="" key=""></a></li>
-                    </ul>
+                            <li><a href="" key=""></a></li>
+                        </ul>
+                    @else
+                        <div></div>
+                    @endif
                 </li>
 
                 @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
@@ -91,12 +98,15 @@
                             <span key="t-dashboards">Approvals</span>
                         </a>
                         <ul class="sub-menu" aria-expanded="false">
-                            <li>
-                                <a href="{{ route('exception.supervisor.list') }}">Supervisor's Approval
+                            @if (in_array($employeeRoleId, $topManagers))
+                                <li>
+                                    <a href="{{ route('exception.supervisor.list') }}">Supervisor's Approval
 
-                                </a>
-                            </li>
-                            <li><a href="{{ route('exception.auditor.list') }}">Auditor's Approval</a></li>
+                                    </a>
+                                </li>
+                            @else
+                                <li><a href="{{ route('exception.auditor.list') }}">Auditor's Approval</a></li>
+                            @endif
                         </ul>
                     </li>
                     <li>
@@ -126,7 +136,6 @@
                         </ul>
                     </li>
                 @endif
-
 
             </ul>
 

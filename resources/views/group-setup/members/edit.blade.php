@@ -30,8 +30,9 @@
                                 <select class="select2 form-control" id="customSelect" name="employeeId">
                                     <option value="">Select member...</option>
                                     @foreach ($employees as $employee)
+
                                         <option value="{{ $employee->id }}"
-                                            {{ $employee->id === $groupMember->employeeId ? 'selected' : '' }}>
+                                            {{ $employee->id == $groupMemberEmployeeId ? 'selected' : '' }}>
                                             {{ $employee->firstName }}, {{ $employee->surname }} -
                                             {{ $employee->empRoleName }}
                                         </option>

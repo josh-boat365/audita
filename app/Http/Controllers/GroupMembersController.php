@@ -151,18 +151,20 @@ class GroupMembersController extends Controller
             return (object) $employee;
         });
 
-        
+
         $groups = GroupController::getActivityGroups();
 
         try {
             // Make the GET request to the external API
             $response = $this->getAGroupMember($id);
 
+            $groupMemberIds = collect($this->getGroupMembers())->where('id', $id)->unique()->toArray();
+            $groupMemberEmployeeId = $groupMember->employeeId ?? null; // Get the employeeId from the group member
             // Check the response status and return appropriate response
             if (!empty($response)) {
                 $groupMember = $response;
 
-                return view('group-setup.members.edit', compact('employees', 'groupMember', 'groups'));
+                return view('group-setup.members.edit', compact('employees', 'groupMember', 'groupMemberIds', 'groupMemberEmployeeId', 'groups'));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Group Member does not exist');

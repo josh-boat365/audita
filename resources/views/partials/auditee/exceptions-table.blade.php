@@ -141,7 +141,7 @@
                 </button>
             </form>
         </div>
-    @elseif($allResolved && in_array($employeeDepartmentId, $auditorDepartments))
+    @elseif(!$allResolved && in_array($employeeDepartmentId, $auditorDepartments))
         <div class="mt-3 mb-4 float-end">
             {{-- Action Button for Pushing to Resolved --}}
             <form action="{{ route('exception.supervisor.action') }}" method="POST">
@@ -152,11 +152,6 @@
                     <i class="bx bx-analyse"></i> Set Batch to Resolved/Completed
                 </button>
             </form>
-        </div>
-    @elseif($allResolved && $pendingException->status === 'ANALYSIS' && $checkForApproved === 1 && $checkForNotResolved === 0)
-        <div class="mt-3 mb-4 float-end">
-            {{-- Action Button for Pushing to Resolved --}}
-
         </div>
     @else
         <div></div>

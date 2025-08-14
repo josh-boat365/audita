@@ -137,170 +137,111 @@ class ExceptionApprovalController extends Controller
 
     public function auditeeExceptionList()
     {
-
-        // 1. Session and Token Validation
+        // Validate session token
         $access_token = session('api_token');
         if (empty($access_token)) {
-            Log::warning('Session token missing in exceptionSupList');
+            Log::warning('Session token missing in auditeeExceptionList');
             return redirect()->route('login')
                 ->with('toast_warning', 'Session expired, please login to continue');
         }
 
         try {
-            // 2. API Request Setup
-            $apiEndpoint = 'http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions';
-            Log::info('Fetching pending exceptions from API', ['endpoint' => $apiEndpoint]);
-
-            // 3. Make API Request with Retry Logic
+            // Fetch data from API
             $response = Http::withToken($access_token)
                 ->timeout(30)
-                ->retry(3, 100, function ($exception) {
-                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
-                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-                })
-                ->get($apiEndpoint);
+                ->retry(3, 100)
+                ->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions');
 
-            // 4. Handle API Response
+            // Handle API failure
             if (!$response->successful()) {
-                Log::error('API (pending-batch-exceptions) request failed', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
+                Log::error('API request failed', ['status' => $response->status()]);
+                return view('exception-setup.auditee-exception-list', [
+                    'pendingExceptions' => [],
+                    'isEmpty' => true
                 ]);
-
-                return redirect()->back()
-                    ->with('toast_error', 'Failed to fetch pending exceptions. Please try again later.');
             }
 
-            // 5. Process Response Data
             $exceptions = $response->json();
-            // dd($exceptions);
-
-            $loggedInUser = ExceptionController::getLoggedInUserInformation();
-            // dd($loggedInUser->departmentId);
-
             if (!is_array($exceptions)) {
-                Log::error('Invalid API response format', ['response' => $exceptions]);
-                throw new \RuntimeException('Invalid data received from server');
+                return view('exception-setup.auditee-exception-list', [
+                    'pendingExceptions' => [],
+                    'isEmpty' => true
+                ]);
             }
 
-            // 6. Process Exceptions or Create Empty Dataset
-            if (empty($exceptions)) {
-                Log::info('No pending exceptions found');
-                $pendingExceptions = [[
-                    'id' => '---',
-                    'status' => '---',
-                    'submittedBy' => '---',
-                    'submittedAt' => '---',
-                    'groupName' => '---',
-                    'department' => '---',
-                    'exceptionCount' => '---',
-                    'auditorDepartmentId' => '---', //current logged in user's department id (auditor department check)
-                ]];
-            } else {
+            // Get user and lookup data
+            $loggedInUser = ExceptionController::getLoggedInUserInformation();
+            $employeeId = $loggedInUser->id;
+            $employeeRoleId = $loggedInUser->empRoleId;
+            $topManagers = [1, 2, 4]; // MD, Head of IA, Head of IC&C
 
-                $batches = BatchController::getBatches();
-                $groups = GroupController::getActivityGroups();
-                $groupMembers = GroupMembersController::getGroupMembers();
-                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+            // Get valid batches and groups
+            $validBatches = collect(BatchController::getBatches())
+                ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+                ->keyBy('id');
 
+            $validGroups = collect(GroupController::getActivityGroups())
+                ->filter(fn($group) => $group->active)
+                ->keyBy('id');
 
-                // Filter active batches with status 'OPEN' and map them by ID
-                $validBatches = collect($batches)
-                    ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
-                    ->keyBy('id');
+            // Get user's groups
+            $employeeGroups = collect(GroupMembersController::getGroupMembers())
+                ->where('employeeId', $employeeId)
+                ->pluck('activityGroupId')
+                ->unique();
 
-                // Filter active groups and map them by ID
-                $validGroups = collect($groups)
-                    ->filter(fn($group) => $group->active)
-                    ->keyBy('id');
+            // Get batch-group mapping
+            $batchGroupMap = collect(BatchController::getBatches())
+                ->pluck('activityGroupId', 'id');
 
-                // Get groups where the specified employee belongs
-                $employeeGroups = collect($groupMembers)
-                    ->where('employeeId', $employeeId)
-                    ->pluck('activityGroupId')
-                    ->unique();
+            // Process exceptions
+            $pendingExceptions = collect($exceptions)
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+                    $batchId = $exception['exceptionBatchId'] ?? null;
+                    $groupId = $batchGroupMap[$batchId] ?? null;
 
-                // dd($employeeGroups);
+                    return $validBatches->has($batchId) &&
+                        $validGroups->has($groupId) &&
+                        $exception['status'] === 'APPROVED' &&
+                        (in_array($employeeRoleId, $topManagers) || $employeeGroups->contains($groupId));
+                })
+                ->map(function ($exception) use ($loggedInUser) {
+                    $nestedExceptions = collect($exception['exceptions'] ?? []);
+                    $approvedCount = $nestedExceptions->where('status', 'APPROVED')->count();
+                    $respondedCount = $nestedExceptions->where('recommendedStatus', 'RESOLVED')->count();
 
-                // Map batch IDs to their corresponding activity group IDs
-                $batchGroupMap = collect($batches)
-                    ->pluck('activityGroupId', 'id');
+                    return [
+                        'id' => $exception['id'],
+                        'status' => $exception['status'],
+                        'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
+                        'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
+                        'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
+                        'department' => $exception['departmentName'] ?? 'Unknown Department',
+                        'exceptionCount' => $approvedCount,
+                        'countForRespondedExceptionsByAuditee' => $respondedCount,
+                        'auditorDepartmentId' => $loggedInUser->departmentId,
+                    ];
+                })
+                ->filter(fn($exception) => $exception['exceptionCount'] > 0)
+                ->values()
+                ->all();
 
-                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
-
-                // top managers
-                // 1 - Managing Director
-                // 2 - Head of Internal Audit
-                // 4 - Head of Internal Control & Compliance
-                $topManagers = [1, 2, 4];
-
-
-                $pendingExceptions = collect($exceptions)
-                    // Filter top-level exceptions by status
-                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
-                        $groupId = $batchGroupMap[$exception['exceptionBatchId']] ?? null;
-                        return $validBatches->has($exception['exceptionBatchId']) &&
-                            $validGroups->has($groupId) && (in_array($exception['status'], ['APPROVED'])) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
-                    })
-                    // Transform and count nested exceptions
-                    ->map(function ($exception) use ($loggedInUser) {
-                        $pendingCount = collect($exception['exceptions'] ?? [])
-                            ->where('status', 'APPROVED')
-                            // ->where('recommendedStatus', null) // Only count if recommendedStatus is null
-                            ->count();
-                        $countForRespondedExceptionsByAuditee = collect($exception['exceptions'] ?? [])
-                            ->where('recommendedStatus', 'RESOLVED')
-                            ->count();
-
-
-                        // if(in_array($exception['status'], ['APPROVED', 'ANALYSIS'])) {}
-
-
-                        return [
-                            'id' => $exception['id'] ?? null,
-                            'status' => $exception['status'] ?? '---',
-                            'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
-                            'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
-                            'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
-                            'department' => $exception['departmentName'] ?? 'Unknown Department',
-                            'exceptionCount' => $pendingCount,
-                            'auditorDepartmentId' =>  $loggedInUser->departmentId,
-                            'countForRespondedExceptionsByAuditee' => $countForRespondedExceptionsByAuditee,
-                        ];
-                    })
-                    // Only include if at least 1 nested exception matches
-                    ->filter(function ($exception) {
-                        return ($exception['exceptionCount'] ?? 0) > 0;
-                    })
-                    ->values()
-                    ->all();
-
-                // dd($pendingExceptions);
-            }
-
-            // 7. Return View with Processed Data
+            // Always return view - let Blade handle empty state
             return view('exception-setup.auditee-exception-list', [
                 'pendingExceptions' => $pendingExceptions,
-                'isEmpty' => empty($pendingExceptions) ||
-                    (count($pendingExceptions) === 1 && $pendingExceptions[0]['id'] === '---')
+                'isEmpty' => empty($pendingExceptions)
             ]);
-        } catch (\Illuminate\Http\Client\RequestException $e) {
-            Log::error('HTTP request exception', [
-                'message' => $e->getMessage(),
-                'code' => $e->getCode()
-            ]);
-
-            return redirect()->back()
-                ->with('toast_error', 'Connection problem with the exception service. Please try again later.');
         } catch (\Exception $e) {
-            Log::critical('Unexpected error in exceptionSupList', [
+            Log::critical('Error in auditeeExceptionList', [
                 'message' => $e->getMessage(),
-                'code' => $e->getCode(),
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return redirect()->back()
-                ->with('toast_error', 'An unexpected error occurred. Our team has been notified.');
+            // Return empty view instead of redirect
+            return view('exception-setup.auditee-exception-list', [
+                'pendingExceptions' => [],
+                'isEmpty' => true
+            ]);
         }
     }
 
@@ -1444,7 +1385,7 @@ class ExceptionApprovalController extends Controller
                 'statusComment' => $validatedData['statusComment'],
             ];
 
-            // dd($data);
+            dd($data);
 
             // Make API request to update exception status
             $response = Http::withToken($access_token)

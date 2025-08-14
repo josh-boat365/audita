@@ -263,6 +263,7 @@ class DashboardController extends Controller
 
                     return [
                         'id' => $report->id,
+                        'exceptionTitle' => $report->exception,
                         'exception' => $report->exception,
                         'department' => $report->department,
                         'occurrenceDate' => \Carbon\Carbon::parse($report->occurrenceDate)->format('M d, Y'),
@@ -315,6 +316,7 @@ class DashboardController extends Controller
                 // Metrics (Enhanced)
                 'totalExceptions' => $reports->count(),
                 'resolvedCount' => $reports->where('status', 'RESOLVED')->count(),
+                'notResolvedCount' => $reports->where('status', 'NOT-RESOLVED')->count(),
                 'pendingCount' => $reports->where('status', 'PENDING')->count(),
                 'overdueCount' => $reports->filter(function ($report) {
                     if ($report->status !== 'RESOLVED' && $report->proposeResolutionDate) {
@@ -355,6 +357,7 @@ class DashboardController extends Controller
                 'exceptionCategories' => collect(),
                 'totalExceptions' => 0,
                 'resolvedCount' => 0,
+                'notResolvedCount' => 0,
                 'pendingCount' => 0,
                 'overdueCount' => 0,
                 'avgResolutionDays' => 0,

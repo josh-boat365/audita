@@ -265,7 +265,8 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Exception</th>
+                                        <th>Exception Title</th>
+                                        <th>Exception Description</th>
                                         <th>Department</th>
                                         <th>Process Type</th>
                                         <th>Status</th>
@@ -275,6 +276,7 @@
                                 <tbody>
                                     @forelse($highRiskExceptions as $exception)
                                         <tr>
+                                            <td>{{ Str::limit($exception['exceptionTitle'], 40) }}</td>
                                             <td>{{ Str::limit($exception['exception'], 40) }}</td>
                                             <td>{{ $exception['department'] }}</td>
                                             <td>{{ $exception['processType'] }}</td>
@@ -380,7 +382,19 @@
                             labels: {!! json_encode($statusData->keys()) !!},
                             datasets: [{
                                 data: {!! json_encode($statusData->pluck('count')) !!},
-                                backgroundColor: ['#198754', '#ffc107'],
+                                backgroundColor: function(context) {
+                                    const labels = {!! json_encode($statusData->keys()) !!};
+                                    const statusColors = {
+                                        'PENDING': '#ffc107', // warning - yellow
+                                        'APPROVED': '#0d6efd', // primary - blue
+                                        'NOT-RESOLVED': '#dc3545', // danger - red
+                                        'RESOLVED': '#198754' // success - green
+                                    };
+
+                                    // Map each label to its corresponding color
+                                    return labels.map(label => statusColors[label] ||
+                                    '#6c757d'); // default gray for unknown statuses
+                                }(),
                                 hoverBorderColor: "rgba(234, 236, 244, 1)",
                             }],
                         },
