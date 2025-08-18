@@ -152,30 +152,40 @@ class DashboardController extends Controller
             });
 
             // 2. Risk Rate Distribution (Enhanced with severity levels)
-            $riskData = $reports->groupBy('riskRate')->map(function ($items, $risk) {
-                $severity = match ($risk) {
-                    'High' => 3,
-                    'Medium' => 2,
-                    'Low' => 1,
-                    default => 0
-                };
-                return [
-                    'count' => $items->count(),
-                    'severity' => $severity
-                ];
-            })->sortByDesc('severity');
+            $riskData = $reports->groupBy('riskRate')
+                ->filter(function ($items, $risk) {
+                    // Only include valid risk levels, exclude null/empty/unknown values
+                    return in_array($risk, ['High', 'Medium', 'Low']);
+                })
+                ->map(function ($items, $risk) {
+                    $severity = match ($risk) {
+                        'High' => 3,
+                        'Medium' => 2,
+                        'Low' => 1,
+                    };
+                    return [
+                        'count' => $items->count(),
+                        'severity' => $severity
+                    ];
+                })
+                ->sortByDesc('severity');
 
-            // Risk Data colors prepared colors
+            // Risk Data colors - only for valid risk levels
             $riskColors = $riskData->keys()->mapWithKeys(function ($key) {
                 return [
                     $key => match ($key) {
                         'High' => '#dc3545',    // Red
                         'Medium' => '#ffc107',   // Yellow
                         'Low' => '#28a745',      // Green
-                        default => '#6c757d'     // Grey (fallback)
                     }
                 ];
             });
+
+            // If no valid risk data exists, create empty collections to prevent errors
+            if ($riskData->isEmpty()) {
+                $riskData = collect();
+                $riskColors = collect();
+            }
 
             // 3. Department Distribution (With trend comparison)
             $currentMonth = now()->format('Y-m');
