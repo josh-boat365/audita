@@ -395,7 +395,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <form action="{{ route('batch.delete', $batch->id) }}" method="POST">
+                            <form action="{{ route('exception.comment.edit', $comment->id) }}" method="POST">
                                 @csrf
                                 <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
                                 <div class="invalid-feedback">Please enter a comment.</div>
@@ -423,7 +423,7 @@
                             <p class="text-center">Deleting a <b>comment</b> means removing it from the
                                 <b>system entirely</b> and you cannot <b>recover</b> it again
                             </p>
-                            <form action="{{ route('batch.delete', $batch->id) }}" method="POST">
+                            <form action="{{ route('exception.comment.delete', $comment->id) }}" method="POST">
                                 @csrf
                                 <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
                                 <div class="invalid-feedback">Please enter a comment.</div>
