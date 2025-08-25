@@ -442,8 +442,46 @@ class DashboardController extends Controller
             }
 
             // Process data for dashboard
-            $statusData = $filteredReports->groupBy('status')->map->count();
-            $riskData = $filteredReports->groupBy('riskRate')->map->count();
+            $statusData = $filteredReports->groupBy('status')->map(function ($items, $status) use ($reports) {
+                return [
+                    'count' => $items->count(),
+                    'percentage' => round(($items->count() / $reports->count()) * 100, 1)
+                ];
+            });
+
+            $riskData = $filteredReports->groupBy('riskRate')->filter(function ($items, $risk) {
+                // Only include valid risk levels, exclude null/empty/unknown values
+                return in_array($risk, ['High', 'Medium', 'Low']);
+            })
+                ->map(function ($items, $risk) {
+                    $severity = match ($risk) {
+                        'High' => 3,
+                        'Medium' => 2,
+                        'Low' => 1,
+                    };
+                    return [
+                        'count' => $items->count(),
+                        'severity' => $severity
+                    ];
+                })
+                ->sortByDesc('severity');
+
+            // Risk Data colors - only for valid risk levels
+            $riskColors = $riskData->keys()->mapWithKeys(function ($key) {
+                return [
+                    $key => match ($key) {
+                        'High' => '#dc3545',    // Red
+                        'Medium' => '#ffc107',   // Yellow
+                        'Low' => '#28a745',      // Green
+                    }
+                ];
+            });
+
+            // If no valid risk data exists, create empty collections to prevent errors
+            if ($riskData->isEmpty()) {
+                $riskData = collect();
+                $riskColors = collect();
+            }
             $departmentData = $filteredReports->groupBy('department')->map->count()->sortDesc();
             $processTypeData = $filteredReports->groupBy('processType')->map->count();
 
@@ -487,6 +525,7 @@ class DashboardController extends Controller
             return view('my-dashboard', [
                 'statusData' => $statusData,
                 'riskData' => $riskData,
+                'riskColors' => $riskColors,
                 'departmentData' => $departmentData,
                 'processTypeData' => $processTypeData,
                 'monthlyTrends' => $monthlyTrends,
