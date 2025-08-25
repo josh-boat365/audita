@@ -1327,7 +1327,7 @@ class ExceptionApprovalController extends Controller
                 'statusComment' => $validatedData['statusComment'],
             ];
 
-            dd($data);
+            // dd($data);
 
             // Make API request to update exception status
             $response = Http::withToken($access_token)
