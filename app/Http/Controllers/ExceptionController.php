@@ -1295,6 +1295,7 @@ class ExceptionController extends Controller
     {
         //filtering is based on groups if you don't belong to a group, you don't see an exception
         //you only see exceptions in a particular group you are part of, But top managers can see all exceptions
+        //MODIFIED: Now filters only Internal Control exceptions
 
         $instance = new self();
 
@@ -1304,15 +1305,8 @@ class ExceptionController extends Controller
         $groups = GroupController::getActivityGroups();
         $groupMembers = GroupMembersController::getGroupMembers();
 
-        // Filter active batches with status 'OPEN' and map them by ID
-        $validBatches = collect($batches)
-            ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
-            ->keyBy('id');
-
-        // Filter active groups and map them by ID
-        $validGroups = collect($groups)
-            ->filter(fn($group) => $group->active)
-            ->keyBy('id');
+        // Create a lookup map for all batches (keyed by ID) to check audit units
+        $batchLookup = collect($batches)->keyBy('id');
 
         // Get groups where the specified employee belongs
         $employeeGroups = collect($groupMembers)
@@ -1320,36 +1314,122 @@ class ExceptionController extends Controller
             ->pluck('activityGroupId')
             ->unique();
 
-        // dd($employeeGroups);
-
         // Map batch IDs to their corresponding activity group IDs
-        $batchGroupMap = collect($batches)
-            ->pluck('activityGroupId', 'id');
+        $batchGroupMap = collect($batches)->pluck('activityGroupId', 'id');
 
+        // Get employee role information
         $employeeRoleId = $instance->getLoggedInUserInformation()->empRoleId;
-        $employeeDepartmentId = $instance->getLoggedInUserInformation()->departmentId;
-        // dd($employeeDepartmentId);
 
-        //Internal Audit Department ID - 7
-        //Internal Control and Compliance Department ID - 8
-
-
-        // top managers role
+        // Top managers role IDs who can see all Internal Control exceptions
         // 1 - Managing Director
-        // 2 - Head of Internal Audit
         // 4 - Head of Internal Control & Compliance
-        $topManagers = [1, 2, 4];
+        $topManagersForIC = [1, 4];
 
-        // Filter exceptions - and include top managers
-        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
+        // Filter exceptions - Internal Control only
+        $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($batchLookup, $employeeGroups, $batchGroupMap, $topManagersForIC, $employeeRoleId) {
+
+            // Only show PENDING exceptions with null recommendedStatus
+            if (!($exception->status == 'PENDING' && $exception->recommendedStatus == null)) {
+                return false;
+            }
+
+            // Get the batch this exception belongs to
+            $batch = $batchLookup[$exception->exceptionBatchId] ?? null;
+            // dd($batch);
+            // Check if batch exists and belongs to Internal Control (auditorUnitId = 2)
+            if ( $batch->auditorUnitId === 2) {
+                return true;
+            }
+
+            // Check if batch is active and open
+            if (!($batch->active && $batch->status === 'OPEN')) {
+                return false;
+            }
+
+            // Get the activity group ID for this exception's batch
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
-            return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && ($exception->status == 'PENDING' && $exception->recommendedStatus == null) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+
+            // Check access permissions:
+            // 1. Top managers for Internal Control can see all IC exceptions
+            // 2. Regular employees can only see exceptions from groups they belong to
+            $isTopManager = in_array($employeeRoleId, $topManagersForIC);
+            $isMemberOfGroup = $employeeGroups->contains($groupId);
+
+            return $isTopManager || $isMemberOfGroup;
         });
 
+        // dd($filteredExceptions);
 
         return $filteredExceptions->values()->all();
     }
+
+    // public static function getFilteredExceptions($employeeId)
+    // {
+    //     //filtering is based on groups if you don't belong to a group, you don't see an exception
+    //     //you only see exceptions in a particular group you are part of, But top managers can see all exceptions
+
+    //     $instance = new self();
+
+    //     // Fetch data from APIs
+    //     $exceptions = $instance->getExceptions(); //same as all reports data
+    //     $batches = BatchController::getBatches();
+    //     $groups = GroupController::getActivityGroups();
+    //     $groupMembers = GroupMembersController::getGroupMembers();
+
+    //     // Filter active batches with status 'OPEN' and map them by ID
+    //     $validBatches = collect($batches)
+    //         ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
+    //         ->keyBy('id');
+
+    //     // Filter active groups and map them by ID
+    //     $validGroups = collect($groups)
+    //         ->filter(fn($group) => $group->active)
+    //         ->keyBy('id');
+
+    //     // Get groups where the specified employee belongs
+    //     $employeeGroups = collect($groupMembers)
+    //         ->where('employeeId', $employeeId)
+    //         ->pluck('activityGroupId')
+    //         ->unique();
+
+    //     // dd($employeeGroups);
+    //     dd($exceptions);
+
+    //     // Map batch IDs to their corresponding activity group IDs
+    //     $batchGroupMap = collect($batches)
+    //         ->pluck('activityGroupId', 'id');
+
+    //     $batchUnitIds = collect($batches)
+    //     //internal control unit id = 2 | audit unit id = 3
+    //         ->pluck('auditorUnitId', 'id')->unique()->values()->all();
+
+    //     // dd(in_array(2,$batchUnitIds));
+
+    //     $employeeRoleId = $instance->getLoggedInUserInformation()->empRoleId;
+    //     $employeeDepartmentId = $instance->getLoggedInUserInformation()->departmentId;
+    //     // dd($employeeDepartmentId);
+
+    //     //Internal Audit Department ID - 7
+    //     //Internal Control and Compliance Department ID - 8
+
+
+    //     // top managers role
+    //     // 1 - Managing Director
+    //     // 2 - Head of Internal Audit
+    //     // 4 - Head of Internal Control & Compliance
+    //     $topManagers = [1, 2, 4];
+
+    //     // Filter exceptions - and include top managers
+    //     $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $batchUnitIds, $employeeRoleId) {
+    //         $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
+    //         return $validBatches->has($exception->exceptionBatchId) &&
+    //             $validGroups->has($groupId) && ($exception->status == 'PENDING' && $exception->recommendedStatus == null) && (in_array(2, $batchUnitIds)) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+    //     });
+
+    //     dd($filteredExceptions);
+
+    //     return $filteredExceptions->values()->all();
+    // }
 
 
     public static function getFilteredBatchExceptions($employeeId)
@@ -1453,7 +1533,7 @@ class ExceptionController extends Controller
         $filteredExceptions = collect($exceptions)->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topMangers, $employeeRoleId) {
             $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
             return $validBatches->has($exception->exceptionBatchId) &&
-                $validGroups->has($groupId) && ($exception->recommendedStatus == 'RESOLVED' && $exception->status == 'PENDING' || $exception->status == 'PENDING') && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topMangers));
+                $validGroups->has($groupId) && ($exception->recommendedStatus == 'RESOLVED' && $exception->status == 'PENDING') && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topMangers));
         });
 
         return $filteredExceptions->values()->all();
