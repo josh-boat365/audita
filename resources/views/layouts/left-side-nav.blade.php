@@ -48,8 +48,8 @@
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
                         <li><a href="{{ route('auditee.exception.list') }}"> Audit List</a></li>
+                        <li><a href="{{ route('auditee.pending.exception.list') }}">Pending Audit List</a></li>
                         <li><a href="{{ route('exception.list') }}" key="list">Internal Cont. List</a></li>
-                        <li><a href="{{ route('auditee.pending.exception.list') }}">Pending</a></li>
                         <li><a href="{{ route('group.exception.enquiry.list') }}">Exception Enquiry</a></li>
                     </ul>
                 </li>
@@ -91,36 +91,44 @@
                     @endif
                 </li>
 
-                @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
-                    <li>
+                <li>
+                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
                         <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
                             <i class="bx bx-check-square"></i>
                             <span key="t-dashboards">Approvals</span>
                         </a>
-                        <ul class="sub-menu" aria-expanded="false">
-                            @if (in_array($employeeRoleId, $topManagers))
-                                <li>
-                                    <a href="{{ route('exception.supervisor.list') }}">Supervisor's Approval
+                    @endif
+                    <ul class="sub-menu" aria-expanded="false">
+                        @if (in_array($employeeRoleId, $topManagers))
+                            <li>
+                                <a href="{{ route('exception.supervisor.list') }}">Supervisor's Approval
 
-                                    </a>
-                                </li>
-                            @else
-                                <li><a href="{{ route('exception.auditor.list') }}">Auditor's Approval</a></li>
-                            @endif
-                        </ul>
-                    </li>
-                    <li>
+                                </a>
+                            </li>
+                        @else
+                            <li><a href="{{ route('exception.auditor.list') }}">Auditor's Approval</a></li>
+                        @endif
+                    </ul>
+                </li>
+                <li>
+                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7 || $employeeDepartmentId === 8)
                         <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
                             <i class="bx bx-analyse"></i>
                             <span key="t-dashboards">Exception Analysis</span>
                         </a>
+                    @endif
+                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
                         <ul class="sub-menu" aria-expanded="false">
                             <li><a href="{{ route('auditor.analysis.exception') }}">Auditor's Analysis</a></li>
                         </ul>
-                    </li>
-                @else
-                    <li></li>
-                @endif
+                    @endif
+                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 8)
+                        <ul class="sub-menu" aria-expanded="false">
+                            <li><a href="{{ route('exception.pending') }}">Internal Cont. Analysis</a></li>
+                        </ul>
+                    @endif
+                </li>
+
 
                 @if (in_array($employeeRoleId, $topManagers) || in_array($employeeDepartmentId, $auditorDepartments))
                     <li>
