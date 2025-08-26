@@ -170,7 +170,11 @@
                             <select name="auditorUnitId" class="form-select">
                                 <option>Select unit</option>
                                 @foreach ($units as $unit)
-                                    <option value="{{ $unit->id }}">{{ $unit->name }}</option>
+                                    @if ($unit->name === $employeeDepartment)
+                                        <option value="{{ $unit->id }}" @selected($unit->name === $employeeDepartment)>
+                                            {{ $unit->name }}</option>
+                                    @else
+                                    @endif
                                 @endforeach
                             </select>
                         </div>

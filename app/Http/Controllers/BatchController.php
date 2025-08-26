@@ -32,20 +32,24 @@ class BatchController extends Controller
         });
 
         $batches = self::getBatches();
-    
-        $sortedBatches = collect($batches)->sortByDesc('createdAt');
-
-        $batchData = ExceptionController::paginate($sortedBatches, 15, $request);
 
         $employeeData = ExceptionController::getLoggedInUserInformation();
 
-        $employeeFullName = $employeeData->firstName .' '. $employeeData->surname;
-        $employeeDepartmentID = $employeeData->department->id;
+        $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+        $employeeDepartment = $employeeData->department->name;
+
+        $sortedBatches = collect($batches)->filter( function($batch) use ($employeeDepartment) {
+            return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
+        } )
+        ->sortByDesc('createdAt');
+
+        $batchData = ExceptionController::paginate($sortedBatches, 15, $request);
+
 
         // dd($employeeFullName);
 
 
-        return view('batch-setup.index', compact('activeGroups', 'units', 'batchData', 'employeeFullName', 'employeeDepartmentID'));
+        return view('batch-setup.index', compact('activeGroups', 'units', 'batchData', 'employeeFullName', 'employeeDepartment'));
     }
 
     /**
