@@ -68,7 +68,7 @@
 
         <div class="tab-content p-3 text-muted">
             <div class="tab-pane active" id="exception-creation" role="tabpanel">
-                @if($employeeDepartmentId === 7)
+                @if($employeeDepartmentId === 8)
                 <form action="{{ route('exception.update', $exception->id) }}" method="POST"
                     enctype="multipart/form-data" autocomplete="on" class="needs-validation">
                     @csrf
@@ -729,7 +729,7 @@
                                     <p class="text-center">Deleting a <b>comment</b> means removing it from the
                                         <b>system entirely</b> and you cannot <b>recover</b> it again
                                     </p>
-                                    <form action="{{ route('batch.delete', $batch->id) }}" method="POST">
+                                    <form action="{{ route('exception.comment.delete', $comment->id) }} method="POST">
                                         @csrf
                                         <textarea class="form-control" rows="3" name="exception" placeholder="Enter comment......">{{ $comment->comment }}</textarea>
                                         <div class="invalid-feedback">Please enter a comment.</div>
