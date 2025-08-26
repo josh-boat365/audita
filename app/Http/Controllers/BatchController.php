@@ -32,6 +32,7 @@ class BatchController extends Controller
         });
 
         $batches = self::getBatches();
+    
         $sortedBatches = collect($batches)->sortByDesc('createdAt');
 
         $batchData = ExceptionController::paginate($sortedBatches, 15, $request);
