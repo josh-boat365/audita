@@ -92,7 +92,8 @@
                 </li>
 
                 <li>
-                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
+
+                    @if ($employeeDepartmentId === 7)
                         <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
                             <i class="bx bx-check-square"></i>
                             <span key="t-dashboards">Approvals</span>
@@ -111,21 +112,24 @@
                     </ul>
                 </li>
                 <li>
-                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7 || $employeeDepartmentId === 8)
-                        <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
-                            <i class="bx bx-analyse"></i>
-                            <span key="t-dashboards">Exception Analysis</span>
-                        </a>
-                    @endif
-                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
-                        <ul class="sub-menu" aria-expanded="false">
-                            <li><a href="{{ route('auditor.analysis.exception') }}">Auditor's Analysis</a></li>
-                        </ul>
-                    @endif
-                    @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 8)
-                        <ul class="sub-menu" aria-expanded="false">
-                            <li><a href="{{ route('exception.pending') }}">Internal Cont. Analysis</a></li>
-                        </ul>
+                    @if (in_array($employeeRoleId, $topManagers))
+                    @else
+                        @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7 || $employeeDepartmentId === 8)
+                            <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                                <i class="bx bx-analyse"></i>
+                                <span key="t-dashboards">Exception Analysis</span>
+                            </a>
+                        @endif
+                        @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li><a href="{{ route('auditor.analysis.exception') }}">Auditor's Analysis</a></li>
+                            </ul>
+                        @endif
+                        @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 8)
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li><a href="{{ route('exception.pending') }}">Internal Cont. Analysis</a></li>
+                            </ul>
+                        @endif
                     @endif
                 </li>
 
