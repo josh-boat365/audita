@@ -281,19 +281,16 @@
                         }
                     });
 
-                    // Risk Chart - Using Bootstrap colors
+
+                    // Risk Chart
                     new Chart(document.getElementById('riskChart'), {
                         type: 'bar',
                         data: {
                             labels: {!! json_encode($riskData->keys()) !!},
                             datasets: [{
-                                label: "Exceptions",
-                                backgroundColor: [
-                                    '#dc3545', // High - Bootstrap warning
-                                    '#198754', // Low - Bootstrap danger
-                                    '#ffc107' // Medium - Bootstrap success
-                                ],
-                                data: {!! json_encode($riskData->values()) !!},
+                                label: "Count",
+                                data: {!! json_encode($riskData->pluck('count')) !!},
+                                backgroundColor: {!! json_encode($riskColors->values()) !!},
                             }],
                         },
                         options: {
