@@ -11,10 +11,13 @@ use App\Http\Controllers\RiskRateController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExceptionController;
 use App\Http\Controllers\AuditCreateController;
+use App\Http\Controllers\AuditeeDataManipulationController;
+use App\Http\Controllers\ChatsAndCommentsController;
 use App\Http\Controllers\GroupExceptionsFilter;
 use App\Http\Controllers\ProcessTypeController;
 use App\Http\Controllers\GroupMembersController;
 use App\Http\Controllers\ExceptionApprovalController;
+use App\Http\Controllers\ExceptionStatusChange;
 
 /*
 |--------------------------------------------------------------------------
@@ -163,24 +166,24 @@ Route::get('/list-resolved-exception', [ExceptionController::class, 'resolvedExc
 // Exception CRUD Routes
 Route::get('/create-exception', [ExceptionController::class, 'create'])->name('exception.create');
 Route::post('/create-exception', [ExceptionController::class, 'store'])->name('exception.post');
-Route::get('/exception/{id}/open', [ExceptionController::class, 'edit2'])->name('exception.edit');
-Route::get('/exception/{id}/open-pending', [ExceptionController::class, 'edit2'])->name('exception.pending.edit');
+Route::get('/exception/{id}/open', [ExceptionController::class, 'edit'])->name('exception.edit');
+Route::get('/exception/{id}/open-pending', [ExceptionController::class, 'edit'])->name('exception.pending.edit');
 Route::post('/exception/{id}/update', [ExceptionController::class, 'update'])->name('exception.update');
 Route::post('/exception/{id}/delete', [ExceptionController::class, 'destroy'])->name('exception.delete');
 
 // Exception File Management
-Route::post('/exception/{id}/file-upload', [ExceptionController::class, 'exceptionFileUpload'])->name('exception.file.upload');
-Route::get('/exception/{id}/get-files', [ExceptionController::class, 'downloadExceptionFile'])->name('exception.file.download');
-Route::delete('/exception/{id}/file-delete', [ExceptionController::class, 'deleteExceptionFile'])->name('exception.file.delete');
+Route::post('/exception/{id}/file-upload', [ChatsAndCommentsController::class, 'exceptionFileUpload'])->name('exception.file.upload');
+Route::get('/exception/{id}/get-files', [ChatsAndCommentsController::class, 'downloadExceptionFile'])->name('exception.file.download');
+Route::delete('/exception/{id}/file-delete', [ChatsAndCommentsController::class, 'deleteExceptionFile'])->name('exception.file.delete');
 
 // Exception Status Management
-Route::post('/exception/{id}/close', [ExceptionController::class, 'closeException'])->name('exception.close');
-Route::post('/exception/{id}/auditee-resolution', [ExceptionController::class, 'recommendExceptionForResolution'])->name('exception.resolution');
+Route::post('/exception/{id}/close', [ExceptionStatusChange::class, 'closeException'])->name('exception.close');
+Route::post('/exception/{id}/auditee-resolution', [ExceptionStatusChange::class, 'recommendExceptionForResolution'])->name('exception.resolution');
 
 // Exception Comments Management
-Route::post('/exception/{id}/comment', [ExceptionController::class, 'storeComment'])->name('exception.comment.post');
-Route::post('/exception/{id}/comment-delete', [ExceptionController::class, 'deleteComment'])->name('exception.comment.delete');
-Route::post('/exception/{id}/comment-edit', [ExceptionController::class, 'updateComment'])->name('exception.comment.edit');
+Route::post('/exception/{id}/comment', [ChatsAndCommentsController::class, 'storeComment'])->name('exception.comment.post');
+Route::post('/exception/{id}/comment-delete', [ChatsAndCommentsController::class, 'deleteComment'])->name('exception.comment.delete');
+Route::post('/exception/{id}/comment-edit', [ChatsAndCommentsController::class, 'updateComment'])->name('exception.comment.edit');
 
 /*
 |--------------------------------------------------------------------------
@@ -191,19 +194,20 @@ Route::post('/exception/{id}/comment-edit', [ExceptionController::class, 'update
 
 // Supervisor Approval Routes
 Route::get('/exception/supervisor-approval-list', [ExceptionApprovalController::class, 'exceptionSupList'])->name('exception.supervisor.list');
-Route::get('/exception/supervisor/show-exception-list-for-approval/{batchId}/{status}', [ExceptionApprovalController::class, 'showExceptionListWithStatusForApproval'])->name('show.supervisor.exception.for.approval');
+Route::get('/exception/supervisor/show-exception-list-for-approval/{batchId}/{status}', [AuditeeDataManipulationController::class, 'showExceptionListWithStatusForApproval'])->name('show.supervisor.exception.for.approval');
 Route::get('/exception/{id}/open-supervisor-approval', [ExceptionApprovalController::class, 'supEditException'])->name('exception.supervisor.edit');
 
 // Auditor Approval Routes
 Route::get('/exception/auditor-approval-list', [ExceptionApprovalController::class, 'exceptionAuditorList'])->name('exception.auditor.list');
-Route::get('/exception/auditor/show-exception-list-for-approval/{batchId}/{status}', [ExceptionApprovalController::class, 'showAuditorExceptionListForApproval'])->name('show.auditor.exception.list.for.approval');
+Route::get('/exception/auditor/show-exception-list-for-approval/{batchId}/{status}', [AuditeeDataManipulationController::class, 'showAuditorExceptionListForApproval'])->name('show.auditor.exception.list.for.approval');
 
 // Auditee [Branch Exception] Routes
-Route::get('/exception/auditee/exception-list', [ExceptionApprovalController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
-Route::get('/exception/auditee/pending-exception-list', [ExceptionApprovalController::class, 'auditeePendingExceptionList'])->name('auditee.pending.exception.list');
-Route::post('/exception/auditee-push-back-to-auditor', [ExceptionController::class, 'exceptionPushBackToAuditor'])->name('auditee.push.back');
+Route::get('/exception/auditee/exception-list', [AuditeeDataManipulationController::class, 'auditeeExceptionList'])->name('auditee.exception.list');
+Route::get('/exception/auditee/pending-exception-list', [AuditeeDataManipulationController::class, 'auditeePendingExceptionList'])->name('auditee.pending.exception.list');
+Route::post('/exception/auditee-push-back-to-auditor', [ExceptionStatusChange::class, 'exceptionPushBackToAuditor'])->name('auditee.push.back');
 Route::get('/exception/group-exception-enquiry-list', [GroupExceptionsFilter::class, 'groupExceptionStatus'])->name('group.exception.enquiry.list');
 Route::get('/exception/group-exception-enquiry-open/{exceptionId}/{exceptionStatus}', [GroupExceptionsFilter::class, 'openBatch'])->name('group.exception.open');
+
 
 // New filtering route
 Route::get('/exception/group-filter-exceptions', [GroupExceptionsFilter::class, 'filterExceptions'])
@@ -259,6 +263,8 @@ Route::post('/reports/export-pdf', [ReportsController::class, 'exportWord'])->na
 */
 
 Route::get('/audit/create', [AuditCreateController::class, 'index'])->name('audit.create');
+Route::get('/auditor/exception-status-list', [AuditCreateController::class, 'list'])->name('audit.list');
+Route::get('/exception/exception-status-view/{exceptionId}/{exceptionStatus}', [AuditCreateController::class, 'viewExceptionStatus'])->name('audit.view.exception.status');
 Route::post('/audit/bulk-exceptions/create', [AuditCreateController::class, 'store'])->name('bulk.exception.create');
 Route::post('/audit/create', [AuditCreateController::class, 'store'])->name('audit.post');
 Route::get('/audit/{id}/open', [AuditCreateController::class, 'editAudit'])->name('audit.edit');
