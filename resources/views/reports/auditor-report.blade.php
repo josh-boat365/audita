@@ -31,7 +31,7 @@
                                 <select id="branchFilter" class="form-select" required>
                                     <option value="">Select Branch...</option>
                                     @foreach (array_unique(array_column($groups, 'branchName')) as $branchName)
-                                        <option value="{{ $branchName }}">{{ $branchName }}</option>
+                                    <option value="{{ $branchName }}">{{ $branchName }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -51,9 +51,9 @@
                                 <select id="statusFilter" class="form-select">
                                     <option value="">All Statuses</option>
                                     @foreach (array_unique(array_column($reports, 'status')) as $status)
-                                        @if ($status)
-                                            <option value="{{ $status }}">{{ $status }}</option>
-                                        @endif
+                                    @if ($status)
+                                    <option value="{{ $status }}">{{ $status }}</option>
+                                    @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -63,9 +63,9 @@
                                 <select id="riskRateFilter" class="form-select">
                                     <option value="">All Risk Rates</option>
                                     @foreach (array_unique(array_column($reports, 'riskRate')) as $rate)
-                                        @if ($rate)
-                                            <option value="{{ $rate }}">{{ $rate }}</option>
-                                        @endif
+                                    @if ($rate)
+                                    <option value="{{ $rate }}">{{ $rate }}</option>
+                                    @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -75,9 +75,9 @@
                                 <select id="processTypeFilter" class="form-select">
                                     <option value="">All Process Types</option>
                                     @foreach (array_unique(array_column($reports, 'processType')) as $processType)
-                                        @if ($processType)
-                                            <option value="{{ $processType }}">{{ $processType }}</option>
-                                        @endif
+                                    @if ($processType)
+                                    <option value="{{ $processType }}">{{ $processType }}</option>
+                                    @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -89,9 +89,9 @@
                                 <select id="departmentFilter" class="form-select">
                                     <option value="">All Departments</option>
                                     @foreach (array_unique(array_column($reports, 'department')) as $department)
-                                        @if ($department)
-                                            <option value="{{ $department }}">{{ $department }}</option>
-                                        @endif
+                                    @if ($department)
+                                    <option value="{{ $department }}">{{ $department }}</option>
+                                    @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -101,23 +101,21 @@
                                 <select id="batchFilter" class="form-select">
                                     <option value="">All Batches</option>
                                     @foreach (array_unique(array_column($reports, 'exceptionBatch')) as $batch)
-                                        @if ($batch)
-                                            <option value="{{ $batch }}">{{ $batch }}</option>
-                                        @endif
+                                    @if ($batch)
+                                    <option value="{{ $batch }}">{{ $batch }}</option>
+                                    @endif
                                     @endforeach
                                 </select>
                             </div>
 
                             <div class="col-md-2">
                                 <label for="dateFromFilter" class="form-label">From Date</label>
-                                <input type="text" id="dateFromFilter" class="form-control datepicker"
-                                    placeholder="Select start date">
+                                <input type="text" id="dateFromFilter" class="form-control datepicker" placeholder="Select start date">
                             </div>
 
                             <div class="col-md-2">
                                 <label for="dateToFilter" class="form-label">To Date</label>
-                                <input type="text" id="dateToFilter" class="form-control datepicker"
-                                    placeholder="Select end date">
+                                <input type="text" id="dateToFilter" class="form-control datepicker" placeholder="Select end date">
                             </div>
 
                             <div class="col-md-2 d-flex align-items-end">
@@ -165,239 +163,239 @@
     </div>
 
     @push('scripts')
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-        <script>
-            $(document).ready(function() {
-                // ============================================
-                // GLOBAL VARIABLES
-                // ============================================
-                let filteredData = [];
-                let allReports = @json($reports);
-                let batches = @json($batches);
-                let groups = @json($groups);
-                let currentBranchAuditors = [];
+    <script>
+        $(document).ready(function() {
+            // ============================================
+            // GLOBAL VARIABLES
+            // ============================================
+            let filteredData = [];
+            let allReports = @json($reports);
+            let batches = @json($batches);
+            let groups = @json($groups);
+            let currentBranchAuditors = [];
 
-                // ============================================
-                // INITIALIZATION
-                // ============================================
-                function initialize() {
-                    initializeDatePicker();
-                    enhanceReportsWithBranchNames();
-                    bindEventHandlers();
-                    resetPreview();
-                }
+            // ============================================
+            // INITIALIZATION
+            // ============================================
+            function initialize() {
+                initializeDatePicker();
+                enhanceReportsWithBranchNames();
+                bindEventHandlers();
+                resetPreview();
+            }
 
-                function initializeDatePicker() {
-                    flatpickr('.datepicker', {
-                        dateFormat: 'Y-m-d',
-                        allowInput: true
-                    });
-                }
+            function initializeDatePicker() {
+                flatpickr('.datepicker', {
+                    dateFormat: 'Y-m-d'
+                    , allowInput: true
+                });
+            }
 
-                function enhanceReportsWithBranchNames() {
-                    allReports = allReports.map(report => ({
-                        ...report,
-                        branchName: getBranchName(report.exceptionBatchId)
-                    }));
-                }
+            function enhanceReportsWithBranchNames() {
+                allReports = allReports.map(report => ({
+                    ...report
+                    , branchName: getBranchName(report.exceptionBatchId)
+                }));
+            }
 
-                // ============================================
-                // UTILITY FUNCTIONS
-                // ============================================
-                function getBranchName(exceptionBatchId) {
-                    for (let batch of batches) {
-                        if (batch.id == exceptionBatchId) {
-                            for (let group of groups) {
-                                if (group.id == batch.activityGroupId) {
-                                    return group.branchName;
-                                }
+            // ============================================
+            // UTILITY FUNCTIONS
+            // ============================================
+            function getBranchName(exceptionBatchId) {
+                for (let batch of batches) {
+                    if (batch.id == exceptionBatchId) {
+                        for (let group of groups) {
+                            if (group.id == batch.activityGroupId) {
+                                return group.branchName;
                             }
                         }
                     }
-                    return 'N/A';
                 }
+                return 'N/A';
+            }
 
-                function showLoading() {
-                    $('#loadingState').show();
-                    $('#emptyState').hide();
-                    $('#previewContent').hide();
-                    $('#downloadReport').prop('disabled', true);
-                }
+            function showLoading() {
+                $('#loadingState').show();
+                $('#emptyState').hide();
+                $('#previewContent').hide();
+                $('#downloadReport').prop('disabled', true);
+            }
 
-                function hideLoading() {
-                    $('#loadingState').hide();
-                }
+            function hideLoading() {
+                $('#loadingState').hide();
+            }
 
-                function resetPreview() {
-                    filteredData = [];
-                    $('#emptyState').show();
-                    $('#previewContent').hide();
-                    $('#recordCount').text('0 records');
-                    $('#downloadReport').prop('disabled', true);
-                }
+            function resetPreview() {
+                filteredData = [];
+                $('#emptyState').show();
+                $('#previewContent').hide();
+                $('#recordCount').text('0 records');
+                $('#downloadReport').prop('disabled', true);
+            }
 
-                // ============================================
-                // EVENT HANDLERS
-                // ============================================
-                function bindEventHandlers() {
-                    $('#branchFilter').on('change', handleBranchSelection);
-                    $('#auditorFilter, #statusFilter, #riskRateFilter, #departmentFilter, #processTypeFilter, #batchFilter, #dateFromFilter, #dateToFilter')
-                        .on('change', handleFilterChange);
-                    $('#resetFilters').on('click', handleResetFilters);
-                    $('#dateFromFilter, #dateToFilter').on('change', handleDateValidation);
-                    $('#downloadReport').on('click', handleDownloadReport);
-                }
+            // ============================================
+            // EVENT HANDLERS
+            // ============================================
+            function bindEventHandlers() {
+                $('#branchFilter').on('change', handleBranchSelection);
+                $('#auditorFilter, #statusFilter, #riskRateFilter, #departmentFilter, #processTypeFilter, #batchFilter, #dateFromFilter, #dateToFilter')
+                    .on('change', handleFilterChange);
+                $('#resetFilters').on('click', handleResetFilters);
+                $('#dateFromFilter, #dateToFilter').on('change', handleDateValidation);
+                $('#downloadReport').on('click', handleDownloadReport);
+            }
 
-                function handleBranchSelection() {
-                    const selectedBranch = $(this).val();
-                    if (selectedBranch) {
-                        populateAuditorFilter(selectedBranch);
-                        applyFilters();
-                    } else {
-                        resetAuditorFilter();
-                        resetPreview();
-                    }
-                }
-
-                function handleFilterChange() {
-                    if ($('#branchFilter').val()) {
-                        applyFilters();
-                    }
-                }
-
-                function handleResetFilters() {
-                    $('#reportFilters')[0].reset();
+            function handleBranchSelection() {
+                const selectedBranch = $(this).val();
+                if (selectedBranch) {
+                    populateAuditorFilter(selectedBranch);
+                    applyFilters();
+                } else {
                     resetAuditorFilter();
-                    filteredData = [];
-                    currentBranchAuditors = [];
                     resetPreview();
                 }
+            }
 
-                function handleDateValidation() {
-                    const dateFrom = $('#dateFromFilter').val();
-                    const dateTo = $('#dateToFilter').val();
-
-                    if (dateFrom && dateTo && dateFrom > dateTo) {
-                        alert('End date must be after start date');
-                        $(this).val('');
-                    }
+            function handleFilterChange() {
+                if ($('#branchFilter').val()) {
+                    applyFilters();
                 }
+            }
 
-                //handle download report
-                function handleDownloadReport() {
-                    downloadWordDocument();
+            function handleResetFilters() {
+                $('#reportFilters')[0].reset();
+                resetAuditorFilter();
+                filteredData = [];
+                currentBranchAuditors = [];
+                resetPreview();
+            }
+
+            function handleDateValidation() {
+                const dateFrom = $('#dateFromFilter').val();
+                const dateTo = $('#dateToFilter').val();
+
+                if (dateFrom && dateTo && dateFrom > dateTo) {
+                    alert('End date must be after start date');
+                    $(this).val('');
                 }
+            }
+
+            //handle download report
+            function handleDownloadReport() {
+                downloadWordDocument();
+            }
 
 
-                // ============================================
-                // FILTER MANAGEMENT
-                // ============================================
-                function populateAuditorFilter(selectedBranch) {
-                    const branchReports = allReports.filter(report => report.branchName === selectedBranch);
-                    currentBranchAuditors = [...new Set(branchReports.map(r => r.auditorName))].filter(a => a);
+            // ============================================
+            // FILTER MANAGEMENT
+            // ============================================
+            function populateAuditorFilter(selectedBranch) {
+                const branchReports = allReports.filter(report => report.branchName === selectedBranch);
+                currentBranchAuditors = [...new Set(branchReports.map(r => r.auditorName))].filter(a => a);
 
-                    $('#auditorFilter').prop('disabled', false).html(`
+                $('#auditorFilter').prop('disabled', false).html(`
                     <option value="">All Auditors in ${selectedBranch}</option>
                     ${currentBranchAuditors.map(auditor => `<option value="${auditor}">${auditor}</option>`).join('')}
                 `);
+            }
+
+            function resetAuditorFilter() {
+                $('#auditorFilter').prop('disabled', true).html(
+                    '<option value="">All Auditors in Branch</option>'
+                );
+            }
+
+            function getFilterValues() {
+                return {
+                    branch: $('#branchFilter').val()
+                    , auditor: $('#auditorFilter').val()
+                    , status: $('#statusFilter').val()
+                    , riskRate: $('#riskRateFilter').val()
+                    , department: $('#departmentFilter').val()
+                    , processType: $('#processTypeFilter').val()
+                    , batch: $('#batchFilter').val()
+                    , dateFrom: $('#dateFromFilter').val()
+                    , dateTo: $('#dateToFilter').val()
+                };
+            }
+
+            function applyFilters() {
+                const filters = getFilterValues();
+
+                if (!filters.branch) {
+                    resetPreview();
+                    return;
                 }
 
-                function resetAuditorFilter() {
-                    $('#auditorFilter').prop('disabled', true).html(
-                        '<option value="">All Auditors in Branch</option>'
-                    );
-                }
+                showLoading();
+                setTimeout(() => {
+                    filteredData = filterReports(allReports, filters);
+                    displayBranchAnalysis(filteredData, filters);
+                    hideLoading();
+                }, 1000);
+            }
 
-                function getFilterValues() {
-                    return {
-                        branch: $('#branchFilter').val(),
-                        auditor: $('#auditorFilter').val(),
-                        status: $('#statusFilter').val(),
-                        riskRate: $('#riskRateFilter').val(),
-                        department: $('#departmentFilter').val(),
-                        processType: $('#processTypeFilter').val(),
-                        batch: $('#batchFilter').val(),
-                        dateFrom: $('#dateFromFilter').val(),
-                        dateTo: $('#dateToFilter').val()
-                    };
-                }
+            function filterReports(reports, filters) {
+                return reports.filter(report => {
+                    if (report.branchName !== filters.branch) return false;
+                    if (filters.auditor && report.auditorName !== filters.auditor) return false;
+                    if (filters.status && report.status !== filters.status) return false;
+                    if (filters.riskRate && report.riskRate !== filters.riskRate) return false;
+                    if (filters.department && report.department !== filters.department) return false;
+                    if (filters.processType && report.processType !== filters.processType) return false;
+                    if (filters.batch && report.exceptionBatch !== filters.batch) return false;
 
-                function applyFilters() {
-                    const filters = getFilterValues();
-
-                    if (!filters.branch) {
-                        resetPreview();
-                        return;
+                    // Date filtering
+                    if (filters.dateFrom || filters.dateTo) {
+                        const occurrenceDate = report.occurrenceDate ? report.occurrenceDate.split('T')[0] :
+                            null;
+                        if (filters.dateFrom && occurrenceDate && occurrenceDate < filters.dateFrom)
+                            return false;
+                        if (filters.dateTo && occurrenceDate && occurrenceDate > filters.dateTo)
+                            return false;
                     }
 
-                    showLoading();
-                    setTimeout(() => {
-                        filteredData = filterReports(allReports, filters);
-                        displayBranchAnalysis(filteredData, filters);
-                        hideLoading();
-                    }, 1000);
+                    return true;
+                });
+            }
+
+            // ============================================
+            // REPORT DISPLAY AND ANALYSIS
+            // ============================================
+            function displayBranchAnalysis(data, filters) {
+                if (data.length === 0) {
+                    showEmptyState(filters.branch);
+                    return;
                 }
 
-                function filterReports(reports, filters) {
-                    return reports.filter(report => {
-                        if (report.branchName !== filters.branch) return false;
-                        if (filters.auditor && report.auditorName !== filters.auditor) return false;
-                        if (filters.status && report.status !== filters.status) return false;
-                        if (filters.riskRate && report.riskRate !== filters.riskRate) return false;
-                        if (filters.department && report.department !== filters.department) return false;
-                        if (filters.processType && report.processType !== filters.processType) return false;
-                        if (filters.batch && report.exceptionBatch !== filters.batch) return false;
+                $('#recordCount').text(`${data.length} exceptions`);
+                generateReportPreview(data, filters);
+                displayFilterSummary(filters);
 
-                        // Date filtering
-                        if (filters.dateFrom || filters.dateTo) {
-                            const occurrenceDate = report.occurrenceDate ? report.occurrenceDate.split('T')[0] :
-                                null;
-                            if (filters.dateFrom && occurrenceDate && occurrenceDate < filters.dateFrom)
-                                return false;
-                            if (filters.dateTo && occurrenceDate && occurrenceDate > filters.dateTo)
-                                return false;
-                        }
+                $('#emptyState').hide();
+                $('#previewContent').show();
+                $('#downloadReport').prop('disabled', false);
+            }
 
-                        return true;
-                    });
-                }
-
-                // ============================================
-                // REPORT DISPLAY AND ANALYSIS
-                // ============================================
-                function displayBranchAnalysis(data, filters) {
-                    if (data.length === 0) {
-                        showEmptyState(filters.branch);
-                        return;
-                    }
-
-                    $('#recordCount').text(`${data.length} exceptions`);
-                    generateReportPreview(data, filters);
-                    displayFilterSummary(filters);
-
-                    $('#emptyState').hide();
-                    $('#previewContent').show();
-                    $('#downloadReport').prop('disabled', false);
-                }
-
-                function showEmptyState(branchName) {
-                    $('#emptyState').html(`
+            function showEmptyState(branchName) {
+                $('#emptyState').html(`
                     <i class="fas fa-search fa-4x text-muted mb-3"></i>
                     <h5 class="text-muted">No exceptions found for ${branchName}</h5>
                     <p class="text-muted">Try adjusting your filters or check if this branch has any recorded exceptions.</p>
                 `).show();
-                    $('#previewContent').hide();
-                    $('#downloadReport').prop('disabled', true);
-                }
+                $('#previewContent').hide();
+                $('#downloadReport').prop('disabled', true);
+            }
 
-                function generateReportPreview(data, filters) {
-                    const reportTitle = generateReportTitle(filters);
-                    const executiveSummary = generateExecutiveSummary(data, filters);
-                    const exceptionReports = generateExceptionReports(data);
+            function generateReportPreview(data, filters) {
+                const reportTitle = generateReportTitle(filters);
+                const executiveSummary = generateExecutiveSummary(data, filters);
+                const exceptionReports = generateExceptionReports(data);
 
-                    $('#previewContent').html(`
+                $('#previewContent').html(`
                             <!-- Report Title -->
                             <div class="mb-4 text-center">
                                 <h3 class="text-primary font-weight-bold">${reportTitle}</h3>
@@ -432,461 +430,551 @@
                                 <div id="filterSummary" class="alert alert-info mb-4"></div>
                             </div>
                         `);
+            }
+
+            function generateReportTitle(filters) {
+                const auditPeriod = determineAuditPeriod(filters);
+                return `BEST POINT SAVINGS AND LOANS LIMITED INTERNAL AUDIT REPORT FOR ${filters.branch.toUpperCase()} BRANCH DURING THE ${auditPeriod} AUDIT`;
+            }
+
+            function determineAuditPeriod(filters) {
+                const currentYear = new Date().getFullYear();
+
+                if (filters.dateFrom && filters.dateTo) {
+                    const fromYear = new Date(filters.dateFrom).getFullYear();
+                    const toYear = new Date(filters.dateTo).getFullYear();
+                    return fromYear === toYear ? fromYear.toString() : `${fromYear}-${toYear}`;
                 }
 
-                function generateReportTitle(filters) {
-                    const auditPeriod = determineAuditPeriod(filters);
-                    return `BESTPOINT SAVINGS AND LOANS LIMITED INTERNAL AUDIT DEPARTMENT EXCEPTION SHEET FOR ${filters.branch.toUpperCase()} BRANCH DURING THE ${auditPeriod} AUDIT`;
-                }
+                return currentYear.toString();
+            }
 
-                function determineAuditPeriod(filters) {
-                    const currentYear = new Date().getFullYear();
+            function generateExecutiveSummary(data, filters) {
+                const totalExceptions = data.length;
+                const uniqueAuditors = [...new Set(data.map(r => r.auditorName))].filter(a => a);
+                const uniqueDepartments = [...new Set(data.map(r => r.department))].filter(d => d);
+                const auditPeriod = determineAuditPeriod(filters);
 
-                    if (filters.dateFrom && filters.dateTo) {
-                        const fromYear = new Date(filters.dateFrom).getFullYear();
-                        const toYear = new Date(filters.dateTo).getFullYear();
-                        return fromYear === toYear ? fromYear.toString() : `${fromYear}-${toYear}`;
-                    }
+                // Analysis data
+                const riskDistribution = getRiskDistribution(data);
+                const statusAnalysis = getStatusAnalysis(data);
 
-                    return currentYear.toString();
-                }
+                // Build summary
+                let summary =
+                    `During the ${auditPeriod} internal audit exercise at <strong>${filters.branch}</strong> Branch, our audit team conducted a comprehensive review of operational processes, controls, and compliance measures. `;
 
-                function generateExecutiveSummary(data, filters) {
-                    const totalExceptions = data.length;
-                    const uniqueAuditors = [...new Set(data.map(r => r.auditorName))].filter(a => a);
-                    const uniqueDepartments = [...new Set(data.map(r => r.department))].filter(d => d);
-                    const auditPeriod = determineAuditPeriod(filters);
 
-                    // Analysis data
-                    const riskDistribution = getRiskDistribution(data);
-                    const statusAnalysis = getStatusAnalysis(data);
+                summary +=
+                    `This examination resulted in the identification of <strong>${totalExceptions}</strong> exception${totalExceptions !== 1 ? 's' : ''} across various operational areas that require management attention and corrective action. `;
 
-                    // Build summary
-                    let summary =
-                        `During the ${auditPeriod} internal audit exercise at ${filters.branch} Branch, our audit team conducted a comprehensive review of operational processes, controls, and compliance measures. `;
 
+                if (uniqueDepartments.length > 0) {
                     summary +=
-                        `This examination resulted in the identification of ${totalExceptions} exception${totalExceptions !== 1 ? 's' : ''} across various operational areas that require management attention and corrective action. `;
+                        `The exceptions were identified across <strong>${uniqueDepartments.length}</strong> department${uniqueDepartments.length !== 1 ? 's' : ''}, `;
 
-                    if (uniqueDepartments.length > 0) {
-                        summary +=
-                            `The exceptions were identified across ${uniqueDepartments.length} department${uniqueDepartments.length !== 1 ? 's' : ''}, `;
-                        summary += uniqueDepartments.length > 3 ?
-                            `indicating widespread areas requiring operational improvements. ` :
-                            `indicating specific areas of operational focus: ${uniqueDepartments.join(', ')}. `;
-                    }
+                    summary += uniqueDepartments.length > 3 ?
+                        `indicating widespread areas requiring operational improvements. ` :
+                        `indicating specific areas of operational focus: ${uniqueDepartments.join(', ')}. `;
+                }
 
-                    // Risk assessment
-                    const hasHighRisk = riskDistribution['High'] > 0;
-                    const hasMediumRisk = riskDistribution['Medium'] > 0;
-                    const hasLowRisk = riskDistribution['Low'] > 0;
+                // Risk assessment
+                const hasHighRisk = riskDistribution['High'] > 0;
+                const hasMediumRisk = riskDistribution['Medium'] > 0;
+                const hasLowRisk = riskDistribution['Low'] > 0;
 
-                    if (hasHighRisk || hasMediumRisk || hasLowRisk) {
-                        summary += `From a risk perspective, the audit findings include `;
-                        const riskComponents = [];
+                if (hasHighRisk || hasMediumRisk || hasLowRisk) {
+                    summary += `From a risk perspective, the audit findings include `;
+                    const riskComponents = [];
 
-                        if (hasHighRisk) riskComponents.push(
-                            `${riskDistribution['High']} high-risk exception${riskDistribution['High'] !== 1 ? 's' : ''} requiring immediate corrective action`
-                        );
-                        if (hasMediumRisk) riskComponents.push(
-                            `${riskDistribution['Medium']} medium-risk exception${riskDistribution['Medium'] !== 1 ? 's' : ''} needing prompt attention`
-                        );
-                        if (hasLowRisk) riskComponents.push(
-                            `${riskDistribution['Low']} low-risk exception${riskDistribution['Low'] !== 1 ? 's' : ''} for ongoing monitoring`
-                        );
+                    if (hasHighRisk) riskComponents.push(
+                        `${riskDistribution['High']} high-risk exception${riskDistribution['High'] !== 1 ? 's' : ''} requiring immediate corrective action`
+                    );
+                    if (hasMediumRisk) riskComponents.push(
+                        `${riskDistribution['Medium']} medium-risk exception${riskDistribution['Medium'] !== 1 ? 's' : ''} needing prompt attention`
+                    );
+                    if (hasLowRisk) riskComponents.push(
+                        `${riskDistribution['Low']} low-risk exception${riskDistribution['Low'] !== 1 ? 's' : ''} for ongoing monitoring`
+                    );
 
-                        summary += riskComponents.join(', ') + '. ';
-                    }
+                    summary += riskComponents.join(', ') + '. ';
+                }
 
-                    // Resolution status
-                    const {
-                        resolvedCount,
-                        pendingCount,
-                        resolutionRate
-                    } = statusAnalysis;
+                // Resolution status
+                const {
+                    resolvedCount
+                    , pendingCount
+                    , resolutionRate
+                } = statusAnalysis;
+                summary +=
+                    `Management has demonstrated commitment to addressing audit findings with <strong>${resolvedCount}</strong> exception${resolvedCount !== 1 ? 's' : ''} already resolved`;
+
+
+                if (pendingCount > 0) {
                     summary +=
-                        `Management has demonstrated commitment to addressing audit findings with ${resolvedCount} exception${resolvedCount !== 1 ? 's' : ''} already resolved`;
+                        `, while <strong>${pendingCount}</strong> exception${pendingCount !== 1 ? 's remain' : ' remains'} pending resolution`;
 
-                    if (pendingCount > 0) {
-                        summary +=
-                            `, while ${pendingCount} exception${pendingCount !== 1 ? 's remain' : ' remains'} pending resolution`;
-                    }
-
-                    summary += `, achieving a ${resolutionRate}% resolution rate. `;
-
-                    // Operational assessment
-                    const rate = parseFloat(resolutionRate);
-                    if (rate >= 80) {
-                        summary +=
-                            `This demonstrates strong management commitment and effective control environment at the branch, with robust exception management processes in place.`;
-                    } else if (rate >= 60) {
-                        summary +=
-                            `While progress has been made in addressing audit findings, there remains opportunity for improvement in exception resolution timelines and control effectiveness.`;
-                    } else {
-                        summary +=
-                            `The current resolution rate indicates the need for enhanced management focus on audit findings, improved control processes, and more timely corrective actions to strengthen the branch's operational environment.`;
-                    }
-
-                    return summary;
                 }
 
-                function generateExceptionReports(data) {
-                    if (data.length === 0)
-                        return '<p class="text-muted">No exceptions found for the selected criteria.</p>';
+                summary += `, achieving a <strong>${resolutionRate}%</strong> resolution rate. `;
 
-                    let reportHtml = '';
-                    const groupedExceptions = groupExceptionsByTitle(data);
 
-                    Object.keys(groupedExceptions).forEach(title => {
-                        const exceptions = groupedExceptions[title];
-                        reportHtml += generateSingleExceptionReport(title, exceptions);
-                    });
-
-                    return reportHtml;
+                // Operational assessment
+                const rate = parseFloat(resolutionRate);
+                if (rate >= 80) {
+                    summary +=
+                        `This demonstrates strong management commitment and effective control environment at the branch, with robust exception management processes in place.`;
+                } else if (rate >= 60) {
+                    summary +=
+                        `While progress has been made in addressing audit findings, there remains opportunity for improvement in exception resolution timelines and control effectiveness.`;
+                } else {
+                    summary +=
+                        `The current resolution rate indicates the need for enhanced management focus on audit findings, improved control processes, and more timely corrective actions to strengthen the branch's operational environment.`;
                 }
 
-                function groupExceptionsByTitle(data) {
-                    const groups = {};
+                return summary;
+            }
 
-                    data.forEach(exception => {
-                        let groupTitle = exception.exceptionTitle || 'UNTITLED EXCEPTION';
-                        groupTitle = groupTitle.toUpperCase().trim();
+            function generateExceptionReports(data) {
+                if (data.length === 0)
+                    return '<p class="text-muted">No exceptions found for the selected criteria.</p>';
 
-                        // If no title but has exception description, create title from first part
-                        if (groupTitle === 'UNTITLED EXCEPTION' && exception.exception) {
-                            const firstSentence = exception.exception.split('.')[0].trim();
-                            if (firstSentence.length > 0) {
-                                groupTitle = firstSentence.toUpperCase().substring(0, 80);
-                                if (exception.exception.length > 80) groupTitle += '...';
-                            }
+                let reportHtml = '';
+                const groupedExceptions = groupExceptionsByTitle(data);
+
+                Object.keys(groupedExceptions).forEach(title => {
+                    const exceptions = groupedExceptions[title];
+                    reportHtml += generateSingleExceptionReport(title, exceptions);
+                });
+
+                return reportHtml;
+            }
+
+            function groupExceptionsByTitle(data) {
+                const groups = {};
+
+                data.forEach(exception => {
+                    let groupTitle = exception.exceptionTitle || 'UNTITLED EXCEPTION';
+                    groupTitle = groupTitle.toUpperCase().trim();
+
+                    // If no title but has exception description, create title from first part
+                    if (groupTitle === 'UNTITLED EXCEPTION' && exception.exception) {
+                        const firstSentence = exception.exception.split('.')[0].trim();
+                        if (firstSentence.length > 0) {
+                            groupTitle = firstSentence.toUpperCase().substring(0, 80);
+                            if (exception.exception.length > 80) groupTitle += '...';
                         }
-
-                        if (!groups[groupTitle]) {
-                            groups[groupTitle] = [];
-                        }
-                        groups[groupTitle].push(exception);
-                    });
-
-                    return groups;
-                }
-
-                function generateSingleExceptionReport(title, exceptions) {
-                    const primaryException = exceptions[0];
-                    const multipleInstances = exceptions.length > 1;
-
-                    let reportHtml = `
-        <div class="exception-report mb-5 p-4" style="border: 1px solid #e9ecef; border-radius: 8px; background: #fafafa;">
-            <!-- Exception Title -->
-            <h5 class="exception-title text-primary mb-3" style="font-weight: bold;">
-                **${title}**${multipleInstances ? ` <span class="badge bg-info ms-2">${exceptions.length} instances</span>` : ''}
-            </h5>
-
-            <!-- Exception Description -->
-            <div class="exception-description mb-3" style="line-height: 1.8;">
-                ${generateExceptionDescription(primaryException, exceptions)}
-            </div>`;
-
-                    if (primaryException.rootCause) {
-                        reportHtml += `
-            <!-- Root Cause -->
-            <div class="root-cause mb-3">
-                <strong>Root Cause:</strong><br>
-                <div style="line-height: 1.8; margin-top: 8px;">
-                    ${primaryException.rootCause}
-                </div>
-            </div>`;
                     }
 
+                    if (!groups[groupTitle]) {
+                        groups[groupTitle] = [];
+                    }
+                    groups[groupTitle].push(exception);
+                });
+
+                return groups;
+            }
+
+            // Updated generateSingleExceptionReport function with new structure
+            function generateSingleExceptionReport(title, exceptions) {
+                const primaryException = exceptions[0];
+                const multipleInstances = exceptions.length > 1;
+
+                let reportHtml = `
+            <div class="exception-report mb-5 p-4" style="border: 1px solid #e9ecef; border-radius: 8px; background: #fafafa;">
+                <!-- Exception Title -->
+                <h5 class="exception-title text-primary mb-3" style="font-weight: bold;">
+                    **${title}**${multipleInstances ? ` <span class="badge bg-info ms-2">${exceptions.length} instances</span>` : ''}
+                </h5>
+
+                <!-- Exception Description -->
+                <div class="exception-description mb-3" style="line-height: 1.8;">
+                    <strong>Exception Description:</strong><br>
+                    <div style="margin-top: 8px;">
+                        ${generateExceptionDescription(primaryException, exceptions)}
+                    </div>
+                </div>`;
+
+                // Root Cause (if available)
+                if (primaryException.rootCause) {
                     reportHtml += `
-            <!-- Analysis on Exception -->
-            <div class="exception-analysis mb-3" style="line-height: 1.8;">
-                ${generateExceptionAnalysis(primaryException, exceptions)}
-            </div>
+                <!-- Root Cause -->
+                <div class="root-cause mb-3" style="background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                    <strong style="color: #856404;">Root Cause:</strong><br>
+                    <div style="line-height: 1.8; margin-top: 8px;">
+                        ${primaryException.rootCause}
+                    </div>
+                </div>`;
+                }
 
-            <!-- Management Response Request -->
-            <div class="management-request mb-3" style="font-style: italic; color: #666;">
-                <em>Kindly explain why the case.</em>
-            </div>
+                reportHtml += `
+                <!-- Analysis on Exception -->
+                <div class="exception-analysis mb-3" style="background: #f8f9fa; padding: 15px; border-radius: 6px; border-left: 4px solid #6c757d;">
+                    <strong style="color: #495057;">Analysis:</strong><br>
+                    <div style="line-height: 1.8; margin-top: 8px;">
+                        ${generateExceptionAnalysis(primaryException, exceptions)}
+                    </div>
+                </div>`;
 
-            <!-- Management Response -->
-            <div class="management-response" style="background: #e8f4f8; padding: 15px; border-radius: 6px; border-left: 4px solid #17a2b8;">
-                <strong style="color: #0c5460;">Management Response${multipleInstances ? 's' : ''}</strong><br>
-                <div style="margin-top: 8px; line-height: 1.6;">
-                    ${generateManagementResponse(exceptions)}
+                // Risk Analysis (new section)
+                if (primaryException.riskAnalysis) {
+                    reportHtml += `
+                <!-- Risk Analysis -->
+                <div class="risk-analysis mb-3" style="background: #fff3cd; padding: 15px; border-radius: 6px; border-left: 4px solid #ffc107;">
+                    <strong style="color: #856404;">Risk Analysis:</strong><br>
+                    <div style="line-height: 1.8; margin-top: 8px;">
+                        ${primaryException.riskAnalysis}
+                    </div>
+                </div>`;
+                }
+
+                // Recommendation (new section)
+                if (primaryException.recommendation) {
+                    reportHtml += `
+                <!-- Audit Recommendation -->
+                <div class="audit-recommendation mb-3" style="background: #d4edda; padding: 15px; border-radius: 6px; border-left: 4px solid #28a745;">
+                    <strong style="color: #155724;">Audit Recommendation:</strong><br>
+                    <div style="margin-top: 8px; line-height: 1.6;">
+                        ${generateRecommendationContent(exceptions)}
+                    </div>
+                </div>`;
+                }
+
+                reportHtml += `
+                <!-- Management Response -->
+                <div class="management-response mb-3" style="background: #e8f4f8; padding: 15px; border-radius: 6px; border-left: 4px solid #17a2b8;">
+                    <strong style="color: #0c5460;">Management Response${multipleInstances ? 's' : ''}</strong><br>
+                    <div style="margin-top: 8px; line-height: 1.6;">
+                        ${generateManagementResponse(exceptions)}
+                    </div>
                 </div>
-            </div>
-        </div>`;
 
-                    return reportHtml;
-                }
+            </div>`;
 
-                function generateExceptionDescription(primaryException, allExceptions) {
-                    let description = primaryException.exception ||
-                        'No detailed description provided for this exception.';
+                return reportHtml;
+            }
 
-                    if (allExceptions.length > 1) {
-                        const departments = [...new Set(allExceptions.map(e => e.department))].filter(d => d);
-                        const processTypes = [...new Set(allExceptions.map(e => e.processType))].filter(p => p);
+            // NEW: Function to handle recommendation content for multiple instances
+            function generateRecommendationContent(exceptions) {
+                const recommendations = {};
 
-                        description +=
-                            `<br><br><strong>Scope:</strong> This exception was identified in ${allExceptions.length} instances`;
-
-                        if (departments.length > 1) {
-                            description += ` across multiple departments (${departments.join(', ')})`;
-                        } else if (departments.length === 1) {
-                            description += ` within the ${departments[0]} department`;
-                        }
-
-                        if (processTypes.length > 1) {
-                            description += ` affecting ${processTypes.length} different process types`;
-                        } else if (processTypes.length === 1) {
-                            description += ` related to ${processTypes[0]} processes`;
-                        }
-
-                        description += '.';
+                exceptions.forEach(exception => {
+                    const recommendation = exception.recommendation || 'No specific recommendation provided';
+                    if (!recommendations[recommendation]) {
+                        recommendations[recommendation] = 0;
                     }
+                    recommendations[recommendation]++;
+                });
 
-                    return description;
-                }
+                const recommendationEntries = Object.entries(recommendations);
 
-                function generateExceptionAnalysis(primaryException, allExceptions) {
-                    let analysis = '';
+                if (recommendationEntries.length === 1) {
+                    return recommendationEntries[0][0];
+                } else {
+                    let content = '';
+                    recommendationEntries.forEach(([rec, count], index) => {
+                        if (index > 0) content += '<br><br>';
+                        if (count > 1) {
+                            content += `<strong>Recommendation ${index + 1}</strong> <strong>(${count} instance${count !== 1 ? 's' : ''})</strong>:<br>`;
 
-                    // Risk assessment
-                    const riskRates = [...new Set(allExceptions.map(e => e.riskRate))].filter(r => r);
-                    if (riskRates.length > 0) {
-                        const highRiskCount = allExceptions.filter(e => e.riskRate === 'High').length;
-                        const mediumRiskCount = allExceptions.filter(e => e.riskRate === 'Medium').length;
-                        const lowRiskCount = allExceptions.filter(e => e.riskRate === 'Low').length;
-
-                        if (highRiskCount > 0) {
-                            analysis +=
-                                `This represents a high-risk exposure that requires immediate management attention and corrective action. `;
-                        } else if (mediumRiskCount > 0) {
-                            analysis +=
-                                `This constitutes a medium-risk issue that needs prompt management intervention to prevent potential operational impact. `;
-                        } else if (lowRiskCount > 0) {
-                            analysis +=
-                                `While classified as low-risk, this exception still requires management attention to maintain operational excellence. `;
                         }
-                    }
+                        content += rec;
+                    });
+                    return content;
+                }
+            }
 
-                    // Impact analysis
+
+
+            function generateExceptionDescription(primaryException, allExceptions) {
+                let description = primaryException.exception ||
+                    'No detailed description provided for this exception.';
+
+                if (allExceptions.length > 1) {
                     const departments = [...new Set(allExceptions.map(e => e.department))].filter(d => d);
                     const processTypes = [...new Set(allExceptions.map(e => e.processType))].filter(p => p);
 
-                    if (departments.includes('Operations') || processTypes.includes('Customer Service')) {
-                        analysis +=
-                            `The operational nature of this exception could impact customer service delivery and branch efficiency. `;
+                    description +=
+                        `<br><br><strong>Scope:</strong> This exception was identified in <strong>${allExceptions.length}</strong> instances`;
+
+
+                    if (departments.length > 1) {
+                        description += ` across multiple departments (${departments.join(', ')})`;
+                    } else if (departments.length === 1) {
+                        description += ` within the <strong>${departments[0]}</strong> department`;
+
                     }
 
-                    if (departments.includes('Credit') || processTypes.includes('Loan Processing')) {
-                        analysis +=
-                            `This exception in credit operations could affect loan portfolio quality and regulatory compliance. `;
+                    if (processTypes.length > 1) {
+                        description += ` affecting ${processTypes.length} different process types`;
+                    } else if (processTypes.length === 1) {
+                        description += ` related to ${processTypes[0]} processes`;
                     }
 
-                    if (departments.includes('Treasury') || processTypes.includes('Cash Management')) {
-                        analysis +=
-                            `The treasury-related nature of this exception poses risks to cash management and financial controls. `;
-                    }
-
-                    // Resolution urgency
-                    const unresolvedCount = allExceptions.filter(e => e.status !== 'RESOLVED').length;
-                    if (unresolvedCount > 0) {
-                        analysis +=
-                            `With ${unresolvedCount} instance${unresolvedCount !== 1 ? 's' : ''} still pending resolution, immediate action is required to mitigate ongoing operational risks.`;
-                    } else {
-                        analysis +=
-                            `All instances of this exception have been resolved, demonstrating effective management response to audit findings.`;
-                    }
-
-                    return analysis ||
-                        'This exception requires management review and appropriate corrective measures to ensure operational compliance and effectiveness.';
+                    description += '.';
                 }
 
-                function generateManagementResponse(exceptions) {
-                    let response = '';
+                return description;
+            }
 
-                    // Group responses by status comment
-                    const responseGroups = {};
-                    exceptions.forEach(exception => {
-                        const statusComment = exception.statusComment || 'No management response provided';
-                        const status = exception.status || 'PENDING';
-                        const key = `${statusComment}_${status}`;
+            // Updated generateExceptionAnalysis function (simplified since riskAnalysis is now separate)
+            function generateExceptionAnalysis(primaryException, allExceptions) {
+                let analysis = '';
 
-                        if (!responseGroups[key]) {
-                            responseGroups[key] = {
-                                comment: statusComment,
-                                status: status,
-                                count: 0
-                            };
+                // Impact analysis based on departments and process types
+                const departments = [...new Set(allExceptions.map(e => e.department))].filter(d => d);
+                const processTypes = [...new Set(allExceptions.map(e => e.processType))].filter(p => p);
+
+                if (departments.includes('Operations') || processTypes.includes('Customer Service')) {
+                    analysis += `The operational nature of this exception could impact customer service delivery and branch efficiency. `;
+                }
+
+                if (departments.includes('Credit') || processTypes.includes('Loan Processing')) {
+                    analysis += `This exception in credit operations could affect loan portfolio quality and regulatory compliance. `;
+                }
+
+                if (departments.includes('Treasury') || processTypes.includes('Cash Management')) {
+                    analysis += `The treasury-related nature of this exception poses risks to cash management and financial controls. `;
+                }
+
+                // Control environment assessment
+                if (allExceptions.length > 1) {
+                    analysis += `The recurrence of this exception across <strong>${allExceptions.length}</strong> instances indicates potential systemic control weaknesses that require comprehensive review. `;
+
+                }
+
+                // Resolution urgency
+                const unresolvedCount = allExceptions.filter(e => e.status !== 'RESOLVED').length;
+                if (unresolvedCount > 0) {
+                    analysis += `With <strong>${unresolvedCount} instance${unresolvedCount !== 1 ? 's' : ''}</strong> still pending resolution, immediate action is required to mitigate ongoing operational risks.`;
+
+                } else {
+                    analysis += `All instances of this exception have been resolved, demonstrating effective management response to audit findings.`;
+                }
+
+                // Fallback if no specific analysis is generated
+                if (!analysis.trim()) {
+                    analysis = `This exception requires management review and appropriate corrective measures to ensure operational compliance and effectiveness. The identified control gaps need to be addressed to prevent recurrence and maintain operational integrity.`;
+                }
+
+                return analysis;
+            }
+
+            // Function to generate recommendation content for multiple instances
+            function generateRecommendationContent(exceptions) {
+                const recommendations = {};
+
+                exceptions.forEach(exception => {
+                    const recommendation = exception.recommendation || 'Management should implement appropriate controls to prevent recurrence of this exception.';
+                    if (!recommendations[recommendation]) {
+                        recommendations[recommendation] = 0;
+                    }
+                    recommendations[recommendation]++;
+                });
+
+                const recommendationEntries = Object.entries(recommendations);
+
+                if (recommendationEntries.length === 1) {
+                    return recommendationEntries[0][0];
+                } else {
+                    let content = '';
+                    recommendationEntries.forEach(([rec, count], index) => {
+                        if (index > 0) content += '<br><br>';
+                        if (count > 1) {
+                            content += `<strong>Recommendation ${index + 1}</strong> (${count} instance${count !== 1 ? 's' : ''}):<br>`;
                         }
-                        responseGroups[key].count++;
+                        content += rec;
                     });
+                    return content;
+                }
+            }
 
-                    const responses = Object.values(responseGroups);
 
-                    if (responses.length === 1) {
-                        const resp = responses[0];
-                        response = `<strong>Status:</strong> ${resp.status}<br>`;
-                        response += `<strong>Response:</strong> ${resp.comment}`;
-                    } else {
-                        responses.forEach((resp, index) => {
-                            response +=
-                                `<strong>Response ${index + 1}</strong> (${resp.count} instance${resp.count !== 1 ? 's' : ''}):<br>`;
-                            response += `<strong>Status:</strong> ${resp.status}<br>`;
-                            response += `<strong>Comment:</strong> ${resp.comment}`;
-                            if (index < responses.length - 1) response += '<br><br>';
-                        });
+
+
+            function generateManagementResponse(exceptions) {
+                let response = '';
+
+                // Group responses by status comment
+                const responseGroups = {};
+                exceptions.forEach(exception => {
+                    const statusComment = exception.statusComment || 'No management response provided';
+                    const status = exception.status || 'PENDING';
+                    const key = `${statusComment}_${status}`;
+
+                    if (!responseGroups[key]) {
+                        responseGroups[key] = {
+                            comment: statusComment
+                            , status: status
+                            , count: 0
+                        };
                     }
+                    responseGroups[key].count++;
+                });
 
-                    return response;
-                }
+                const responses = Object.values(responseGroups);
 
-                // ============================================
-                // ANALYSIS HELPER FUNCTIONS
-                // ============================================
-                function getRiskDistribution(data) {
-                    const distribution = {};
-                    data.forEach(report => {
-                        if (report.riskRate) {
-                            distribution[report.riskRate] = (distribution[report.riskRate] || 0) + 1;
-                        }
+                if (responses.length === 1) {
+                    const resp = responses[0];
+                    response = `<strong>Status:</strong> ${resp.status}<br>`;
+                    response += `<strong>Response:</strong> ${resp.comment}`;
+                } else {
+                    responses.forEach((resp, index) => {
+                        response +=
+                            `<strong>Response ${index + 1}</strong> (${resp.count} instance${resp.count !== 1 ? 's' : ''}):<br>`;
+                        response += `<strong>Status:</strong> ${resp.status}<br>`;
+                        response += `<strong>Comment:</strong> ${resp.comment}`;
+                        if (index < responses.length - 1) response += '<br><br>';
                     });
-                    return distribution;
                 }
 
-                function getStatusAnalysis(data) {
-                    const resolvedCount = data.filter(r => r.status === 'RESOLVED').length;
-                    const approvedCount = data.filter(r => r.status === 'APPROVED').length;
-                    const pendingCount = data.filter(r => r.status === 'PENDING' || r.status === 'OPEN').length;
-                    const resolutionRate = data.length > 0 ? ((resolvedCount / data.length) * 100).toFixed(1) : 0;
+                return response;
+            }
 
-                    return {
-                        resolvedCount,
-                        approvedCount,
-                        pendingCount,
-                        resolutionRate
-                    };
-                }
-
-                function displayFilterSummary(filters) {
-                    const activeFilters = [];
-                    Object.keys(filters).forEach(key => {
-                        if (filters[key]) {
-                            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-                            activeFilters.push(`<strong>${label}:</strong> ${filters[key]}`);
-                        }
-                    });
-
-                    $('#filterSummary').html(
-                        activeFilters.length > 1 ?
-                        activeFilters.join(' | ') :
-                        `<strong>Branch:</strong> ${filters.branch} (All other parameters included)`
-                    );
-                }
-
-                // ============================================
-                // EXPORT FUNCTIONALITY
-                // ============================================
-                function generateAndSubmitExportForm() {
-                    const filters = getFilterValues();
-                    const analysisData = {
-                        executiveSummary: $('#summaryContent').html(),
-                        qualitativeAnalysis: $('#analysisContent').html(),
-                        keyMetrics: generateMetricsForExport(filteredData),
-                        filterSummary: $('#filterSummary').text()
-                    };
-
-                    const form = $('<form>', {
-                        'method': 'POST',
-                        'action': '{{ route('reports.export-word') }}',
-                        'target': '_blank'
-                    });
-
-                    // Add form fields
-                    form.append($('<input>', {
-                        'type': 'hidden',
-                        'name': '_token',
-                        'value': '{{ csrf_token() }}'
-                    }));
-                    form.append($('<input>', {
-                        'type': 'hidden',
-                        'name': 'filters',
-                        'value': JSON.stringify(filters)
-                    }));
-                    form.append($('<input>', {
-                        'type': 'hidden',
-                        'name': 'data',
-                        'value': JSON.stringify(filteredData)
-                    }));
-                    form.append($('<input>', {
-                        'type': 'hidden',
-                        'name': 'analysis',
-                        'value': JSON.stringify(analysisData)
-                    }));
-
-                    form.appendTo('body').submit().remove();
-                }
-
-                function generateMetricsForExport(data) {
-                    return {
-                        totalExceptions: data.length,
-                        riskDistribution: getRiskDistribution(data),
-                        statusDistribution: getStatusDistribution(data),
-                        departmentSpread: [...new Set(data.map(r => r.department))].length,
-                        processTypeSpread: [...new Set(data.map(r => r.processType))].length,
-                        uniqueAuditors: [...new Set(data.map(r => r.auditorName))].filter(a => a).length
-                    };
-                }
-
-                function getStatusDistribution(data) {
-                    const distribution = {};
-                    data.forEach(report => {
-                        if (report.status) {
-                            distribution[report.status] = (distribution[report.status] || 0) + 1;
-                        }
-                    });
-                    return distribution;
-                }
-
-
-                // ============================================
-                // WORD DOCUMENT DOWNLOAD FUNCTION
-                // ============================================
-
-                function downloadWordDocument() {
-                    if (filteredData.length === 0) {
-                        alert('No data to export. Please select a branch and apply filters first.');
-                        return;
+            // ============================================
+            // ANALYSIS HELPER FUNCTIONS
+            // ============================================
+            function getRiskDistribution(data) {
+                const distribution = {};
+                data.forEach(report => {
+                    if (report.riskRate) {
+                        distribution[report.riskRate] = (distribution[report.riskRate] || 0) + 1;
                     }
+                });
+                return distribution;
+            }
 
-                    showLoading();
+            function getStatusAnalysis(data) {
+                const resolvedCount = data.filter(r => r.status === 'RESOLVED').length;
+                const approvedCount = data.filter(r => r.status === 'APPROVED').length;
+                const pendingCount = data.filter(r => r.status === 'PENDING' || r.status === 'OPEN').length;
+                const resolutionRate = data.length > 0 ? ((resolvedCount / data.length) * 100).toFixed(1) : 0;
 
-                    try {
-                        // Generate the Word document content
-                        const wordContent = generateWordDocumentContent();
+                return {
+                    resolvedCount
+                    , approvedCount
+                    , pendingCount
+                    , resolutionRate
+                };
+            }
 
-                        // Create and download the file
-                        createAndDownloadWordFile(wordContent);
-
-                    } catch (error) {
-                        console.error('Error generating Word document:', error);
-                        alert('Error generating document. Please try again.');
-                    } finally {
-                        hideLoading();
+            function displayFilterSummary(filters) {
+                const activeFilters = [];
+                Object.keys(filters).forEach(key => {
+                    if (filters[key]) {
+                        const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                        activeFilters.push(`<strong>${label}:</strong> ${filters[key]}`);
                     }
+                });
+
+                $('#filterSummary').html(
+                    activeFilters.length > 1 ?
+                    activeFilters.join(' | ') :
+                    `<strong>Branch:</strong> ${filters.branch} (All other parameters included)`
+                );
+            }
+
+            // ============================================
+            // EXPORT FUNCTIONALITY
+            // ============================================
+            /*function generateAndSubmitExportForm() {
+                const filters = getFilterValues();
+                const analysisData = {
+                    executiveSummary: $('#summaryContent').html()
+                    , qualitativeAnalysis: $('#analysisContent').html()
+                    , keyMetrics: generateMetricsForExport(filteredData)
+                    , filterSummary: $('#filterSummary').text()
+                };
+
+                const form = $('<form>', {
+                    'method': 'POST'
+                    {{--  , 'action': '{{ route('
+                    reports.export-word ') }}'  --}}
+                    , 'target': '_blank'
+                });
+
+                // Add form fields
+                form.append($('<input>', {
+                    'type': 'hidden'
+                    , 'name': '_token'
+                    , 'value': '{{ csrf_token() }}'
+                }));
+                form.append($('<input>', {
+                    'type': 'hidden'
+                    , 'name': 'filters'
+                    , 'value': JSON.stringify(filters)
+                }));
+                form.append($('<input>', {
+                    'type': 'hidden'
+                    , 'name': 'data'
+                    , 'value': JSON.stringify(filteredData)
+                }));
+                form.append($('<input>', {
+                    'type': 'hidden'
+                    , 'name': 'analysis'
+                    , 'value': JSON.stringify(analysisData)
+                }));
+
+                form.appendTo('body').submit().remove();
+            }*/
+
+            function generateMetricsForExport(data) {
+                return {
+                    totalExceptions: data.length
+                    , riskDistribution: getRiskDistribution(data)
+                    , statusDistribution: getStatusDistribution(data)
+                    , departmentSpread: [...new Set(data.map(r => r.department))].length
+                    , processTypeSpread: [...new Set(data.map(r => r.processType))].length
+                    , uniqueAuditors: [...new Set(data.map(r => r.auditorName))].filter(a => a).length
+                };
+            }
+
+            function getStatusDistribution(data) {
+                const distribution = {};
+                data.forEach(report => {
+                    if (report.status) {
+                        distribution[report.status] = (distribution[report.status] || 0) + 1;
+                    }
+                });
+                return distribution;
+            }
+
+
+            // ============================================
+            // WORD DOCUMENT DOWNLOAD FUNCTION
+            // ============================================
+
+            function downloadWordDocument() {
+                if (filteredData.length === 0) {
+                    alert('No data to export. Please select a branch and apply filters first.');
+                    return;
                 }
 
-                function generateWordDocumentContent() {
-                    const filters = getFilterValues();
-                    const reportTitle = generateReportTitle(filters);
-                    const executiveSummary = generateExecutiveSummary(filteredData, filters);
-                    const exceptionReports = generateExceptionReportsForWord(filteredData);
-                    const filterSummary = generateFilterSummaryForWord(filters);
+                showLoading();
 
-                    // Generate Word-compatible HTML content - to word
-                    const wordContent = `
+                try {
+                    // Generate the Word document content
+                    const wordContent = generateWordDocumentContent();
+
+                    // Create and download the file
+                    createAndDownloadWordFile(wordContent);
+
+                } catch (error) {
+                    console.error('Error generating Word document:', error);
+                    alert('Error generating document. Please try again.');
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            function generateWordDocumentContent() {
+                const filters = getFilterValues();
+                const reportTitle = generateReportTitle(filters);
+                const executiveSummary = generateExecutiveSummary(filteredData, filters);
+                const exceptionReports = generateExceptionReportsForWord(filteredData);
+                const filterSummary = generateFilterSummaryForWord(filters);
+
+                // Generate Word-compatible HTML content - to word
+                const wordContent = `
                         <!DOCTYPE html>
                         <html>
                         <head>
@@ -1004,362 +1092,442 @@
                         </body>
                         </html>`;
 
-                    return wordContent;
+                return wordContent;
+            }
+
+            // Updated generateExceptionReportsForWord function for Word export
+            function generateExceptionReportsForWord(data) {
+                if (data.length === 0) {
+                    return '<p>No exceptions found for the selected criteria.</p>';
                 }
 
-                function generateExceptionReportsForWord(data) {
-                    if (data.length === 0) {
-                        return '<p>No exceptions found for the selected criteria.</p>';
+                let reportHtml = '';
+                const groupedExceptions = groupExceptionsByTitle(data);
+                let exceptionNumber = 1;
+
+                Object.keys(groupedExceptions).forEach(title => {
+                    const exceptions = groupedExceptions[title];
+                    const primaryException = exceptions[0];
+                    const multipleInstances = exceptions.length > 1;
+
+                    reportHtml += `
+            <div class="exception-item">
+                <div class="exception-title">
+                    ${exceptionNumber}. ${cleanHtmlForWord(title)}${multipleInstances ? ` (${exceptions.length} instances)` : ''}
+                </div>
+
+                <div class="exception-description">
+                    <strong>Exception Description:</strong><br>
+                    ${cleanHtmlForWord(generateExceptionDescription(primaryException, exceptions))}
+                </div>`;
+
+                    // Root Cause (if available)
+                    if (primaryException.rootCause) {
+                        reportHtml += `
+                <div style="margin: 10px 0; padding: 10px; background: #fff3cd; border-left: 3px solid #ffc107;">
+                    <strong>Root Cause:</strong><br>
+                    ${cleanHtmlForWord(primaryException.rootCause)}
+                </div>`;
                     }
 
-                    let reportHtml = '';
-                    const groupedExceptions = groupExceptionsByTitle(data);
-                    let exceptionNumber = 1;
+                    // Analysis
+                    reportHtml += `
+                <div class="exception-analysis">
+                    <strong>Analysis:</strong><br>
+                    ${cleanHtmlForWord(generateExceptionAnalysis(primaryException, exceptions))}
+                </div>`;
 
-                    Object.keys(groupedExceptions).forEach(title => {
-                        const exceptions = groupedExceptions[title];
-                        const primaryException = exceptions[0];
-                        const multipleInstances = exceptions.length > 1;
-
+                    // Risk Analysis (new section)
+                    if (primaryException.riskAnalysis) {
                         reportHtml += `
-        <div class="exception-item">
-            <div class="exception-title">
-                ${exceptionNumber}. ${cleanHtmlForWord(title)}${multipleInstances ? ` (${exceptions.length} instances)` : ''}
-            </div>
+                <div style="margin: 10px 0; padding: 10px; background: #fff3cd; border-left: 3px solid #ffc107;">
+                    <strong>Risk Analysis:</strong><br>
+                    ${cleanHtmlForWord(primaryException.riskAnalysis)}
+                </div>`;
+                    }
 
-            <div class="exception-description">
-                <strong>Description:</strong><br>
-                ${cleanHtmlForWord(generateExceptionDescription(primaryException, exceptions))}
-            </div>`;
-
-                        if (primaryException.rootCause) {
-                            reportHtml += `
-            <div style="margin: 10px 0;">
-                <strong>Root Cause:</strong><br>
-                ${cleanHtmlForWord(primaryException.rootCause)}
-            </div>`;
-                        }
-
+                    // Recommendation (new section)
+                    if (primaryException.recommendation) {
                         reportHtml += `
-            <div class="exception-analysis">
-                <strong>Analysis:</strong><br>
-                ${cleanHtmlForWord(generateExceptionAnalysis(primaryException, exceptions))}
-            </div>
+                <div style="margin: 10px 0; padding: 10px; background: #d4edda; border-left: 3px solid #28a745;">
+                    <strong>Audit Recommendation:</strong><br>
+                    ${cleanHtmlForWord(generateRecommendationContent(exceptions))}
+                </div>`;
+                    }
 
-            <div style="text-align: center; font-style: italic; margin: 10px 0;">
-                <em>Kindly explain why the case.</em>
-            </div>
+                    // Management Response
+                    reportHtml += `
+                <div class="management-response">
+                    <strong>Management Response${multipleInstances ? 's' : ''}:</strong><br>
+                    ${cleanHtmlForWord(generateManagementResponse(exceptions))}
+                </div>`;
 
-            <div class="management-response">
-                <strong>Management Response${multipleInstances ? 's' : ''}:</strong><br>
-                ${cleanHtmlForWord(generateManagementResponse(exceptions))}
-            </div>
-        </div>`;
+                    reportHtml += `
+            </div>`;
+                    exceptionNumber++;
+                });
 
-                        exceptionNumber++;
-                    });
-
-                    return reportHtml;
-                }
-
-                function generateFilterSummaryForWord(filters) {
-                    const activeFilters = [];
-
-                    Object.keys(filters).forEach(key => {
-                        if (filters[key]) {
-                            const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
-                            activeFilters.push(`${label}: ${filters[key]}`);
-                        }
-                    });
-
-                    return activeFilters.join(' | ') || `Branch: ${filters.branch} (All other parameters included)`;
-                }
-
-                function cleanHtmlForWord(htmlString) {
-                    if (!htmlString) return '';
-
-                    return htmlString
-                        .replace(/<br\s*\/?>/gi, '\n')
-                        .replace(/<\/p>/gi, '\n\n')
-                        .replace(/<p[^>]*>/gi, '')
-                        .replace(/<strong>/gi, '<b>')
-                        .replace(/<\/strong>/gi, '</b>')
-                        .replace(/<em>/gi, '<i>')
-                        .replace(/<\/em>/gi, '</i>')
-                        .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
-                        .replace(/\n\n\n+/g, '\n\n') // Clean up excessive line breaks
-                        .trim();
-                }
-
-                function createAndDownloadWordFile(content) {
-                    // Create blob with proper MIME type for Word document
-                    const blob = new Blob([content], {
-                        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                    });
-
-                    // Generate filename
-                    const filters = getFilterValues();
-                    const timestamp = new Date().toISOString().slice(0, 10);
-                    const filename = `Exception_Report_${filters.branch.replace(/\s+/g, '_')}_${timestamp}.doc`;
-
-                    // Create download link and trigger download
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = filename;
-                    link.style.display = 'none';
-
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    // Clean up the blob URL
-                    setTimeout(() => {
-                        URL.revokeObjectURL(link.href);
-                    }, 100);
-                }
+                return reportHtml;
+            }
 
 
-                // ============================================
-                // INITIALIZE APPLICATION
-                // ============================================
-                initialize();
-            });
-        </script>
 
-        <style>
-            /* Updated CSS for structured exception reports */
+
+            function generateFilterSummaryForWord(filters) {
+                const activeFilters = [];
+
+                Object.keys(filters).forEach(key => {
+                    if (filters[key]) {
+                        const label = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+                        activeFilters.push(`${label}: ${filters[key]}`);
+                    }
+                });
+
+                return activeFilters.join(' | ') || `Branch: ${filters.branch} (All other parameters included)`;
+            }
+
+            function cleanHtmlForWord(htmlString) {
+                if (!htmlString) return '';
+
+                return htmlString
+                    .replace(/<br\s*\/?>/gi, '\n')
+                    .replace(/<\/p>/gi, '\n\n')
+                    .replace(/<p[^>]*>/gi, '')
+                    .replace(/<strong>/gi, '<b>')
+                    .replace(/<\/strong>/gi, '</b>')
+                    .replace(/<em>/gi, '<i>')
+                    .replace(/<\/em>/gi, '</i>')
+                    .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+                    .replace(/\n\n\n+/g, '\n\n') // Clean up excessive line breaks
+                    .trim();
+            }
+
+            function createAndDownloadWordFile(content) {
+                // Create blob with proper MIME type for Word document
+                const blob = new Blob([content], {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                });
+
+                // Generate filename
+                const filters = getFilterValues();
+                const timestamp = new Date().toISOString().slice(0, 10);
+                const filename = `Exception_Report_${filters.branch.replace(/\s+/g, '_')}_${timestamp}.doc`;
+
+                // Create download link and trigger download
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                link.style.display = 'none';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Clean up the blob URL
+                setTimeout(() => {
+                    URL.revokeObjectURL(link.href);
+                }, 100);
+            }
+
+
+            // ============================================
+            // INITIALIZE APPLICATION
+            // ============================================
+            initialize();
+        });
+
+    </script>
+
+    <style>
+        /* Updated CSS for structured exception reports with new sections */
+        .exception-report {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #fafafa;
+            page-break-inside: avoid;
+        }
+
+        .exception-title {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .exception-description {
+            line-height: 1.8;
+            margin-bottom: 1rem;
+            text-align: justify;
+            color: #333;
+            padding: 0.75rem;
+            background: #ffffff;
+            border-left: 4px solid #007bff;
+            border-radius: 4px;
+        }
+
+        .exception-description strong {
+            color: #007bff;
+            text-decoration: underline;
+        }
+
+        .root-cause {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+
+        .root-cause strong {
+            color: #856404;
+            text-decoration: underline;
+        }
+
+        .exception-analysis {
+            line-height: 1.8;
+            margin-bottom: 1rem;
+            text-align: justify;
+            color: #333;
+            padding: 0.75rem;
+            background: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            border-radius: 4px;
+        }
+
+        .exception-analysis strong {
+            color: #495057;
+            text-decoration: underline;
+        }
+
+        /* Risk Analysis styling */
+        .risk-analysis {
+            background: #fff3cd;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .risk-analysis strong {
+            color: #856404;
+            text-decoration: underline;
+        }
+
+        /* Audit Recommendation styling */
+        .audit-recommendation {
+            background: #d4edda;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #28a745;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .audit-recommendation strong {
+            color: #155724;
+            text-decoration: underline;
+        }
+
+        .management-response {
+            background: #e8f4f8;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #17a2b8;
+            line-height: 1.6;
+        }
+
+        .management-response strong {
+            color: #0c5460;
+            text-decoration: underline;
+        }
+
+        /* Report title styling */
+        .report-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border-radius: 8px;
+            line-height: 1.4;
+        }
+
+        /* Executive summary styling */
+        .executive-summary {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 6px;
+            line-height: 1.8;
+            text-align: justify;
+        }
+
+        /* Badge styling for multiple instances */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+        }
+
+        .bg-info {
+            background-color: #17a2b8 !important;
+            color: white;
+        }
+
+        /* Section headers */
+        .section-header {
+            color: #007bff;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* Filter summary styling */
+        .filter-summary {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Print-specific styles */
+        @media print {
             .exception-report {
-                margin-bottom: 2rem;
-                padding: 1.5rem;
-                border: 1px solid #e9ecef;
-                border-radius: 8px;
-                background: #fafafa;
+                box-shadow: none !important;
+                border: 1px solid #ddd !important;
+                margin-bottom: 1.5rem;
                 page-break-inside: avoid;
             }
 
-            .exception-title {
-                font-weight: bold;
-                color: #007bff;
-                margin-bottom: 1rem;
-                font-size: 1.1rem;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-
+            .management-response,
+            .exception-analysis,
+            .root-cause,
+            .risk-analysis,
+            .audit-recommendation,
             .exception-description {
-                line-height: 1.8;
-                margin-bottom: 1rem;
-                text-align: justify;
-                color: #333;
+                background: white !important;
+                border-left: 2px solid #333 !important;
+                color: black !important;
             }
 
-            .root-cause {
-                margin-bottom: 1rem;
-                padding: 0.75rem;
-                background: #fff3cd;
-                border-left: 4px solid #ffc107;
-                border-radius: 4px;
+            .exception-title {
+                color: black !important;
+                font-weight: bold;
             }
 
-            .exception-analysis {
-                line-height: 1.8;
-                margin-bottom: 1rem;
-                text-align: justify;
-                color: #333;
-                padding: 0.75rem;
-                background: #f8f9fa;
-                border-left: 4px solid #6c757d;
-                border-radius: 4px;
+            .report-title {
+                background: white !important;
+                color: black !important;
+                border: 2px solid #333 !important;
             }
 
-            .management-request {
-                font-style: italic;
-                color: #666;
-                margin-bottom: 1rem;
-                text-align: center;
-                padding: 0.5rem;
-                background: #e9ecef;
-                border-radius: 4px;
+            .btn,
+            .form-control,
+            .form-select {
+                display: none !important;
             }
 
-            .management-response {
-                background: #e8f4f8;
+            .badge {
+                border: 1px solid #333 !important;
+                background: white !important;
+                color: black !important;
+            }
+
+            /* Ensure all section headings are bold and visible in print */
+            .risk-analysis strong,
+            .audit-recommendation strong,
+            .management-response strong,
+            .exception-analysis strong,
+            .root-cause strong,
+            .exception-description strong {
+                color: black !important;
+                font-weight: bold;
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .exception-report {
                 padding: 1rem;
-                border-radius: 6px;
-                border-left: 4px solid #17a2b8;
+                margin-bottom: 1.5rem;
+            }
+
+            .report-title {
+                font-size: 1.1rem;
+                padding: 1rem;
+                line-height: 1.3;
+            }
+
+            .exception-title {
+                font-size: 1rem;
+            }
+
+            .exception-description,
+            .exception-analysis,
+            .risk-analysis,
+            .audit-recommendation {
+                font-size: 0.95rem;
                 line-height: 1.6;
             }
 
-            .management-response strong {
-                color: #0c5460;
-                text-decoration: underline;
+            .management-response {
+                padding: 0.75rem;
+                font-size: 0.9rem;
             }
+        }
 
-            /* Report title styling */
-            .report-title {
-                font-size: 1.4rem;
-                font-weight: bold;
-                text-align: center;
-                margin-bottom: 2rem;
-                padding: 1.5rem;
-                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-                color: white;
-                border-radius: 8px;
-                line-height: 1.4;
-            }
+        /* Text formatting helpers */
+        .text-justify {
+            text-align: justify;
+        }
 
-            /* Executive summary styling */
-            .executive-summary {
-                background: #f8f9fa;
-                border-left: 4px solid #007bff;
-                padding: 1.5rem;
-                margin-bottom: 2rem;
-                border-radius: 6px;
-                line-height: 1.8;
-                text-align: justify;
-            }
+        .line-height-relaxed {
+            line-height: 1.8;
+        }
 
-            /* Badge styling for multiple instances */
-            .badge {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
-                border-radius: 12px;
-            }
+        /* Status-specific styling */
+        .status-resolved {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
 
-            .bg-info {
-                background-color: #17a2b8 !important;
-                color: white;
-            }
+        .status-pending {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
 
-            /* Section headers */
-            .section-header {
-                color: #007bff;
-                border-bottom: 2px solid #e9ecef;
-                padding-bottom: 0.5rem;
-                margin-bottom: 1.5rem;
-                font-weight: 600;
-            }
+        .status-approved {
+            background: #e8f4f8;
+            border-left-color: #17a2b8;
+        }
 
-            /* Filter summary styling */
-            .filter-summary {
-                background: #e3f2fd;
-                border: 1px solid #bbdefb;
-                border-radius: 6px;
-                padding: 1rem;
-                font-size: 0.95rem;
-                line-height: 1.5;
-            }
+        /* Risk-specific styling */
+        .risk-high {
+            border-left-color: #dc3545 !important;
+            background: #f8d7da;
+        }
 
-            /* Print-specific styles */
-            @media print {
-                .exception-report {
-                    box-shadow: none !important;
-                    border: 1px solid #ddd !important;
-                    margin-bottom: 1.5rem;
-                    page-break-inside: avoid;
-                }
+        .risk-medium {
+            border-left-color: #ffc107 !important;
+            background: #fff3cd;
+        }
 
-                .management-response,
-                .exception-analysis,
-                .root-cause {
-                    background: white !important;
-                    border-left: 2px solid #333 !important;
-                    color: black !important;
-                }
+        .risk-low {
+            border-left-color: #28a745 !important;
+            background: #d4edda;
+        }
 
-                .exception-title {
-                    color: black !important;
-                    font-weight: bold;
-                }
-
-                .report-title {
-                    background: white !important;
-                    color: black !important;
-                    border: 2px solid #333 !important;
-                }
-
-                .btn,
-                .form-control,
-                .form-select {
-                    display: none !important;
-                }
-
-                .badge {
-                    border: 1px solid #333 !important;
-                    background: white !important;
-                    color: black !important;
-                }
-            }
-
-            /* Responsive design */
-            @media (max-width: 768px) {
-                .exception-report {
-                    padding: 1rem;
-                    margin-bottom: 1.5rem;
-                }
-
-                .report-title {
-                    font-size: 1.1rem;
-                    padding: 1rem;
-                    line-height: 1.3;
-                }
-
-                .exception-title {
-                    font-size: 1rem;
-                }
-
-                .exception-description,
-                .exception-analysis {
-                    font-size: 0.95rem;
-                    line-height: 1.6;
-                }
-
-                .management-response {
-                    padding: 0.75rem;
-                    font-size: 0.9rem;
-                }
-            }
-
-            /* Text formatting helpers */
-            .text-justify {
-                text-align: justify;
-            }
-
-            .line-height-relaxed {
-                line-height: 1.8;
-            }
-
-            /* Status-specific styling */
-            .status-resolved {
-                background: #d4edda;
-                border-left-color: #28a745;
-            }
-
-            .status-pending {
-                background: #fff3cd;
-                border-left-color: #ffc107;
-            }
-
-            .status-approved {
-                background: #e8f4f8;
-                border-left-color: #17a2b8;
-            }
-
-            /* Risk-specific styling */
-            .risk-high {
-                border-left-color: #dc3545 !important;
-                background: #f8d7da;
-            }
-
-            .risk-medium {
-                border-left-color: #ffc107 !important;
-                background: #fff3cd;
-            }
-
-            .risk-low {
-                border-left-color: #28a745 !important;
-                background: #d4edda;
-            }
-        </style>
+    </style>
     @endpush
 </x-base-layout>
