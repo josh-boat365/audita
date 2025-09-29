@@ -1,8 +1,8 @@
 <x-base-layout>
     @php
         $user_firstName =
-            App\Http\Controllers\ExceptionController::getLoggedInUserInformation()->firstName ?? 'Unknown';
-        $user_surname = App\Http\Controllers\ExceptionController::getLoggedInUserInformation()->surname ?? 'Unknown';
+            App\Http\Controllers\ExceptionManipulationController::getLoggedInUserInformation()->firstName ?? 'Unknown';
+        $user_surname = App\Http\Controllers\ExceptionManipulationController::getLoggedInUserInformation()->surname ?? 'Unknown';
         $employeeName = $user_firstName . ' ' . $user_surname;
     @endphp
 

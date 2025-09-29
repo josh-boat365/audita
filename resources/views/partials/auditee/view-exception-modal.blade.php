@@ -44,9 +44,21 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Branch/Auditee Response</label>
+                                        <label class="form-label">Auditee/Management Response </label>
                                         <textarea class="form-control editable-textarea" rows="3" name="statusComment"
                                             placeholder="Enter exception response">{{ $exceptionItem->statusComment ?? '' }}</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Recommendation by Auditor</label>
+                                        <textarea class="form-control editable-textarea" rows="3" name="recommendation"
+                                            placeholder="Enter exception recommendation">{{ $exceptionItem->recommendation ?? '' }}</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Risk Involved</label>
+                                        <textarea class="form-control editable-textarea" rows="3" name="riskAnalysis"
+                                            placeholder="Enter risk involved">{{ $exceptionItem->riskAnalysis ?? '' }}</textarea>
                                     </div>
 
 

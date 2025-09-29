@@ -28,7 +28,7 @@
                 <th scope="col">Exception Title</th>
                 <th scope="col">Exception Description</th>
                 <th scope="col">Sub Category</th>
-                <th scope="col">Exception Response</th>
+                <th scope="col">Management Response</th>
                 <th scope="col">Action</th>
             </tr>
         </thead>
