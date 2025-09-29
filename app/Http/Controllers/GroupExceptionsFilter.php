@@ -21,7 +21,7 @@ class GroupExceptionsFilter extends Controller
                 ->with('toast_warning', 'Session expired, please login to continue');
         }
 
-        $departments = ExceptionController::departmentData() ?? [];
+        $departments = ExceptionManipulationController::departmentData() ?? [];
         $batches = BatchController::getBatches() ?? [];
         $processTypes = ProcessTypeController::getProcessTypes() ?? [];
         $subProcessTypes = collect(ProcessTypeController::getSubProcessTypes() ?? []);
@@ -67,7 +67,7 @@ class GroupExceptionsFilter extends Controller
         return view('exception-setup.group-exception-status-view', [
             'pendingException' => $exceptionId,
             'batchStatus' => 'OPEN',
-            'departments' => ExceptionController::departmentData() ?? [],
+            'departments' => ExceptionManipulationController::departmentData() ?? [],
             'batches' => BatchController::getBatches() ?? [],
             'processTypes' => ProcessTypeController::getProcessTypes() ?? [],
             'groupedSubProcessTypes' => collect(ProcessTypeController::getSubProcessTypes() ?? [])
@@ -122,7 +122,7 @@ class GroupExceptionsFilter extends Controller
             $batches = BatchController::getBatches();
             $groups = GroupController::getActivityGroups();
             $groupMembers = GroupMembersController::getGroupMembers();
-            $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+            $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
 
 
             // Filter active batches with status 'OPEN' and map them by ID
@@ -147,7 +147,7 @@ class GroupExceptionsFilter extends Controller
             $batchGroupMap = collect($batches)
                 ->pluck('activityGroupId', 'id');
 
-            $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+            $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
 
             // top managers
             // 1 - Managing Director
@@ -251,7 +251,7 @@ class GroupExceptionsFilter extends Controller
 
             // 6. Process Response Data
             $exceptions = $response->json();
-            $loggedInUser = ExceptionController::getLoggedInUserInformation();
+            $loggedInUser = ExceptionManipulationController::getLoggedInUserInformation();
 
             if (!is_array($exceptions)) {
                 Log::error('Invalid API response format', ['response' => $exceptions]);
@@ -278,7 +278,7 @@ class GroupExceptionsFilter extends Controller
             $batches = BatchController::getBatches();
             $groups = GroupController::getActivityGroups();
             $groupMembers = GroupMembersController::getGroupMembers();
-            $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+            $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
 
             // Filter validation logic
             $validBatches = collect($batches)
@@ -297,7 +297,7 @@ class GroupExceptionsFilter extends Controller
             $batchGroupMap = collect($batches)
                 ->pluck('activityGroupId', 'id');
 
-            $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+            $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
             $topManagers = [1, 2, 4];
 
             // 8. Filter and process exceptions
@@ -588,7 +588,7 @@ class GroupExceptionsFilter extends Controller
             $groups = GroupController::getActivityGroups();
 
             // Apply same filtering logic as main method for user permissions
-            $loggedInUser = ExceptionController::getLoggedInUserInformation();
+            $loggedInUser = ExceptionManipulationController::getLoggedInUserInformation();
             $groupMembers = GroupMembersController::getGroupMembers();
             $employeeId = $loggedInUser->id;
             $employeeRoleId = $loggedInUser->empRoleId;

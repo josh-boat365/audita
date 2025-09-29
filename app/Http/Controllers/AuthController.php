@@ -78,8 +78,8 @@ class AuthController extends Controller
                 // 2 - Head of Internal Audit
                 // 4 - Head of Internal Control & Compliance
                 $topManagers = [1, 2, 4];
-                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
-                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+                $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
+                $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
                 // dd($employeeRoleId);
 
                 if (in_array($employeeRoleId, $topManagers)) {
@@ -168,8 +168,8 @@ class AuthController extends Controller
             // ], 200);
 
             $topManagers = [1, 2, 4];
-            $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
-            $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+            $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
+            $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
 
             if (in_array($employeeRoleId, $topManagers)) {
                 return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');

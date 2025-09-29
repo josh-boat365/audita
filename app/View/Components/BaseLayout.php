@@ -3,6 +3,7 @@
 namespace App\View\Components;
 
 use App\Http\Controllers\ExceptionController;
+use App\Http\Controllers\ExceptionManipulationController;
 use Illuminate\View\View;
 use Illuminate\View\Component;
 use Illuminate\Support\Facades\Http;
@@ -17,11 +18,12 @@ class BaseLayout extends Component
         if(session('api_token') !== null){
 
 
-            $employeeId = ExceptionController::getLoggedInUserInformation()->id;
-            $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
-            $employeeDepartmentId = ExceptionController::getLoggedInUserInformation()->departmentId;
+            $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
+            // dd($employeeId);
+            $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
+            $employeeDepartmentId = ExceptionManipulationController::getLoggedInUserInformation()->departmentId;
 
-            $exception = new ExceptionController();
+            $exception = new ExceptionManipulationController();
             $response = $exception->getPendingExceptions($employeeId);
             $pending_exception_count =   collect($response)->count();
 

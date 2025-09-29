@@ -48,7 +48,7 @@ class ReportsController extends Controller
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
         $groupMembers = GroupMembersController::getGroupMembers();
-        $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+        $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
 
 
         // Filter active batches with status 'OPEN' and map them by ID
@@ -73,7 +73,7 @@ class ReportsController extends Controller
         $batchGroupMap = collect($batches)
             ->pluck('activityGroupId', 'id');
 
-        $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
+        $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
 
         // top managers
         // 1 - Managing Director

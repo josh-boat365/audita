@@ -28,7 +28,7 @@ class GroupController extends Controller
         $groups = ExceptionController::paginate($sortedGroups, 15, $request);
 
 
-        $employeeData = ExceptionController::getLoggedInUserInformation();
+        $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
 

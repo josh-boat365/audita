@@ -33,15 +33,15 @@ class BatchController extends Controller
 
         $batches = self::getBatches();
 
-        $employeeData = ExceptionController::getLoggedInUserInformation();
+        $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
         $employeeDepartment = $employeeData->department->name;
 
-        $sortedBatches = collect($batches)->filter( function($batch) use ($employeeDepartment) {
+        $sortedBatches = collect($batches)->filter(function ($batch) use ($employeeDepartment) {
             return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
-        } )
-        ->sortByDesc('createdAt');
+        })
+            ->sortByDesc('createdAt');
 
         $batchData = ExceptionController::paginate($sortedBatches, 15, $request);
 
@@ -147,7 +147,6 @@ class BatchController extends Controller
             ]);
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
-
     }
 
     /**
@@ -264,7 +263,7 @@ class BatchController extends Controller
         $access_token = session('api_token');
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionBatch/'. $id);
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionBatch/' . $id);
 
             if ($response->successful()) {
                 $batch = $response->object() ?? [];
