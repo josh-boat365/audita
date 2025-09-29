@@ -1,3 +1,6 @@
+@php
+    $auditManagerRoleId = 15;
+@endphp
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
         <!--- Sidemenu -->
@@ -14,31 +17,31 @@
                     </a>
                     <ul class="sub-menu" aria-expanded="false">
                         @if (in_array($employeeRoleId, $topManagers))
-                            <li><a href="{{ route('dashboard') }}" key="t-default">Overview</a></li>
+                        <li><a href="{{ route('dashboard') }}" key="t-default">Overview</a></li>
                         @else
-                            <li><a href="{{ route('my.group.dashboard', $employeeId) }}" key="t-default">My
-                                    Dashboard</a></li>
+                        <li><a href="{{ route('my.group.dashboard', $employeeId) }}" key="t-default">My
+                                Dashboard</a></li>
                         @endif
                     </ul>
                 </li>
 
                 @if (in_array($employeeRoleId, $topManagers) || in_array($employeeDepartmentId, $auditorDepartments))
-                    <li>
-                        <a href="#" class="has-arrow waves-effect" aria-label="Setup Menu">
-                            <i class="bx bxs-cog"></i>
-                            <span key="setup">Setup</span>
-                        </a>
-                        <ul class="sub-menu" aria-expanded="false">
-                            <li><a href="{{ route('group') }}" key="default">Group Setup</a></li>
-                            <li><a href="{{ route('members') }}" key="group-assignment">Group Members Assignment</a>
-                            </li>
-                            <li><a href="{{ route('unit') }}" key="unit-setup">Unit Setup</a></li>
-                            <li><a href="{{ route('batch') }}" key="batch-setup">Batch Setup</a></li>
-                            <li><a href="{{ route('process-type') }}" key="process-type-setup">Process Type Setup</a>
-                            </li>
-                            <li><a href="{{ route('risk-rate') }}" key="risk-rate-setup">Risk Rate Setup</a></li>
-                        </ul>
-                    </li>
+                <li>
+                    <a href="#" class="has-arrow waves-effect" aria-label="Setup Menu">
+                        <i class="bx bxs-cog"></i>
+                        <span key="setup">Setup</span>
+                    </a>
+                    <ul class="sub-menu" aria-expanded="false">
+                        <li><a href="{{ route('group') }}" key="default">Group Setup</a></li>
+                        <li><a href="{{ route('members') }}" key="group-assignment">Group Members Assignment</a>
+                        </li>
+                        <li><a href="{{ route('unit') }}" key="unit-setup">Unit Setup</a></li>
+                        <li><a href="{{ route('batch') }}" key="batch-setup">Batch Setup</a></li>
+                        <li><a href="{{ route('process-type') }}" key="process-type-setup">Process Type Setup</a>
+                        </li>
+                        <li><a href="{{ route('risk-rate') }}" key="risk-rate-setup">Risk Rate Setup</a></li>
+                    </ul>
+                </li>
                 @endif
 
                 <li>
@@ -56,98 +59,102 @@
 
                 <li>
                     @if ($employeeDepartmentId === 8 || $employeeDepartmentId === 7)
-                        <a href="#" class="has-arrow waves-effect" aria-label="Setup Menu">
-                            <i class="bx bxs-file"></i>
-                            <span key="setup">Exception Setup</span>
-                        </a>
-                        <ul class="sub-menu" aria-expanded="false">
-                            @if ($employeeDepartmentId === 8)
-                                {{--  IF USER IS IN THE INTERNAL CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 8  --}}
-                                <li><a href="{{ route('exception.create') }}" key="create">Internal Control
-                                        Create</a>
-                                </li>
-                            @elseif($employeeDepartmentId === 7)
-                                {{--  IF USER IS IN THE AUDIT CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 7  --}}
-                                <li><a href="{{ route('audit.create') }}" key="create">Audit Create</a></li>
-                            @else
-                                <div></div>
-                            @endif
-
-                            {{--  <li>
-                            <a href="{{ route('exception.pending') }}" key="create">
-                                Pending
-                                @if ($pending_exception_count >= 0)
-                                    <span class="badge rounded-full bg-danger">{{ $pending_exception_count }}</span>
-                                @else
-                                    <span></span>
-                                @endif
-                            </a>
-                        </li>  --}}
-
-                            <li><a href="" key=""></a></li>
-                        </ul>
-                    @else
-                        <div></div>
-                    @endif
-                </li>
-
-                <li>
-
-                    @if ($employeeDepartmentId === 7)
-                        <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
-                            <i class="bx bx-check-square"></i>
-                            <span key="t-dashboards">Approvals</span>
-                        </a>
-                    @endif
+                    <a href="#" class="has-arrow waves-effect" aria-label="Setup Menu">
+                        <i class="bx bxs-file"></i>
+                        <span key="setup">Exception Setup</span>
+                    </a>
                     <ul class="sub-menu" aria-expanded="false">
-                        @if (in_array($employeeRoleId, $topManagers))
-                            <li>
-                                <a href="{{ route('exception.supervisor.list') }}">Supervisor's Approval
-
-                                </a>
-                            </li>
+                        @if ($employeeDepartmentId === 8)
+                        {{-- IF USER IS IN THE INTERNAL CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 8  --}}
+                        <li><a href="{{ route('exception.create') }}" key="create">Internal Control
+                                Create</a>
+                        </li>
+                        @elseif($employeeDepartmentId === 7)
+                        {{-- IF USER IS IN THE AUDIT CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 7  --}}
+                        <li><a href="{{ route('audit.create') }}" key="create">Audit Create</a></li>
+                        <li><a href="{{ route('audit.list') }}" key="list">List</a></li>
                         @else
-                            <li><a href="{{ route('exception.auditor.list') }}">Auditor's Approval</a></li>
+                        <div></div>
                         @endif
-                    </ul>
-                </li>
-                <li>
-                    @if (in_array($employeeRoleId, $topManagers))
-                    @else
-                        @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7 || $employeeDepartmentId === 8)
-                            <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
-                                <i class="bx bx-analyse"></i>
-                                <span key="t-dashboards">Exception Analysis</span>
-                            </a>
-                        @endif
-                        @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
-                            <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="{{ route('auditor.analysis.exception') }}">Auditor's Analysis</a></li>
-                            </ul>
-                        @endif
-                        @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 8)
-                            <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="{{ route('exception.pending') }}">Internal Cont. Analysis</a></li>
-                            </ul>
-                        @endif
-                    @endif
-                </li>
 
-
-                @if (in_array($employeeRoleId, $topManagers) || in_array($employeeDepartmentId, $auditorDepartments))
-                    <li>
-                        <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
-                            <i class="bx bx-file"></i>
-                            <span key="t-dashboards">Reports</span>
+                        {{-- <li>
+                            <a href="{{ route('exception.pending') }}" key="create">
+                        Pending
+                        @if ($pending_exception_count >= 0)
+                        <span class="badge rounded-full bg-danger">{{ $pending_exception_count }}</span>
+                        @else
+                        <span></span>
+                        @endif
                         </a>
-                        <ul class="sub-menu" aria-expanded="false">
-                            <li><a href="{{ route('reports') }}">Overview</a></li>
-                        </ul>
-                        <ul class="sub-menu" aria-expanded="false">
-                            <li><a href="{{ route('auditor.report') }}">Auditor's Report</a></li>
-                        </ul>
-                    </li>
+                </li> --}}
+
+                <li><a href="" key=""></a></li>
+            </ul>
+            @else
+            <div></div>
+            @endif
+            </li>
+
+            <li>
+
+                @if ($employeeDepartmentId === 7)
+                <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                    <i class="bx bx-check-square"></i>
+                    <span key="t-dashboards">Approvals</span>
+                </a>
                 @endif
+                <ul class="sub-menu" aria-expanded="false">
+                    @if (in_array($employeeRoleId, $topManagers))
+                    <li>
+                        <a href="{{ route('exception.supervisor.list') }}">Supervisor's Approval</a>
+                    </li>
+                    @elseif ($employeeRoleId === $auditManagerRoleId)
+                    <li>
+                        <a href="{{ route('exception.supervisor.list') }}">Audit Manager Approvals</a>
+                    </li>
+                    <li><a href="{{ route('exception.auditor.list') }}">Exception Approvals</a></li>
+                    @else
+                    <li><a href="{{ route('exception.auditor.list') }}">Auditor's Approval</a></li>
+                    @endif
+                </ul>
+            </li>
+            <li>
+                @if (in_array($employeeRoleId, $topManagers))
+                @else
+                @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7 || $employeeDepartmentId === 8)
+                <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                    <i class="bx bx-analyse"></i>
+                    <span key="t-dashboards">Exception Analysis</span>
+                </a>
+                @endif
+                @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 7)
+                <ul class="sub-menu" aria-expanded="false">
+                    <li><a href="{{ route('auditor.analysis.exception') }}">Auditor's Analysis</a></li>
+                </ul>
+                @endif
+                @if (in_array($employeeRoleId, $topManagers) || $employeeDepartmentId === 8)
+                <ul class="sub-menu" aria-expanded="false">
+                    <li><a href="{{ route('exception.pending') }}">Internal Cont. Analysis</a></li>
+                </ul>
+                @endif
+                @endif
+            </li>
+
+
+            @if (in_array($employeeRoleId, $topManagers) || in_array($employeeDepartmentId, $auditorDepartments))
+            <li>
+                <a href="javascript: void(0);" class="has-arrow waves-effect" aria-label="Reports Menu">
+                    <i class="bx bx-file"></i>
+                    <span key="t-dashboards">Reports</span>
+                </a>
+                <ul class="sub-menu" aria-expanded="false">
+                    <li><a href="{{ route('reports') }}">Overview</a></li>
+                </ul>
+                <ul class="sub-menu" aria-expanded="false">
+                    <li><a href="{{ route('auditor.report') }}">Auditor's Report</a></li>
+                </ul>
+            </li>
+            @endif
 
             </ul>
 
