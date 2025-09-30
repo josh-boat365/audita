@@ -1,5 +1,5 @@
 @php
-    $auditManagerRoleId = 15;
+$auditManagerRoleId = 15;
 @endphp
 <div class="vertical-menu">
     <div data-simplebar class="h-100">
@@ -150,9 +150,11 @@
                 <ul class="sub-menu" aria-expanded="false">
                     <li><a href="{{ route('reports') }}">Overview</a></li>
                 </ul>
+                @if($employeeDepartmentId === 7)
                 <ul class="sub-menu" aria-expanded="false">
                     <li><a href="{{ route('auditor.report') }}">Auditor's Report</a></li>
                 </ul>
+                @endif
             </li>
             @endif
 
