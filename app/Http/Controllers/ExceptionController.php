@@ -249,26 +249,23 @@ class ExceptionController extends Controller
             'proposeResolutionDate' => 'nullable|date_format:Y-m-d',
             'resolutionDate' => 'nullable|date_format:Y-m-d',
             'processTypeId' => 'required|integer',
-            'subProcessTypeId' => 'required|integer',
+            'subProcessTypeId' => 'nullable|integer',
             'riskRateId' => 'nullable|integer',
             'departmentId' => 'required|integer',
             'exceptionBatchId' => 'required|integer',
             'requestTrackerId' => 'nullable|integer',
-            'requestType' => 'nullable|string',
+            'requestType' => 'nullable|string',  // Added nullable
             'recommendation' => 'nullable|string',
             'riskAnalysis' => 'nullable|string',
         ]);
 
+        // Update batch request check to handle undefined key
+        $isBatchRequest = isset($validated['requestType']) && $validated['requestType'] === 'BATCH';
+
         // dd($validated);
 
-        // Validate that the ID parameter is numeric
-        // if (!is_numeric($id)) {
-        //     Log::error('Invalid ID parameter provided', ['id' => $id]);
-        //     return redirect()->back()->with('toast_error', 'Invalid exception identifier');
-        // }
 
         $accessToken = session('api_token');
-        $isBatchRequest = $validated['requestType'] === 'BATCH';
 
         // Check for authentication
         if (!$accessToken) {
