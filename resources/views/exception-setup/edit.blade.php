@@ -72,6 +72,7 @@
                 <form action="{{ route('exception.update', $exception->id) }}" method="POST"
                     enctype="multipart/form-data" autocomplete="on" class="needs-validation">
                     @csrf
+                    <input type="hidden" name="requestType" value="">
                     <div class="row">
                         <div class="col-lg-8">
                             <div class="card">
