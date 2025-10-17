@@ -71,7 +71,7 @@ class BatchController extends Controller
             'active' => 'required|integer',
             'status' => 'required|string|max:7',
             'auditorUnitId' => 'required|integer',
-            'activityGroupId' => 'required|integer',
+            // 'activityGroupId' => 'required|integer',
         ]);
 
         $access_token = session('api_token');
@@ -82,7 +82,7 @@ class BatchController extends Controller
             'active' => $request->input('active') == 1 ? true : false,
             'status' => $request->input('status'),
             'auditorUnitId' => $request->input('auditorUnitId'),
-            'activityGroupId' => $request->input('activityGroupId'),
+            // 'activityGroupId' => $request->input('activityGroupId'),
         ];
 
         try {
@@ -122,7 +122,7 @@ class BatchController extends Controller
     public function edit($id)
     {
         $auditUnits = UnitController::getAuditUnitData();
-        $activityGroups = GroupController::getActivityGroups();
+        // $activityGroups = GroupController::getActivityGroups();
 
         try {
             // Make the GET request to the external API
@@ -134,7 +134,7 @@ class BatchController extends Controller
 
                 // dd($batch_data);
 
-                return view('batch-setup.edit', compact('batch_data', 'auditUnits', 'activityGroups'));
+                return view('batch-setup.edit', compact('batch_data', 'auditUnits'));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Batch does not exist');
@@ -160,7 +160,7 @@ class BatchController extends Controller
             'active' => 'required|integer',
             'status' => 'required|string|max:7',
             'auditorUnitId' => 'required|integer',
-            'activityGroupId' => 'required|integer',
+            // 'activityGroupId' => 'required|integer',
         ]);
 
         $access_token = session('api_token');
@@ -172,7 +172,7 @@ class BatchController extends Controller
             'active' => $request->input('active') == 1 ? true : false,
             'status' => $request->input('status'),
             'auditorUnitId' => $request->input('auditorUnitId'),
-            'activityGroupId' => $request->input('activityGroupId'),
+            // 'activityGroupId' => $request->input('activityGroupId'),
         ];
 
         try {
