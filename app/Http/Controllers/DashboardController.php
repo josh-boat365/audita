@@ -398,6 +398,7 @@ class DashboardController extends Controller
         try {
             // Fetch all necessary data
             $reports = collect(ReportsController::getAllReports());
+            // dd($reports);
             $batches = collect(BatchController::getBatches());
             $groups = collect(GroupController::getActivityGroups());
             $groupMembers = collect(GroupMembersController::getGroupMembers());
@@ -406,35 +407,42 @@ class DashboardController extends Controller
             $validBatches = $batches->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
                 ->keyBy('id');
 
+
             $validGroups = $groups->filter(fn($group) => $group->active)
                 ->keyBy('id');
+
+            // dd($validGroups);
 
             // Get groups the employee belongs to
             $employeeGroups = $groupMembers->where('employeeId', $employeeId)
                 ->pluck('activityGroupId')
                 ->unique();
 
+            // dd($employeeGroups);
+
             if ($employeeGroups->isEmpty()) {
                 return redirect()->route('dashboard')
                     ->with('toast_warning', 'You are not a member of any active groups');
             }
 
-            // Create batch to group mapping
-            $batchGroupMap = $batches->pluck('activityGroupId', 'id');
 
             // Filter reports - only those belonging to employee's groups
             $filteredReports = $reports->filter(function ($report) use (
                 $validBatches,
                 $validGroups,
-                $employeeGroups,
-                $batchGroupMap
+                $employeeGroups
             ) {
-                $groupId = $batchGroupMap[$report->exceptionBatchId] ?? null;
+                // Check if the report's activity group is valid (active)
+                $hasValidGroup = $validGroups->has($report->activityGroupId);
 
-                return $validBatches->has($report->exceptionBatchId) &&
-                    $validGroups->has($groupId) &&
-                    $employeeGroups->contains($groupId);
-            });
+                // Check if the report's batch is valid (active and OPEN)
+                $hasValidBatch = $validBatches->has($report->exceptionBatchId);
+
+                // Check if employee belongs to the report's activity group
+                $belongsToGroup = $employeeGroups->contains($report->activityGroupId);
+
+                return $hasValidGroup && $hasValidBatch && $belongsToGroup;
+            })->values();
 
             if ($filteredReports->isEmpty()) {
                 return redirect()->route('dashboard')
