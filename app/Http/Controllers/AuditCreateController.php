@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Database\Eloquent\Collection;
+use App\Http\Controllers\ExceptionManipulationController;
 
 class AuditCreateController extends Controller
 {
@@ -19,8 +21,24 @@ class AuditCreateController extends Controller
             return redirect()->back()->with('toast_warning', 'Session Expired, Kindly Login Again');
         }
 
+        $employeeUnitId = ExceptionManipulationController::getLoggedInUserInformation()->department->id;
+
+
         $departments = ExceptionManipulationController::departmentData();
-        $batches = BatchController::getBatches();
+
+        $batchData = BatchController::getBatches();
+        $user = ExceptionManipulationController::getLoggedInUserInformation();
+
+        $employeeFullName = $user->firstName . ' ' . $user->surname;
+        $employeeDepartment = $user->department->name;
+
+        $batches = collect($batchData)->filter(function ($batch) use ($employeeDepartment) {
+            return isset($batch->createdAt) && $batch->active == true && $batch->status == 'OPEN' && ($employeeDepartment ===  $batch->auditorUnitName);
+        });
+
+        $employeeGroupsData = GroupController::getEmployeeGroups();
+        $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
+
         $processTypes = ProcessTypeController::getProcessTypes();
         $subProcessTypes = collect(ProcessTypeController::getSubProcessTypes());
 
@@ -30,6 +48,7 @@ class AuditCreateController extends Controller
         return view('exception-setup.audit-create', [
             'departments' => $departments,
             'batches' => $batches,
+            'groups' => $groups,
             'processTypes' => $processTypes,
             'subProcessTypes' => $subProcessTypes,
             'groupedSubProcessTypes' => $groupedSubProcessTypes
@@ -43,18 +62,22 @@ class AuditCreateController extends Controller
      */
     public function store(Request $request)
     {
+
         // Validate the request data
         $request->validate([
             'processTypeId' => 'required|integer',
             'departmentId' => 'required|integer',
             'exceptionBatchId' => 'required|integer',
+            'activityGroupId' => 'required|integer',
             'occurrenceDate' => 'required|date',
             'exceptions' => 'required|array|min:1',
             'exceptions.*.exceptionTitle' => 'required|string|max:255',
             'exceptions.*.exception' => 'required|string',
             'exceptions.*.subProcessTypeId' => 'required|integer',
-            // 'exceptions.*.status' => 'required|string|in:Open,In Progress,Resolved',
+            'exceptions.*.files.*' => 'nullable|file|max:10240', // Max 10MB per file
         ]);
+
+
 
         $access_token = session('api_token');
 
@@ -63,24 +86,54 @@ class AuditCreateController extends Controller
             'processTypeId' => $request->input('processTypeId'),
             'departmentId' => $request->input('departmentId'),
             'exceptionBatchId' => $request->input('exceptionBatchId'),
+            'activityGroupId' => $request->input('activityGroupId'),
             'occurrenceDate' => $request->input('occurrenceDate'),
             'exceptions' => []
         ];
 
+
+
         // Format each exception
-        foreach ($request->input('exceptions') as $exception) {
-            $data['exceptions'][] = [
+        foreach ($request->input('exceptions') as $index => $exception) {
+            $exceptionData = [
                 'exceptionTitle' => $exception['exceptionTitle'],
                 'exception' => $exception['exception'],
-                'status' => 'PENDING', // Default status,
+                'status' => 'PENDING', // Default status
+                'processTypeId' => $request->input('processTypeId'),
                 'subProcessTypeId' => $exception['subProcessTypeId'],
                 'departmentId' => $request->input('departmentId'),
-                'exceptionBatchId' => $request->input('exceptionBatchId')
+                'exceptionBatchId' => $request->input('exceptionBatchId'),
+                'activityGroupId' => $request->input('activityGroupId'),
+                'fileUploads' => []
             ];
+
+            // Handle file uploads for this exception
+            if ($request->hasFile("exceptions.{$index}.files")) {
+                $files = $request->file("exceptions.{$index}.files");
+
+                foreach ($files as $file) {
+                    if ($file->isValid()) {
+                        // Read file content and encode to base64
+                        $fileContent = file_get_contents($file->getRealPath());
+                        $base64Content = base64_encode($fileContent);
+
+                        $exceptionData['fileUploads'][] = [
+                            'fileName' => $file->getClientOriginalName(),
+                            'fileData' => $base64Content,
+                            'fileDescription' => $exception['fileDescription'] ?? $file->getClientOriginalName()
+                        ];
+                    }
+                }
+            }
+
+            $data['exceptions'][] = $exceptionData;
         }
+
+        // dd($data);
 
         try {
             $response = Http::withToken($access_token)
+                ->timeout(120) // Increase timeout for file uploads
                 ->post('http://192.168.1.200:5126/Auditor/ExceptionTracker/batch-request', $data);
 
             if ($response->successful()) {
@@ -100,8 +153,7 @@ class AuditCreateController extends Controller
         } catch (\Exception $e) {
             Log::error('Exception occurred while creating bulk exceptions', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'request_data' => $data
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()->back()
@@ -139,7 +191,7 @@ class AuditCreateController extends Controller
                 ]);
             }
 
-            $exceptions = $response->json();
+            $exceptions = $response->object();
             if (!is_array($exceptions)) {
                 return view('exception-setup.auditor-status-list', [
                     'pendingExceptions' => [],
@@ -168,23 +220,29 @@ class AuditCreateController extends Controller
                 ->pluck('activityGroupId')
                 ->unique();
 
-            // Get batch-group mapping
-            $batchGroupMap = collect(BatchController::getBatches())
-                ->pluck('activityGroupId', 'id');
-
             // Process exceptions
             $pendingExceptions = collect($exceptions)
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
-                    $batchId = $exception['exceptionBatchId'] ?? null;
-                    $groupId = $batchGroupMap[$batchId] ?? null;
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                    // Get the actual group ID from the exception
+                    $groupId = $exception->activityGroupId;
 
-                    return $validBatches->has($batchId) &&
-                        $validGroups->has($groupId) &&
-                        in_array($exception['status'], ['PENDING', 'REVIEW', 'AMENDMENT', 'DECLINED']) &&
-                        (in_array($employeeRoleId, $topManagers) || $employeeGroups->contains($groupId));
+                    // Check if batch is valid (active and OPEN)
+                    $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
+
+                    // Check if group is valid (active)
+                    $hasValidGroup = $validGroups->has($groupId);
+
+
+                    // Check if status is one of the tracked statuses
+                    $hasValidStatus = in_array($exception->status, ['PENDING', 'REVIEW', 'AMENDMENT', 'DECLINED']);
+
+                    // Check access: employee belongs to group OR is a top manager
+                    $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
+
+                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
                 })
                 ->map(function ($exception) use ($loggedInUser) {
-                    $nestedExceptions = collect($exception['exceptions'] ?? []);
+                    $nestedExceptions = collect($exception->exceptions ?? []);
 
                     // Count exceptions by status
                     $pendingCount = $nestedExceptions->where('status', 'PENDING')->count();
@@ -192,17 +250,16 @@ class AuditCreateController extends Controller
                     $completedCount = $nestedExceptions->where('status', 'RESOLVED')->count();
                     $resolvedCount = $nestedExceptions->where('recommendedStatus', 'RESOLVED')->count();
                     $approvedCount = $nestedExceptions->where('status', 'APPROVED')->count();
-
                     // Total count of all tracked statuses
                     $totalExceptionCount = $pendingCount + $notResolvedCount + $completedCount + $approvedCount;
 
                     return [
-                        'id' => $exception['id'],
-                        'status' => $exception['status'],
-                        'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
-                        'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
-                        'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
-                        'department' => $exception['departmentName'] ?? 'Unknown Department',
+                        'id' => $exception->id,
+                        'status' => $exception->status,
+                        'submittedBy' => $exception->submittedBy ?? 'Unknown',
+                        'submittedAt' => $exception->submittedAt ?? now()->format('Y-m-d H:i:s'),
+                        'groupName' => $exception->activityGroup ?? 'N/A',
+                        'department' => $exception->departmentName ?? 'Unknown Department',
                         'pendingCount' => $pendingCount,
                         'notResolvedCount' => $notResolvedCount,
                         'resolvedCount' => $resolvedCount,
@@ -269,7 +326,7 @@ class AuditCreateController extends Controller
                 'response' => $request->body()
             ]);
             return redirect()->back()
-                ->with('toast_error', 'Failed to fetch batch exception. Please try again later.'. $request->body());
+                ->with('toast_error', 'Failed to fetch batch exception. Please try again later.' . $request->body());
         }
 
         return view('exception-setup.auditor-status-view', [
