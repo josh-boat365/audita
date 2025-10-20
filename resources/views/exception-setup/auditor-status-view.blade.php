@@ -103,7 +103,7 @@
                         <th scope="col">#</th>
                         <th scope="col">Exception Title</th>
                         <th scope="col">Exception Description</th>
-                        <th scope="col">Exception Response</th>
+                        <th scope="col">Management Response</th>
                         <th scope="col">Status</th>
                         <th scope="col">Actions</th>
                     </tr>
