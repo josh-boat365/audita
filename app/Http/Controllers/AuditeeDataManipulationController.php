@@ -34,7 +34,7 @@ class AuditeeDataManipulationController extends Controller
                 ]);
             }
 
-            $exceptions = $response->json();
+            $exceptions = $response->object();
             if (!is_array($exceptions)) {
                 return view('exception-setup.auditee-exception-list', [
                     'pendingExceptions' => [],
@@ -63,33 +63,41 @@ class AuditeeDataManipulationController extends Controller
                 ->pluck('activityGroupId')
                 ->unique();
 
-            // Get batch-group mapping
-            $batchGroupMap = collect(BatchController::getBatches())
-                ->pluck('activityGroupId', 'id');
 
             // Process exceptions
             $pendingExceptions = collect($exceptions)
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
-                    $batchId = $exception['exceptionBatchId'] ?? null;
-                    $groupId = $batchGroupMap[$batchId] ?? null;
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                // Get the actual group ID from the exception
+                $groupId = $exception->activityGroupId;
 
-                    return $validBatches->has($batchId) &&
-                        $validGroups->has($groupId) &&
-                        $exception['status'] === 'APPROVED' &&
-                        (in_array($employeeRoleId, $topManagers) || $employeeGroups->contains($groupId));
+                // Check if batch is valid (active and OPEN)
+                $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
+
+                // Check if group is valid (active)
+                $hasValidGroup = $validGroups->has($groupId);
+
+
+                // Check if status is one of the tracked statuses
+                $hasValidStatus = in_array($exception->status, ['APPROVED']);
+
+                // Check access: employee belongs to group OR is a top manager
+                $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
+
+                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+
                 })
                 ->map(function ($exception) use ($loggedInUser) {
-                    $nestedExceptions = collect($exception['exceptions'] ?? []);
+                    $nestedExceptions = collect($exception->exceptions ?? []);
                     $approvedCount = $nestedExceptions->where('status', 'APPROVED')->count();
                     $respondedCount = $nestedExceptions->where('recommendedStatus', 'RESOLVED')->count();
 
                     return [
-                        'id' => $exception['id'],
-                        'status' => $exception['status'],
-                        'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
-                        'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
-                        'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
-                        'department' => $exception['departmentName'] ?? 'Unknown Department',
+                        'id' => $exception->id,
+                        'status' => $exception->status,
+                        'submittedBy' => $exception->submittedBy ?? 'Unknown',
+                        'submittedAt' => $exception->submittedAt ?? now()->format('Y-m-d H:i:s'),
+                        'groupName' => $exception->activityGroup ?? 'N/A',
+                        'department' => $exception->departmentName ?? 'Unknown Department',
                         'exceptionCount' => $approvedCount,
                         'countForRespondedExceptionsByAuditee' => $respondedCount,
                         'auditorDepartmentId' => $loggedInUser->departmentId,
@@ -104,7 +112,6 @@ class AuditeeDataManipulationController extends Controller
                 'pendingExceptions' => $pendingExceptions,
                 'isEmpty' => empty($pendingExceptions)
             ]);
-
         } catch (\Exception $e) {
             Log::critical('Error in auditeeExceptionList', [
                 'message' => $e->getMessage(),
@@ -360,6 +367,8 @@ class AuditeeDataManipulationController extends Controller
         // Get reference data with fallbacks
         $departments = ExceptionManipulationController::departmentData() ?? [];
         $batches = BatchController::getBatches() ?? [];
+        $employeeGroupsData = GroupController::getEmployeeGroups();
+        $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
         $processTypes = ProcessTypeController::getProcessTypes() ?? [];
         $subProcessTypes = collect(ProcessTypeController::getSubProcessTypes() ?? []);
         $groupedSubProcessTypes = $subProcessTypes
@@ -376,6 +385,7 @@ class AuditeeDataManipulationController extends Controller
                 'exception',
                 'departments',
                 'batches',
+                'groups',
                 'processTypes',
                 'subProcessTypes',
                 'groupedSubProcessTypes'
@@ -484,7 +494,7 @@ class AuditeeDataManipulationController extends Controller
 
 
                     // Handle different filtering logic based on parent status
-                    if ($status == 'ANALYSIS') {
+                    if ($status == 'ANALYSIS' || $status == 'REVIEW') {
                         // For ANALYSIS status, filter sub-exceptions with status APPROVED and recommendedStatus RESOLVED
                         $item->exceptions = collect($item->exceptions ?? [])
                             ->filter(function ($subException) {
@@ -524,8 +534,8 @@ class AuditeeDataManipulationController extends Controller
             $exceptionFiles = [];
             $exceptionComments = [];
 
-            // Process sub-exceptions for APPROVED status
-            if (($status == 'APPROVED' || $status == 'ANALYSIS') && $responseCollection->isNotEmpty()) {
+            // Process sub-exceptions for APPROVED, ANALYSIS, REVIEW statuses
+            if (( in_array($status, ['APPROVED', 'ANALYSIS','REVIEW', 'PENDING'])) && $responseCollection->isNotEmpty()) {
                 $firstItem = $responseCollection->first();
                 $subExceptions = property_exists($firstItem, 'exceptions') ? ($firstItem->exceptions ?? []) : [];
 
@@ -578,11 +588,14 @@ class AuditeeDataManipulationController extends Controller
                 session()->flush();
                 return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
             }
+            $employeeGroupsData = GroupController::getEmployeeGroups();
+            $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
 
             $commonData = [
                 'exception' => $processedData['exception'] ?? [],
                 'departments' => ExceptionManipulationController::departmentData() ?? [],
                 'batches' => BatchController::getBatches() ?? [],
+                'groups' => $groups,
                 'processTypes' => ProcessTypeController::getProcessTypes() ?? [],
                 'riskRates' => RiskRateController::getRiskRates() ?? [],
                 'subProcessTypes' => collect(ProcessTypeController::getSubProcessTypes() ?? []),
@@ -593,7 +606,7 @@ class AuditeeDataManipulationController extends Controller
                 ->toArray();
 
             // Add files and comments for APPROVED status
-            if ($status == 'APPROVED' || $status == 'ANALYSIS') {
+            if ($status == 'APPROVED' || $status == 'ANALYSIS' || $status == 'REVIEW') {
                 $commonData['exceptionFiles'] = $processedData['exceptionFiles'] ?? [];
                 $commonData['exceptionComments'] = $processedData['exceptionComments'] ?? [];
             }
@@ -619,12 +632,12 @@ class AuditeeDataManipulationController extends Controller
                 return redirect()->back()->with('toast_error', 'Invalid view data');
             }
 
-            $viewName = ($status == 'PENDING')
+            $viewName = ($status == 'PENDING' || $status == 'REVIEW')
                 ? 'exception-setup.supervisor-exception-list-for-approval'
                 : (($status == 'ANALYSIS')
                     // ? 'exception-setup.auditor-analysis-view'
-                    ? 'exception-setup.auditee-exception-view'
-                    : 'exception-setup.auditee-exception-view');
+                    ? 'exception-setup.audit-exception-review'
+                    : 'exception-setup.audit-exception-review');
 
             return view($viewName, $viewData);
         } catch (\Exception $e) {
