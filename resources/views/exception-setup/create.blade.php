@@ -52,6 +52,18 @@
                             </div>
 
                             <div class="mb-3">
+                                <label class="form-label">Group<span class="required">*</span></label>
+                                <select class="form-select select2" name="activityGroupId" required>
+                                    <option>Select.....</option>
+                                    @foreach ($groups as $group)
+                                        <option value="{{ $group->id }}"
+                                            {{ $group->id === old('activityGroupId') ? 'selected' : '' }}>
+                                            {{ $group->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
                                 <label class="form-label">Unit/Dept<span class="required">*</span></label>
                                 <select class="form-select select2" name="departmentId" required>
                                     <option>Select Unit/Department</option>
