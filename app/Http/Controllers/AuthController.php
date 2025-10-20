@@ -80,11 +80,11 @@ class AuthController extends Controller
                 $topManagers = [1, 2, 4];
                 $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
                 $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
-                // dd($employeeRoleId);
 
                 if (in_array($employeeRoleId, $topManagers)) {
                     return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');
                 }
+                // dd($employeeRoleId);
 
                 return redirect()->route('my.group.dashboard', $employeeId)->with('toast_success', 'Logged in successfully');
             }
@@ -95,7 +95,7 @@ class AuthController extends Controller
             // Log the error if authentication fails
             Log::warning('Authentication failed for user', ['user' => $request->input('username')]);
             // Return error if authentication fails
-            $userAccessMessage = ($response->json()['error'][0] ?? 'Invalid credentials. Please try again.');
+            $userAccessMessage = ($response->json()['error'] ?? 'Invalid credentials. Please try again.');
 
             return redirect()->back()->with('toast_error',  $userAccessMessage);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
