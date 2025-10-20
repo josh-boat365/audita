@@ -48,12 +48,12 @@
                 </a>
             </li>
             @if ($exception->auditorId == $employeeId || in_array($employeeDepartmentId, [7, 8]))
-                <li class="nav-item">
+                {{--  <li class="nav-item">
                     <a class="nav-link border border-3" data-bs-toggle="tab" href="#close-exception" role="tab">
                         <span class="d-block d-sm-none"><i class="fas fa-paperclip"></i></span>
                         <span class="d-none d-sm-block">Close Exception</span>
                     </a>
-                </li>
+                </li>  --}}
             @else
                 <li class="nav-item">
                     <a class="nav-link border border-3" data-bs-toggle="tab" href="#recommend-resolution"
@@ -69,160 +69,171 @@
         <div class="tab-content p-3 text-muted">
             <div class="tab-pane active" id="exception-creation" role="tabpanel">
                 @if($employeeDepartmentId === 8)
-                <form action="{{ route('exception.update', $exception->id) }}" method="POST"
-                    enctype="multipart/form-data" autocomplete="on" class="needs-validation">
-                    @csrf
-                    <input type="hidden" name="requestType" value="">
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label class="form-label">Exception Title <span
-                                                class="required">*</span></label>
-                                        <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ $exception->exceptionTitle ?? '-----------' }}</textarea>
-                                        <div class="invalid-feedback">Please enter exception title.</div>
-                                    </div>
+                    <form action="{{ route('exception.update', $exception->id) }}" method="POST"
+                        enctype="multipart/form-data" autocomplete="on" class="needs-validation">
+                        @csrf
+                        <input type="hidden" name="requestType" value="">
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Exception Title <span
+                                                    class="required">*</span></label>
+                                            <textarea class="form-control" rows="3" name="exceptionTitle" placeholder="Enter exception title......" required>{{ $exception->exceptionTitle ?? '-----------' }}</textarea>
+                                            <div class="invalid-feedback">Please enter exception title.</div>
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Exception Description <span
-                                                class="required">*</span></label>
-                                        <textarea @disabled(!$canEdit) class="form-control" rows="3" id="exception" name="exception"
-                                            placeholder="Enter exception description......" required>{{ $exception->exception ?? '-----------' }}</textarea>
-                                        <div class="invalid-feedback">Please enter an exception.</div>
-                                    </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Exception Description <span
+                                                    class="required">*</span></label>
+                                            <textarea @disabled(!$canEdit) class="form-control" rows="3" id="exception" name="exception"
+                                                placeholder="Enter exception description......" required>{{ $exception->exception ?? '-----------' }}</textarea>
+                                            <div class="invalid-feedback">Please enter an exception.</div>
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Root Cause</label>
-                                        <textarea @disabled(!$canEdit) class="form-control" rows="3" name="rootCause"
-                                            placeholder="Enter root cause details......">{{ $exception->rootCause ?? '-----------' }}</textarea>
-                                        <div class="invalid-feedback">Please enter the root cause.</div>
-                                    </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Root Cause</label>
+                                            <textarea @disabled(!$canEdit) class="form-control" rows="3" name="rootCause"
+                                                placeholder="Enter root cause details......">{{ $exception->rootCause ?? '-----------' }}</textarea>
+                                            <div class="invalid-feedback">Please enter the root cause.</div>
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Batch<span class="required">*</span></label>
-                                        <select @disabled(!$canEdit) class="form-select select2"
-                                            name="exceptionBatchId" required>
-                                            <option>Select.....</option>
-                                            @foreach ($batches as $batch)
-                                                <option value="{{ $batch->id }}" @selected($batch->id === $exception->exceptionBatchId)>
-                                                    {{ $batch->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Batch<span class="required">*</span></label>
+                                            <select @disabled(!$canEdit) class="form-select select2"
+                                                name="exceptionBatchId" required>
+                                                <option>Select.....</option>
+                                                @foreach ($batches as $batch)
+                                                    <option value="{{ $batch->id }}" @selected($batch->id === $exception->exceptionBatchId)>
+                                                        {{ $batch->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Group<span class="required">*</span></label>
+                                            <select class="form-select select2" name="activityGroupId" required>
+                                                <option>Select.....</option>
+                                                @foreach ($groups as $group)
+                                                    <option value="{{ $group->id }}" @selected($group->id === $exception->activityGroupId)>
+                                                        {{ $group->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Unit/Dept<span class="required">*</span></label>
-                                        <select @disabled(!$canEdit)class="form-select select2"
-                                            name="departmentId" required>
-                                            <option>Select Unit/Department</option>
-                                            @foreach ($departments as $department)
-                                                <option value="{{ $department->id }}" @selected($department->id === $exception->departmentId)>
-                                                    {{ $department->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Unit/Dept<span class="required">*</span></label>
+                                            <select @disabled(!$canEdit)class="form-select select2"
+                                                name="departmentId" required>
+                                                <option>Select Unit/Department</option>
+                                                @foreach ($departments as $department)
+                                                    <option value="{{ $department->id }}" @selected($department->id === $exception->departmentId)>
+                                                        {{ $department->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Occurrence Date<span
-                                                class="required">*</span></label>
-                                        <input @disabled(!$canEdit)type="date" class="form-control"
-                                            name="occurrenceDate"
-                                            value="{{ $exception->occurrenceDate ? \Carbon\Carbon::parse($exception->occurrenceDate)->format('Y-m-d') : '' }}"
-                                            required />
-                                        <div class="invalid-feedback">Please select occurrence date.</div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Occurrence Date<span
+                                                    class="required">*</span></label>
+                                            <input @disabled(!$canEdit)type="date" class="form-control"
+                                                name="occurrenceDate"
+                                                value="{{ $exception->occurrenceDate ? \Carbon\Carbon::parse($exception->occurrenceDate)->format('Y-m-d') : '' }}"
+                                                required />
+                                            <div class="invalid-feedback">Please select occurrence date.</div>
+                                        </div>
                                     </div>
+                                    <!-- end card body -->
                                 </div>
-                                <!-- end card body -->
+                                <!-- end card -->
+
                             </div>
-                            <!-- end card -->
+                            <!-- end col -->
+                            <div class="col-lg-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title mb-3">Actions</h5>
 
-                        </div>
-                        <!-- end col -->
-                        <div class="col-lg-4">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title mb-3">Actions</h5>
+                                        <div class="mb-3">
+                                            <label class="form-label" for="project-status-input">Status</label>
+                                            <select @disabled(!$canEdit)class="form-select" name="status">
+                                                <option selected>Select.....</option>
+                                                <option value="PENDING" @selected($exception->status === 'PENDING')>Pending</option>
+                                                <option value="RESOLVED" @selected($exception->status === 'RESOLVED')>Resolved</option>
+                                                <option value="NOT-RESOLVED" @selected($exception->status === 'RESOLVED')>Not Resolved</option>
+                                            </select>
+                                            <div class="invalid-feedback">Please select exception status.</div>
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label class="form-label" for="project-status-input">Status</label>
-                                        <select @disabled(!$canEdit)class="form-select" name="status">
-                                            <option selected>Select.....</option>
-                                            <option value="PENDING" @selected($exception->status === 'PENDING')>Pending</option>
-                                            <option value="RESOLVED" @selected($exception->status === 'RESOLVED')>Resolved</option>
-                                            <option value="NOT-RESOLVED" @selected($exception->status === 'RESOLVED')>Not Resolved</option>
-                                        </select>
-                                        <div class="invalid-feedback">Please select exception status.</div>
+                                        <div class="mb-3">
+                                            <label class="form-label" for="project-visibility-input">Risk Rate</label>
+                                            <select @disabled(!$canEdit)class="form-select select2"
+                                                name="riskRateId">
+                                                <option>Select.....</option>
+                                                @foreach ($riskRates as $riskRate)
+                                                    <option value="{{ $riskRate->id }}" @selected($riskRate->id === $exception->riskRateId)>
+                                                        {{ $riskRate->name }}</option>
+                                                @endforeach
+
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="form-label" for="project-visibility-input">Process
+                                                Type/Scope<span class="required">*</span></label>
+                                            <select @disabled(!$canEdit)class="form-select select2"
+                                                name="processTypeId" required>
+                                                <option>Select.....</option>
+                                                @foreach ($processTypes as $processType)
+                                                    <option value="{{ $processType->id }}" @selected($processType->id === $exception->processTypeId)>
+                                                        {{ $processType->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
+
                                     </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label" for="project-visibility-input">Risk Rate</label>
-                                        <select @disabled(!$canEdit)class="form-select select2"
-                                            name="riskRateId">
-                                            <option>Select.....</option>
-                                            @foreach ($riskRates as $riskRate)
-                                                <option value="{{ $riskRate->id }}" @selected($riskRate->id === $exception->riskRateId)>
-                                                    {{ $riskRate->name }}</option>
-                                            @endforeach
-
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label class="form-label" for="project-visibility-input">Process
-                                            Type/Scope<span class="required">*</span></label>
-                                        <select @disabled(!$canEdit)class="form-select select2"
-                                            name="processTypeId" required>
-                                            <option>Select.....</option>
-                                            @foreach ($processTypes as $processType)
-                                                <option value="{{ $processType->id }}" @selected($processType->id === $exception->processTypeId)>
-                                                    {{ $processType->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-
-
+                                    <!-- end card body -->
                                 </div>
-                                <!-- end card body -->
-                            </div>
-                            <!-- end card -->
+                                <!-- end card -->
 
-                            <div class="card">
-                                <div class="card-body">
+                                <div class="card">
+                                    <div class="card-body">
 
 
-                                    <div class="mb-3">
-                                        <label class="form-label">Proposed Resolution Date</label>
-                                        <small>(optional)</small>
-                                        <input @disabled(!$canEdit)type="date" class="form-control"
-                                            name="proposeResolutionDate"
-                                            value="{{ $exception->proposeResolutionDate ? \Carbon\Carbon::parse($exception->proposeResolutionDate)->format('Y-m-d') : '' }}" />
-                                        <div class="invalid-feedback">Please select proposed resolution date.</div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Proposed Resolution Date</label>
+                                            <small>(optional)</small>
+                                            <input @disabled(!$canEdit)type="date" class="form-control"
+                                                name="proposeResolutionDate"
+                                                value="{{ $exception->proposeResolutionDate ? \Carbon\Carbon::parse($exception->proposeResolutionDate)->format('Y-m-d') : '' }}" />
+                                            <div class="invalid-feedback">Please select proposed resolution date.</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label">Resolution Date</label>
+                                            <small>(optional)</small>
+                                            <input @disabled(!$canEdit) type="date" class="form-control"
+                                                name="resolutionDate"
+                                                value="{{ $exception->resolutionDate ? \Carbon\Carbon::parse($exception->resolutionDate)->format('Y-m-d') : '' }}" />
+                                            <div class="invalid-feedback">Please select resolution date.</div>
+                                        </div>
                                     </div>
-
-                                    <div class="mb-3">
-                                        <label class="form-label">Resolution Date</label>
-                                        <small>(optional)</small>
-                                        <input @disabled(!$canEdit) type="date" class="form-control"
-                                            name="resolutionDate"
-                                            value="{{ $exception->resolutionDate ? \Carbon\Carbon::parse($exception->resolutionDate)->format('Y-m-d') : '' }}" />
-                                        <div class="invalid-feedback">Please select resolution date.</div>
-                                    </div>
+                                    <!-- end card body -->
                                 </div>
-                                <!-- end card body -->
+                                <!-- end card -->
                             </div>
-                            <!-- end card -->
-                        </div>
-                        <!-- end col -->
+                            <!-- end col -->
 
-                        <div class="col-lg-8">
-                            <div class="text-end mb-4">
-                                <button type="submit" class="btn btn-primary">Update Exception</button>
+                            <div class="col-lg-8">
+                                <div class="text-end mb-4">
+                                    <button type="submit" class="btn btn-primary">Update Exception</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <!-- end row -->
-                </form>
+                        <!-- end row -->
+                    </form>
                 @else
                 <div class="row">
                     <div class="col-lg-8">
@@ -510,8 +521,8 @@
                             <div class="chat-conversation p-3">
                                 <ul class="list-unstyled mb-0" data-simplebar style="max-height: 486px;">
                                     @php
-                                        $sortedComments = collect($exception->comment);
-                                        //->sortByDesc('createdAt')
+$sortedComments = collect($exception->comment);
+//->sortByDesc('createdAt')
                                     @endphp
 
                                     @forelse ($sortedComments as $comment)
@@ -747,8 +758,8 @@
 
 
             {{--  CLOSE EXCEPTION - AUDITOR  --}}
-            @if ($exception->auditorId == $employeeId || in_array($employeeDepartmentId, [7, 8]))
-                <div class="tab-pane" id="close-exception" role="tabpanel">
+            @if ($exception->auditorId == $employeeId || in_array($employeeDepartmentId, [8]))
+                {{--  <div class="tab-pane" id="close-exception" role="tabpanel">
 
                     <div class="card">
                         <div class="card-body">
@@ -800,7 +811,7 @@
                     <!-- end col -->
 
 
-                </div>
+                </div>  --}}
             @else
                 {{--  RECOMMEND RESOLUTION - USER  --}}
 
