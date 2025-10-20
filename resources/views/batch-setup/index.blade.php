@@ -26,7 +26,7 @@
                     <tr>
                         <th>Batch Name</th>
                         <th>Batch Code</th>
-                        <th>Group</th>
+                        {{--  <th>Group</th>  --}}
                         <th>Unit</th>
                         <th>Year</th>
                         <th>State</th>
@@ -39,9 +39,9 @@
                         <tr>
                             <th scope="row"><a href="#">{{ $batch->name }}</a></th>
                             <td>{{ $batch->code }}</td>
-                            <td><span
+                            {{--  <td><span
                                     class="dropdown badge rounded-pill bg-primary">{{ $batch->activityGroupName }}</span>
-                            </td>
+                            </td>  --}}
                             <td><span
                                     class="dropdown badge rounded-pill bg-secondary">{{ $batch->auditorUnitName }}</span>
                             </td>
@@ -152,7 +152,7 @@
                         </div>
                     </div>
 
-                    <div class="row mb-3">
+                    {{--  <div class="row mb-3">
                         <label for="example-text-input" class="">Select Group</label>
                         <div class="col-md-12">
                             <select name="activityGroupId" class="form-select">
@@ -162,7 +162,7 @@
                                 @endforeach
                             </select>
                         </div>
-                    </div>
+                    </div>  --}}
 
                     <div class="row mb-3">
                         <label for="example-text-input" class="">Select Unit Type</label>
