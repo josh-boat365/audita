@@ -116,7 +116,7 @@ class GroupExceptionsFilter extends Controller
 
             // 5. Process Response Data
             $exceptions = $response->object();
-
+            // dd($exceptions);
 
 
             $batches = BatchController::getBatches();
@@ -130,10 +130,12 @@ class GroupExceptionsFilter extends Controller
                 ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
                 ->keyBy('id');
 
+
             // Filter active groups and map them by ID
             $validGroups = collect($groups)
                 ->filter(fn($group) => $group->active)
                 ->keyBy('id');
+
 
             // Get groups where the specified employee belongs
             $employeeGroups = collect($groupMembers)
@@ -141,11 +143,6 @@ class GroupExceptionsFilter extends Controller
                 ->pluck('activityGroupId')
                 ->unique();
 
-            // dd($employeeGroups);
-
-            // Map batch IDs to their corresponding activity group IDs
-            $batchGroupMap = collect($batches)
-                ->pluck('activityGroupId', 'id');
 
             $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
 
@@ -157,11 +154,23 @@ class GroupExceptionsFilter extends Controller
 
 
             $exceptionsData = collect($exceptions)
-                // Filter top-level exceptions by status
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
-                    $groupId = $batchGroupMap[$exception->exceptionBatchId] ?? null;
-                    return $validBatches->has($exception->exceptionBatchId) &&
-                        $validGroups->has($groupId) && (!in_array($exception->status, ['DECLINED'])) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                    // Get the actual group ID from the exception
+                    $groupId = $exception->activityGroupId;
+
+                    // Check if batch is valid (active and OPEN)
+                    $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
+
+                    // Check if group is valid (active)
+                    $hasValidGroup = $validGroups->has($groupId);
+
+                    // Check if status is not DECLINED
+                    $hasValidStatus = !in_array($exception->status, ['DECLINED']);
+
+                    // Check access: employee belongs to group OR is a top manager
+                    $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
+
+                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
                 })
                 ->values()
                 ->all();
