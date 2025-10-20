@@ -396,10 +396,12 @@ class DashboardController extends Controller
         }
 
         try {
+            // dd($employeeId);
             // Fetch all necessary data
             $reports = collect(ReportsController::getAllReports());
             // dd($reports);
             $batches = collect(BatchController::getBatches());
+            // dd($batches);
             $groups = collect(GroupController::getActivityGroups());
             $groupMembers = collect(GroupMembersController::getGroupMembers());
 
@@ -448,6 +450,8 @@ class DashboardController extends Controller
                 return redirect()->route('dashboard')
                     ->with('toast_info', 'No exception reports found for your groups');
             }
+
+
 
             // Process data for dashboard
             $statusData = $filteredReports->groupBy('status')->map(function ($items, $status) use ($reports) {
