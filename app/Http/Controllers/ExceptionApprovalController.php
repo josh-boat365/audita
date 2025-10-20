@@ -76,7 +76,14 @@ class ExceptionApprovalController extends Controller
                             Log::warning('Invalid exception structure - missing status', ['exception' => $exception]);
                             return false;
                         }
+                        //return based on roles between top managers and supervisors (managers)
+                        $userRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
+
+                        if($userRoleId == 2){ //supervisor - Internal Audit Head
+                            return ($exception['status'] ?? null) === 'REVIEW';
+                        }else{
                         return ($exception['status'] ?? null) === 'PENDING';
+                        }
                     })
                     ->map(function ($exception) {
                         $pendingCount = collect($exception['exceptions'] ?? [])
@@ -88,7 +95,7 @@ class ExceptionApprovalController extends Controller
                             'status' => $exception['status'] ?? 'PENDING',
                             'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
                             'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
-                            'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
+                            'groupName' => $exception['activityGroup'] ?? 'N/A',
                             'department' => $exception['departmentName'] ?? 'Unknown Department',
                             'exceptionCount' => $pendingCount,
                         ];
@@ -264,7 +271,7 @@ class ExceptionApprovalController extends Controller
             $request->validate([
                 'batchExceptionId' => 'required|integer',
                 // 'singleExceptionId' => 'required|integer',
-                'status' => 'required|string|in:APPROVED,AMENDMENT,ANALYSIS,DECLINED,PENDING,RESOLVED',
+                'status' => 'required|string|in:APPROVED,AMENDMENT,ANALYSIS,DECLINED,PENDING,RESOLVED,REVIEW',
                 'statusComment' => 'nullable|string|max:255',
             ]);
 
@@ -287,6 +294,7 @@ class ExceptionApprovalController extends Controller
                 // Define status messages mapping
                 $statusMessages = [
                     'PENDING' => 'supervisor for review',
+                    'REVIEW' => 'supervisor for review',
                     'APPROVED' => 'approved',
                     'AMENDMENT' => 'amendment',
                     'ANALYSIS' => 'analysis',
@@ -568,7 +576,7 @@ class ExceptionApprovalController extends Controller
             }
 
             // 4. Process API response
-            $exceptions = $response->json();
+            $exceptions = $response->object();
             if (!is_array($exceptions)) {
                 Log::error('Invalid API response format', ['response' => $exceptions]);
                 return view('exception-setup.auditor-analysis-list', [
@@ -606,34 +614,42 @@ class ExceptionApprovalController extends Controller
                 ->pluck('activityGroupId')
                 ->unique();
 
-            $batchGroupMap = collect(BatchController::getBatches())
-                ->pluck('activityGroupId', 'id');
-
             // 8. Process and filter exceptions
             $pendingExceptions = collect($exceptions)
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
-                    $batchId = $exception['exceptionBatchId'] ?? null;
-                    $groupId = $batchGroupMap[$batchId] ?? null;
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                // Get the actual group ID from the exception
+                $groupId = $exception->activityGroupId;
 
-                    return $validBatches->has($batchId) &&
-                        $validGroups->has($groupId) &&
-                        $exception['status'] === 'ANALYSIS' &&
-                        (in_array($employeeRoleId, $topManagers) || $employeeGroups->contains($groupId));
+                // Check if batch is valid (active and OPEN)
+                $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
+
+                // Check if group is valid (active)
+                $hasValidGroup = $validGroups->has($groupId);
+
+
+                // Check if status is one of the tracked statuses
+                $hasValidStatus = in_array($exception->status, ['ANALYSIS']);
+
+                // Check access: employee belongs to group OR is a top manager
+                $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
+
+                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+
                 })
                 ->map(function ($exception) {
-                    $nestedExceptions = collect($exception['exceptions'] ?? []);
+                    $nestedExceptions = collect($exception->exceptions ?? []);
                     $pendingCount = $nestedExceptions
                         ->whereIn('status', ['APPROVED', 'RESOLVED'])
                         ->where('recommendedStatus', 'RESOLVED')
                         ->count();
 
                     return [
-                        'id' => $exception['id'] ?? null,
-                        'status' => $exception['status'] ?? 'UNKNOWN',
-                        'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
-                        'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
-                        'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
-                        'department' => $exception['departmentName'] ?? 'Unknown Department',
+                        'id' => $exception->id ?? null,
+                        'status' => $exception->status ?? 'UNKNOWN',
+                        'submittedBy' => $exception->submittedBy ?? 'Unknown',
+                        'submittedAt' => $exception->submittedAt ?? now()->format('Y-m-d H:i:s'),
+                        'groupName' => $exception->activityGroup ?? 'N/A',
+                        'department' => $exception->departmentName ?? 'Unknown Department',
                         'exceptionCount' => $pendingCount,
                     ];
                 })
