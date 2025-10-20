@@ -70,11 +70,22 @@ class ExceptionController extends Controller
     public function create()
     {
         $departments = ExceptionManipulationController::departmentData();
-        $batches = BatchController::getBatches();
+        $batchData = BatchController::getBatches();
+        $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
+
+        $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+        $employeeDepartment = $employeeData->department->name;
+        // dd($batches);
+        $batches = collect($batchData)->filter(function ($batch) use ($employeeDepartment) {
+            return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
+        })
+            ->sortByDesc('createdAt');
+        $employeeGroupsData = GroupController::getEmployeeGroups();
+        $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
         $processTypes = ProcessTypeController::getProcessTypes();
         $riskRates = RiskRateController::getRiskRates();
 
-        return view('exception-setup.create', compact('departments', 'batches', 'processTypes', 'riskRates'));
+        return view('exception-setup.create', compact('departments', 'groups', 'batches', 'processTypes', 'riskRates'));
     }
 
     /**
@@ -97,6 +108,7 @@ class ExceptionController extends Controller
             'riskAnalysis' => 'nullable|integer',
             'departmentId' => 'required|integer',
             'exceptionBatchId' => 'required|integer',
+            'activityGroupId' => 'required|integer',
         ]);
         // dd($request);
         $access_token = session('api_token');
@@ -117,6 +129,7 @@ class ExceptionController extends Controller
             'riskAnalysis' => $request->input('riskAnalysis'),
             'departmentId' => $request->input('departmentId'),
             'exceptionBatchId' => $request->input('exceptionBatchId'),
+            'activityGroupId' => $request->input('activityGroupId'),
 
         ];
 
@@ -152,11 +165,12 @@ class ExceptionController extends Controller
     {
         try {
             // Get all necessary data
-            $batches = BatchController::getBatches();
+
             $departments = ExceptionManipulationController::departmentData();
             $processTypes = ProcessTypeController::getProcessTypes();
             $riskRates = RiskRateController::getRiskRates();
-            $groups = GroupController::getActivityGroups();
+            $employeeGroupsData = GroupController::getEmployeeGroups();
+            $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
             $groupMembers = GroupMembersController::getGroupMembers();
             $exceptions = ExceptionManipulationController::getExceptions();
 
@@ -167,10 +181,21 @@ class ExceptionController extends Controller
                 return redirect()->back();
             }
 
+            $batchData = BatchController::getBatches();
+            $user = ExceptionManipulationController::getLoggedInUserInformation();
+
+            $employeeFullName = $user->firstName . ' ' . $user->surname;
+            $employeeDepartment = $user->department->name;
+
+            $batches = collect($batchData)->filter(function ($batch) use ($employeeDepartment, $exception) {
+                return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName) || $batch->id == $exception->exceptionBatchId;
+            });
+
+
             // dd($exception);
 
             // Get user information
-            $user = ExceptionManipulationController::getLoggedInUserInformation();
+
             $employeeId = $user->id;
             $employeeDepartmentId = $user->departmentId;
             $employeeName = $user->firstName . ' ' . $user->surname;
@@ -189,10 +214,11 @@ class ExceptionController extends Controller
                 ->toArray();
 
             // dd($auditorIds);
+            // dd($groupMembers);
 
             // Get all auditor IDs in the same group as the exception
             $groupAuditorIds = collect($groupMembers)
-                ->where('activityGroupId', $exceptionBatch->activityGroupId)
+                ->where('activityGroupId', $exception->activityGroupId)
                 ->pluck('employeeId')
                 ->toArray();
 
