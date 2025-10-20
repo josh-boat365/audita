@@ -37,7 +37,7 @@ class BatchController extends Controller
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
         $employeeDepartment = $employeeData->department->name;
-
+        
         $sortedBatches = collect($batches)->filter(function ($batch) use ($employeeDepartment) {
             return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
         })
