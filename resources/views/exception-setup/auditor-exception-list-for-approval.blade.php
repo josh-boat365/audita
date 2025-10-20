@@ -1,38 +1,38 @@
 <x-base-layout>
     @php
-        // Safely get first exception with null checks
-        $firstException = collect($exception)->first() ?? null;
-        $batchId = $firstException->exceptionBatchId ?? '';
-        $processTypeId = $firstException->processTypeId ?? '';
-        $departmentId = $firstException->departmentId ?? '';
-        $requestDate = isset($firstException->requestDate)
-            ? Carbon\Carbon::parse($firstException->requestDate)->format('Y-m-d')
-            : '';
-        $employeeName = session('user_name') ?? 'Unknown User';
-        $batchStatus = $firstException->status ?? null;
+// Safely get first exception with null checks
+$firstException = collect($exception)->first() ?? null;
+$batchId = $firstException->exceptionBatchId ?? '';
+$processTypeId = $firstException->processTypeId ?? '';
+$departmentId = $firstException->departmentId ?? '';
+$requestDate = isset($firstException->requestDate)
+    ? Carbon\Carbon::parse($firstException->requestDate)->format('Y-m-d')
+    : '';
+$employeeName = session('user_name') ?? 'Unknown User';
+$batchStatus = $firstException->status ?? null;
 
-        // Process exceptions with sorting
-        $processedExceptions = collect($exception ?? [])->map(function ($batchItem) use ($batchStatus) {
-            $exceptions = collect($batchItem->exceptions ?? []);
+// Process exceptions with sorting
+$processedExceptions = collect($exception ?? [])->map(function ($batchItem) use ($batchStatus) {
+    $exceptions = collect($batchItem->exceptions ?? []);
 
-            // Sort exceptions based on batch status
-            if ($batchStatus === 'AMENDMENT') {
-                $exceptions = $exceptions
-                    ->sortBy(function ($exception) {
-                        // Pending goes to bottom, Declined stays in normal order (show Amend button)
-                        return ($exception->status ?? null) === 'PENDING' ? 1 : 0;
-                    })
-                    ->values();
-            }
-            // For DECLINED status, we keep the original order (all will be declined)
+    // Sort exceptions based on batch status
+    if ($batchStatus === 'AMENDMENT') {
+        $exceptions = $exceptions
+            ->sortBy(function ($exception) {
+                // Pending goes to bottom, Declined stays in normal order (show Amend button)
+                return ($exception->status ?? null) === 'PENDING' ? 1 : 0;
+            })
+            ->values();
+    }
+    // For DECLINED status, we keep the original order (all will be declined)
 
-            $batchItem->exceptions = $exceptions->all();
-            return $batchItem;
-        });
+    $batchItem->exceptions = $exceptions->all();
+    return $batchItem;
+});
 
-        // Count total exceptions safely
-        $totalExceptions = $processedExceptions->sum(fn($item) => count($item->exceptions ?? []));
-        $hasExceptions = $totalExceptions > 0;
+// Count total exceptions safely
+$totalExceptions = $processedExceptions->sum(fn($item) => count($item->exceptions ?? []));
+$hasExceptions = $totalExceptions > 0;
     @endphp
 
     <div class="container-fluid px-1">
@@ -67,8 +67,8 @@
                 <p class="card-text">
                     <i>
                         {{ !empty(trim($firstException->statusComment ?? ''))
-                            ? $firstException->statusComment
-                            : 'No comments on batch, check the exceptions for the needed amendments below if required.' }}
+    ? $firstException->statusComment
+    : 'No comments on batch, check the exceptions for the needed amendments below if required.' }}
                     </i>
                 </p>
             </div>
@@ -88,6 +88,15 @@
                                         <option value="{{ $batch->id }}" @selected($batch->id == $batchId)>
                                             {{ $batch->name }}
                                         </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Group/Branch</label>
+                                <select class="form-select select2" id="groupFilter">
+                                    <option>Select.....</option>
+                                    @foreach ($groups as $group)
+                                        <option value="{{ $group->id }}">{{ $group->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -145,18 +154,18 @@
                         @foreach ($processedExceptions as $batchItem)
                             @foreach ($batchItem->exceptions ?? [] as $exceptionItem)
                                 @php
-                                    $exceptionStatus = $exceptionItem->status ?? null;
-                                    $isDeclined = $exceptionStatus === 'DECLINED';
-                                    $isPending = $exceptionStatus === 'PENDING';
+            $exceptionStatus = $exceptionItem->status ?? null;
+            $isDeclined = $exceptionStatus === 'DECLINED';
+            $isPending = $exceptionStatus === 'PENDING';
 
-                                    // Determine if Amend button should be shown
-                                    $showAmendButton = false;
+            // Determine if Amend button should be shown
+            $showAmendButton = false;
 
-                                    if ($batchStatus === 'AMENDMENT') {
-                                        // Show for DECLINED, hide for PENDING
-                                        $showAmendButton = $isDeclined;
-                                    }
-                                    // For DECLINED batch status, never show Amend button
+            if ($batchStatus === 'AMENDMENT') {
+                // Show for DECLINED, hide for PENDING
+                $showAmendButton = $isDeclined;
+            }
+            // For DECLINED batch status, never show Amend button
                                 @endphp
 
                                 <tr id="exception-row-{{ $exceptionItem->id }}"
