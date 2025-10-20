@@ -148,7 +148,7 @@ $employeeName = session('user_name') ?? 'Unknown User';
         </div>
 
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
-        {{-- {{ dd($pendingException) }} --}}
+        {{--  {{ dd($pendingException) }}  --}}
         <div class="table-responsive">
             <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                 <thead class="table-light">

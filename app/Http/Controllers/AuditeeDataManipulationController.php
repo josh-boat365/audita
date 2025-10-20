@@ -435,131 +435,75 @@ class AuditeeDataManipulationController extends Controller
     private function processExceptionsByStatus($responseObject, $status)
     {
         try {
-            $access_token = session('api_token');
-
-            if (empty($access_token)) {
+            // Validate session
+            if (empty(session('api_token'))) {
                 session()->flush();
-                return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+                return redirect()->route('login')
+                    ->with('toast_warning', 'Session expired, login to access the application');
             }
 
-            // Ensure responseObject is iterable
             $responseCollection = collect($responseObject ?? []);
 
-            $batches = BatchController::getBatches();
-            $groups = GroupController::getActivityGroups();
-            $groupMembers = GroupMembersController::getGroupMembers();
-            $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
-
-
-            // Filter active batches with status 'OPEN' and map them by ID
-            $validBatches = collect($batches)
-                ->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
-                ->keyBy('id');
-
-            // Filter active groups and map them by ID
-            $validGroups = collect($groups)
-                ->filter(fn($group) => $group->active)
-                ->keyBy('id');
-
-            // Get groups where the specified employee belongs
-            $employeeGroups = collect($groupMembers)
-                ->where('employeeId', $employeeId)
-                ->pluck('activityGroupId')
-                ->unique();
-
-            // dd($employeeGroups);
-
-            // Map batch IDs to their corresponding activity group IDs
-            $batchGroupMap = collect($batches)
-                ->pluck('activityGroupId', 'id');
-
-            $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
-
-            // top managers
-            // 1 - Managing Director
-            // 2 - Head of Internal Audit
-            // 4 - Head of Internal Control & Compliance
-            $topManagers = [1, 2, 4];
-
-            // Process main exceptions
+            // Filter and map exceptions based on status
             $exception = $responseCollection
-                ->filter(function ($item) use ($status) {
-
-                    return is_object($item) && property_exists($item, 'status') && $item->status == $status;
-                })
+                ->filter(fn($item) => is_object($item) && property_exists($item, 'status') && $item->status == $status)
                 ->map(function ($item) use ($status) {
                     if (!is_object($item) || !property_exists($item, 'exceptions')) {
                         return $item;
                     }
 
+                    // dd(in_array($status, ['ANALYSIS', 'REVIEW']));
 
-                    // Handle different filtering logic based on parent status
-                    if ($status == 'ANALYSIS' || $status == 'REVIEW') {
-                        // For ANALYSIS status, filter sub-exceptions with status APPROVED and recommendedStatus RESOLVED
-                        $item->exceptions = collect($item->exceptions ?? [])
-                            ->filter(function ($subException) {
-                                return is_object($subException)
-                                    && property_exists($subException, 'status')
-                                    && property_exists($subException, 'recommendedStatus')
-                                    && $subException->status == 'APPROVED'
-                                    && $subException->recommendedStatus == 'RESOLVED'
-                                    || (
-                                        is_object($subException)
-                                        && property_exists($subException, 'status')
-                                        && $subException->status == 'NOT-RESOLVED'
-                                        || $subException->status == 'RESOLVED'
-                                    );
-                            })
-                            ->values()
-                            ->toArray();
+                    $subExceptions = collect($item->exceptions ?? []);
+
+                    // Apply status-specific filtering
+                    if (in_array($status, ['ANALYSIS', 'REVIEW'])) {
+                        $item->exceptions = $subExceptions->filter(function ($sub) {
+                            return is_object($sub) && (
+                                (property_exists($sub, 'status') && property_exists($sub, 'recommendedStatus')
+                                    && $sub->status == 'APPROVED' && $sub->recommendedStatus == 'RESOLVED')
+                                || (property_exists($sub, 'status') && in_array($sub->status, ['NOT-RESOLVED', 'PENDING', 'RESOLVED', 'DECLINED']))
+                            );
+                        })->values()->toArray();
                     } else {
-
-                        // Original logic for other statuses
-                        $item->exceptions = collect($item->exceptions ?? [])
-                            ->where('status', $status)
-                            // ->whereNotIn('recommendedStatus', ['RESOLVED'])
-                            ->values()
-                            ->toArray();
+                        $item->exceptions = $subExceptions->where('status', $status)->values()->toArray();
                     }
 
                     return $item;
                 })
-                ->filter(function ($item) {
-                    return is_object($item) && property_exists($item, 'exceptions') && !empty($item->exceptions);
-                })
+                ->filter(fn($item) => is_object($item) && property_exists($item, 'exceptions') && !empty($item->exceptions))
                 ->values()
                 ->toArray();
 
-            // Initialize data containers
+            // Extract files and comments for specific statuses
             $exceptionFiles = [];
             $exceptionComments = [];
 
-            // Process sub-exceptions for APPROVED, ANALYSIS, REVIEW statuses
-            if (( in_array($status, ['APPROVED', 'ANALYSIS','REVIEW', 'PENDING'])) && $responseCollection->isNotEmpty()) {
+            if (in_array($status, ['APPROVED', 'ANALYSIS', 'REVIEW', 'PENDING']) && $responseCollection->isNotEmpty()) {
                 $firstItem = $responseCollection->first();
                 $subExceptions = property_exists($firstItem, 'exceptions') ? ($firstItem->exceptions ?? []) : [];
 
                 foreach ($subExceptions as $subException) {
-                    if (is_object($subException) && property_exists($subException, 'id') && !empty($subException->id)) {
-                        $preparedException = ExceptionManipulationController::getAnException($subException->id);
+                    if (!is_object($subException) || !property_exists($subException, 'id') || empty($subException->id)) {
+                        continue;
+                    }
 
-                        if (is_object($preparedException)) {
-                            // Collect comments
-                            if (property_exists($preparedException, 'comment') && !empty($preparedException->comment)) {
-                                $exceptionComments = array_merge(
-                                    $exceptionComments,
-                                    is_array($preparedException->comment) ? $preparedException->comment : [$preparedException->comment]
-                                );
-                            }
+                    $preparedException = ExceptionManipulationController::getAnException($subException->id);
 
-                            // Collect files
-                            if (property_exists($preparedException, 'fileAttached') && !empty($preparedException->fileAttached)) {
-                                $exceptionFiles = array_merge(
-                                    $exceptionFiles,
-                                    is_array($preparedException->fileAttached) ? $preparedException->fileAttached : [$preparedException->fileAttached]
-                                );
-                            }
-                        }
+                    if (!is_object($preparedException)) {
+                        continue;
+                    }
+
+                    // Collect comments and remove duplicates
+                    if (property_exists($preparedException, 'comment') && !empty($preparedException->comment)) {
+                        $newComments = is_array($preparedException->comment) ? $preparedException->comment : [$preparedException->comment];
+                        $exceptionComments = array_values(array_unique(array_merge($exceptionComments, $newComments), SORT_REGULAR));
+                    }
+
+                    // Collect files and remove duplicates
+                    if (property_exists($preparedException, 'fileAttached') && !empty($preparedException->fileAttached)) {
+                        $newFiles = is_array($preparedException->fileAttached) ? $preparedException->fileAttached : [$preparedException->fileAttached];
+                        $exceptionFiles = array_values(array_unique(array_merge($exceptionFiles, $newFiles), SORT_REGULAR));
                     }
                 }
             }
