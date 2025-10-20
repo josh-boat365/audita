@@ -122,22 +122,20 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {{--  {{ dd($reports) }}  --}}
+
                                 @forelse ($reports as $report)
                                 <tr data-batch="{{ $report->exceptionBatchId }}" data-branch="@php
-$branchName = 'N/A';
-                                            foreach ($batches as $batch) {
-                                                if ($batch->id == $report->exceptionBatchId) {
-                                                    foreach ($groups as $group) {
-                                                        if ($group->id == $batch->activityGroupId) {
-                                                            $branchName = $group->branchName;
-                                                            break;
-                                                        }
-                                                    }
-                                                    break;
-                                                }
-                                            }
-                                            echo $branchName; @endphp" data-auditor="{{ $report->auditorName }}" data-status="{{ $report->status }}" data-risk-rate="{{ $report->riskRate }}" data-occurrence-date="{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : '' }}">
+                                    $branchName = 'N/A';
+
+                                    foreach ($groups as $group) {
+                                        if ($group->id == $report->activityGroupId) {
+                                            $branchName = $group->branchName;
+                                            break;
+                                        }
+                                    }
+                                    echo $branchName;
+                                    @endphp"
+                                    data-auditor="{{ $report->auditorName }}" data-status="{{ $report->status }}" data-risk-rate="{{ $report->riskRate }}" data-occurrence-date="{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : '' }}">
                                     <td class="text-truncate" style="max-width: 200px;" title="{{ $report->exceptionTitle ?? 'N/A' }}">
                                         {{ $report->exceptionTitle ?? 'N/A' }}
                                     </td>
