@@ -67,9 +67,9 @@ $hasExceptions = $totalExceptions > 0;
                 <p class="card-text">
                     <i>
                         {{ !empty(trim($firstException->statusComment ?? ''))
-    ? $firstException->statusComment
-    : 'No comments on batch, check the exceptions for the needed amendments below if required.' }}
-                    </i>
+                            ? $firstException->statusComment
+                            : 'No comments on batch, check the exceptions for the needed amendments below if required.' }}
+                                            </i>
                 </p>
             </div>
         </div>

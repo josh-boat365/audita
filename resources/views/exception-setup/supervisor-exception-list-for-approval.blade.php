@@ -827,100 +827,136 @@ $employeeName = session('user_name') ?? 'Unknown User';
 
 
                 // SUBMIT BATCH APPROVAL ACTION - PARENT BATCH STATUS
-                document.getElementById('approveBatchBtn').addEventListener('click', function () {
-                    Swal.fire({
-                        title: 'Approve Batch',
-                        text: 'Are you sure you want to approve this entire batch?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, Approve',
-                        cancelButtonText: 'No, Cancel',
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            submitBatchAction('APPROVED', 'Batch approved');
-                        }
+                 // SUBMIT BATCH APPROVAL ACTION - PARENT BATCH STATUS
+                const approveBatchBtn = document.getElementById('approveBatchBtn');
+                const reviewBatchBtn = document.getElementById('reviewBatchBtn');
+                const amendBatchBtn = document.getElementById('amendBatchBtn');
+                const declineBatchForm = document.getElementById('declineBatchForm');
+
+                // Approve Batch Handler
+                if (approveBatchBtn) {
+                    approveBatchBtn.addEventListener('click', function (e) {
+                        e.preventDefault(); // Prevent any default behavior
+
+                        Swal.fire({
+                            title: 'Approve Batch',
+                            text: 'Are you sure you want to approve this entire batch?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, Approve',
+                            cancelButtonText: 'No, Cancel',
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                submitBatchAction('APPROVED', 'Batch approved');
+                            }
+                        });
                     });
-                });
+                }
 
-                document.getElementById('reviewBatchBtn').addEventListener('click', function () {
-                    Swal.fire({
-                        title: 'Push Batch For Review',
-                        text: 'Are you sure you want to push this batch for review?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, Push for Review',
-                        cancelButtonText: 'No, Cancel',
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            submitBatchAction('REVIEW', 'Batch pushed for review');
-                        }
+                // Review Batch Handler - FIXED
+                if (reviewBatchBtn) {
+                    reviewBatchBtn.addEventListener('click', function (e) {
+                        e.preventDefault(); // Prevent any default behavior
+                        e.stopPropagation(); // Stop event bubbling
+
+                        console.log('Review button clicked'); // Debug log
+
+                        Swal.fire({
+                            title: 'Push Batch For Review',
+                            text: 'Are you sure you want to push this batch for review?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, Push for Review',
+                            cancelButtonText: 'No, Cancel',
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                submitBatchAction('REVIEW', 'Batch pushed for review');
+                            }
+                        });
                     });
-                });
+                }
 
+                // Amend Batch Handler
+                if (amendBatchBtn) {
+                    amendBatchBtn.addEventListener('click', function (e) {
+                        e.preventDefault(); // Prevent any default behavior
 
-                // Form validation for amend batch
-                document.getElementById('amendBatchBtn').addEventListener('click', function (e) {
-                    Swal.fire({
-                        title: 'Confirm To Push Batch for Amendment',
-                        text: 'Are you sure you want to push this batch for amendment?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, push for amendment',
-                        cancelButtonText: 'Cancel'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            submitBatchAction('AMENDMENT', 'Batch pushed for amendment');
-                        }
+                        Swal.fire({
+                            title: 'Confirm To Push Batch for Amendment',
+                            text: 'Are you sure you want to push this batch for amendment?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, push for amendment',
+                            cancelButtonText: 'Cancel'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                submitBatchAction('AMENDMENT', 'Batch pushed for amendment');
+                            }
+                        });
                     });
-                });
+                }
 
-                // Form validation for decline batch
-                document.getElementById('declineBatchForm')?.addEventListener('submit', function (e) {
-                    const comment = document.getElementById('declineComment')?.value.trim();
-                    if (!comment) {
-                        e.preventDefault();
-                        alert('Please provide a reason for declining');
-                        document.getElementById('declineComment')?.focus();
-                    } else {
-                        // Auto-submit if comment is valid
+                // Decline Batch Form Handler
+                if (declineBatchForm) {
+                    declineBatchForm.addEventListener('submit', function (e) {
+                        e.preventDefault(); // Prevent default form submission
+
+                        const comment = document.getElementById('declineComment')?.value.trim();
+                        if (!comment) {
+                            Swal.fire('Error', 'Please provide a reason for declining', 'error');
+                            document.getElementById('declineComment')?.focus();
+                            return false;
+                        }
+
                         submitBatchAction('DECLINED', comment);
-                    }
-                });
+                    });
+                }
 
+                // Submit Batch Action Function
                 function submitBatchAction(status, comment) {
+                    // Create form dynamically
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = '{{ route('exception.supervisor.action') }}';
+                    form.style.display = 'none';
 
+                    // Add CSRF token
                     const csrf = document.createElement('input');
                     csrf.type = 'hidden';
                     csrf.name = '_token';
                     csrf.value = document.querySelector('meta[name="csrf-token"]').content;
+                    form.appendChild(csrf);
 
+                    // Add batch ID
                     const batchId = document.createElement('input');
                     batchId.type = 'hidden';
                     batchId.name = 'batchExceptionId';
                     batchId.value = '{{ $pendingException->id ?? '' }}';
+                    form.appendChild(batchId);
 
+                    // Add status
                     const statusInput = document.createElement('input');
                     statusInput.type = 'hidden';
                     statusInput.name = 'status';
                     statusInput.value = status;
+                    form.appendChild(statusInput);
 
+                    // Add comment
                     const commentInput = document.createElement('input');
                     commentInput.type = 'hidden';
                     commentInput.name = 'statusComment';
                     commentInput.value = comment;
-
-                    form.appendChild(csrf);
-                    form.appendChild(batchId);
-                    form.appendChild(statusInput);
                     form.appendChild(commentInput);
+
+                    // Append to body and submit
                     document.body.appendChild(form);
+
+                    console.log('Submitting form with status:', status); // Debug log
+
                     form.submit();
                 }
 
