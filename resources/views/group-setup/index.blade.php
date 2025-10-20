@@ -24,7 +24,7 @@
             <table class="table table-bordered  table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Group Name</th>
+                        <th>Group Name/ Branch Name</th>
                         <th>Branch</th>
                         <th>State</th>
                         <th>Action</th>
