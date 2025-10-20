@@ -114,17 +114,12 @@
                                     <tr data-batch="{{ $report->exceptionBatchId }}"
                                         data-branch="@php
                                             $branchName = 'N/A';
-                                            foreach ($batches as $batch) {
-                                                if ($batch->id == $report->exceptionBatchId) {
-                                                    foreach ($groups as $group) {
-                                                        if ($group->id == $batch->activityGroupId) {
-                                                            $branchName = $group->branchName;
-                                                            break;
-                                                        }
+                                                foreach ($groups as $group) {
+                                                    if ($group->id == $report->activityGroupId) {
+                                                        $branchName = $group->branchName;
+                                                        break;
                                                     }
-                                                    break;
                                                 }
-                                            }
                                             echo $branchName; @endphp"
                                         data-status="{{ $report->status }}" data-risk-rate="{{ $report->riskRate }}"
                                         data-occurrence-date="{{ $report->occurrenceDate ? \Carbon\Carbon::parse($report->occurrenceDate)->format('Y-m-d') : '' }}"
