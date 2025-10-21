@@ -816,8 +816,7 @@
                                             <p class="mb-0">
                                                 @if ($exceptionItem->proposeResolutionDate)
                                                 {{
-                                                \Carbon\Carbon::parse($exceptionItem->proposeResolutionDate)->format('M
-                                                d, Y') }}
+                                                \Carbon\Carbon::parse($exceptionItem->proposeResolutionDate)->format('M,d, Y') }}
                                                 @else
                                                 <span class="text-muted">Not set</span>
                                                 @endif
