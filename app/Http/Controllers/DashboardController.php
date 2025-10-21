@@ -442,9 +442,11 @@ class DashboardController extends Controller
 
                 // Check if employee belongs to the report's activity group
                 $belongsToGroup = $employeeGroups->contains($report->activityGroupId);
-
+                // dd($belongsToGroup);
                 return $hasValidGroup && $hasValidBatch && $belongsToGroup;
             })->values();
+
+        
 
             if ($filteredReports->isEmpty()) {
                 return redirect()->route('dashboard')

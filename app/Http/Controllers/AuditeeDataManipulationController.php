@@ -160,14 +160,8 @@ class AuditeeDataManipulationController extends Controller
             }
 
             // 4. Process API response
-            $exceptions = $response->json();
-            if (!is_array($exceptions)) {
-                Log::error('Invalid API response format', ['response' => $exceptions]);
-                return view('exception-setup.auditee-exception-pending-list', [
-                    'pendingExceptions' => [],
-                    'isEmpty' => true
-                ]);
-            }
+            $exceptions = $response->object();
+
 
             // 5. Handle empty exceptions - return empty view
             if (empty($exceptions)) {
@@ -201,36 +195,35 @@ class AuditeeDataManipulationController extends Controller
             // 8. Process and filter exceptions
             $pendingExceptions = collect($exceptions)
                 ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
-                // Get the actual group ID from the exception
-                $groupId = $exception->activityGroupId;
+                    // Get the actual group ID from the exception
+                    $groupId = $exception->activityGroupId;
 
-                // Check if batch is valid (active and OPEN)
-                $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
+                    // Check if batch is valid (active and OPEN)
+                    $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
 
-                // Check if group is valid (active)
-                $hasValidGroup = $validGroups->has($groupId);
+                    // Check if group is valid (active)
+                    $hasValidGroup = $validGroups->has($groupId);
 
-                // Check if status 
-                $hasValidStatus = in_array($exception->status, ['ANALYSIS']);
+                    // Check if status - trim whitespace and ensure proper comparison
+                    $hasValidStatus = trim(strtoupper($exception->status ?? '')) === 'ANALYSIS';
 
-                // Check access: employee belongs to group OR is a top manager
-                $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
+                    // Check access: employee belongs to group OR is a top manager
+                    $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
 
-                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
-
+                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
                 })
                 ->map(function ($exception) use ($loggedInUser) {
-                    $nestedExceptions = collect($exception['exceptions'] ?? []);
+                    $nestedExceptions = collect($exception->exceptions ?? []);
                     $resolvedCount = $nestedExceptions->where('recommendedStatus', 'RESOLVED')->count();
                     $notResolvedCount = $nestedExceptions->where('status', 'NOT-RESOLVED')->count();
 
                     return [
-                        'id' => $exception['id'] ?? null,
-                        'status' => $exception['status'] ?? 'UNKNOWN',
-                        'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
-                        'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
-                        'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
-                        'department' => $exception['departmentName'] ?? 'Unknown Department',
+                        'id' => $exception->id ?? null,
+                        'status' => $exception->status ?? 'UNKNOWN',
+                        'submittedBy' => $exception->submittedBy ?? 'Unknown',
+                        'submittedAt' => $exception->submittedAt ?? now()->format('Y-m-d H:i:s'),
+                        'groupName' => $exception->activityGroup ?? 'N/A',
+                        'department' => $exception->departmentName ?? 'Unknown Department',
                         'exceptionCount' => $resolvedCount,
                         'countForRespondedExceptionsByAuditee' => $notResolvedCount,
                         'auditorDepartmentId' => $loggedInUser->departmentId,
