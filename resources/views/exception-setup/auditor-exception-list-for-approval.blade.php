@@ -296,7 +296,7 @@ $hasExceptions = $totalExceptions > 0;
                         cancelButtonText: 'No, Cancel',
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            submitBatchAction('PENDING');
+                            submitBatchAction('REVIEW');
                         }
                     });
                 });
