@@ -474,8 +474,8 @@ class ExceptionApprovalController extends Controller
                     // Check if group is valid (active)
                     $hasValidGroup = $validGroups->has($groupId);
 
-                    // Check if status is not DECLINED
-                    $hasValidStatus = !in_array($exception->status, ['DECLINED', 'AMENDMENT', 'APPROVED']);
+                    // Check if status 
+                    $hasValidStatus = in_array($exception->status, ['DECLINED', 'AMENDMENT', 'APPROVED']);
 
                     // Check access: employee belongs to group OR is a top manager
                     $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);

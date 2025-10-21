@@ -198,19 +198,26 @@ class AuditeeDataManipulationController extends Controller
                 ->pluck('activityGroupId')
                 ->unique();
 
-            $batchGroupMap = collect(BatchController::getBatches())
-                ->pluck('activityGroupId', 'id');
-
             // 8. Process and filter exceptions
             $pendingExceptions = collect($exceptions)
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
-                    $batchId = $exception['exceptionBatchId'] ?? null;
-                    $groupId = $batchGroupMap[$batchId] ?? null;
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                // Get the actual group ID from the exception
+                $groupId = $exception->activityGroupId;
 
-                    return $validBatches->has($batchId) &&
-                        $validGroups->has($groupId) &&
-                        $exception['status'] === 'ANALYSIS' &&
-                        (in_array($employeeRoleId, $topManagers) || $employeeGroups->contains($groupId));
+                // Check if batch is valid (active and OPEN)
+                $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
+
+                // Check if group is valid (active)
+                $hasValidGroup = $validGroups->has($groupId);
+
+                // Check if status 
+                $hasValidStatus = in_array($exception->status, ['ANALYSIS']);
+
+                // Check access: employee belongs to group OR is a top manager
+                $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
+
+                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+
                 })
                 ->map(function ($exception) use ($loggedInUser) {
                     $nestedExceptions = collect($exception['exceptions'] ?? []);
