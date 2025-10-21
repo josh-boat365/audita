@@ -409,7 +409,7 @@ class ExceptionApprovalController extends Controller
             }
 
             // 5. Process Response Data
-            $exceptions = $response->json();
+            $exceptions = $response->object();
 
             if (!is_array($exceptions)) {
                 Log::error('Invalid API response format', ['response' => $exceptions]);
@@ -453,9 +453,6 @@ class ExceptionApprovalController extends Controller
 
                 // dd($employeeGroups);
 
-                // Map batch IDs to their corresponding activity group IDs
-                $batchGroupMap = collect($batches)
-                    ->pluck('activityGroupId', 'id');
 
                 $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
 
@@ -467,24 +464,38 @@ class ExceptionApprovalController extends Controller
 
                 $pendingExceptions = collect($exceptions)
                     // Filter top-level exceptions by status
-                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $batchGroupMap, $topManagers, $employeeRoleId) {
-                        $groupId = $batchGroupMap[$exception['exceptionBatchId']] ?? null;
-                        return $validBatches->has($exception['exceptionBatchId']) &&
-                            $validGroups->has($groupId) && (in_array($exception['status'], ['DECLINED', 'AMENDMENT', 'APPROVED'])) && $employeeGroups->contains($groupId) || (in_array($employeeRoleId, $topManagers));
+                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                    // Get the actual group ID from the exception
+                    $groupId = $exception->activityGroupId;
+
+                    // Check if batch is valid (active and OPEN)
+                    $hasValidBatch = $validBatches->has($exception->exceptionBatchId);
+
+                    // Check if group is valid (active)
+                    $hasValidGroup = $validGroups->has($groupId);
+
+                    // Check if status is not DECLINED
+                    $hasValidStatus = !in_array($exception->status, ['DECLINED', 'AMENDMENT', 'APPROVED']);
+
+                    // Check access: employee belongs to group OR is a top manager
+                    $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
+
+                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+
                     })
                     // Transform and count nested exceptions
                     ->map(function ($exception) {
-                        $pendingCount = collect($exception['exceptions'] ?? [])
+                        $pendingCount = collect($exception->exceptions ?? [])
                             ->whereIn('status', ['DECLINED', 'PENDING'])
                             ->count();
 
                         return [
-                            'id' => $exception['id'] ?? null,
-                            'status' => $exception['status'] ?? '---',
-                            'submittedBy' => $exception['submittedBy'] ?? 'Unknown',
-                            'submittedAt' => $exception['submittedAt'] ?? now()->format('Y-m-d H:i:s'),
-                            'groupName' => $exception['exceptionBatch']['activityGroupName'] ?? 'N/A',
-                            'department' => $exception['departmentName'] ?? 'Unknown Department',
+                            'id' => $exception->id ?? null,
+                            'status' => $exception->status ?? '---',
+                            'submittedBy' => $exception->submittedBy ?? 'Unknown',
+                            'submittedAt' => $exception->submittedAt ?? now()->format('Y-m-d H:i:s'),
+                            'groupName' => $exception->activityGroup ?? 'N/A',
+                            'department' => $exception->departmentName ?? 'Unknown Department',
                             'exceptionCount' => $pendingCount, // Count of DECLINED/AMENDMENT nested exceptions
                         ];
                     })
