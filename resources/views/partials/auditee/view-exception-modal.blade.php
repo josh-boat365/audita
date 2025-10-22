@@ -126,6 +126,16 @@
                                             @endforeach
                                         </select>
                                     </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Group<span class="required">*</span></label>
+                                        <select class="form-select " name="activityGroupId" required>
+                                            <option>Select.....</option>
+                                            @foreach ($groups as $group)
+                                                <option value="{{ $group->id }}" @selected($group->id === $exceptionItem->activityGroupId)>
+                                                    {{ $group->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
 
 
 
