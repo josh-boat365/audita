@@ -279,11 +279,14 @@ class ExceptionController extends Controller
             'riskRateId' => 'nullable|integer',
             'departmentId' => 'required|integer',
             'exceptionBatchId' => 'required|integer',
+            'activityGroupId' => 'required|integer',
             'requestTrackerId' => 'nullable|integer',
             'requestType' => 'nullable|string',  // Added nullable
             'recommendation' => 'nullable|string',
             'riskAnalysis' => 'nullable|string',
         ]);
+
+        // dd($validated);
 
         // Update batch request check to handle undefined key
         $isBatchRequest = isset($validated['requestType']) && $validated['requestType'] === 'BATCH';
