@@ -436,17 +436,17 @@ class DashboardController extends Controller
             ) {
                 // Check if the report's activity group is valid (active)
                 $hasValidGroup = $validGroups->has($report->activityGroupId);
-
                 // Check if the report's batch is valid (active and OPEN)
                 $hasValidBatch = $validBatches->has($report->exceptionBatchId);
 
+
                 // Check if employee belongs to the report's activity group
                 $belongsToGroup = $employeeGroups->contains($report->activityGroupId);
-                // dd($belongsToGroup);
+
                 return $hasValidGroup && $hasValidBatch && $belongsToGroup;
             })->values();
 
-        
+            // dd($filteredReports);
 
             if ($filteredReports->isEmpty()) {
                 return redirect()->route('dashboard')
