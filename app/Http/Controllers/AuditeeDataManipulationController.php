@@ -366,7 +366,13 @@ class AuditeeDataManipulationController extends Controller
 
         // Get reference data with fallbacks
         $departments = ExceptionManipulationController::departmentData() ?? [];
-        $batches = BatchController::getBatches() ?? [];
+        $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
+        $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+        $employeeDepartment = $employeeData->department->name;
+        $batchData = BatchController::getBatches() ?? [];
+        $batches = collect($batchData)->filter(function ($batch) use ($employeeDepartment) {
+            return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
+        })->values();
         $employeeGroupsData = GroupController::getEmployeeGroups();
         $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
         $processTypes = ProcessTypeController::getProcessTypes() ?? [];
@@ -532,13 +538,20 @@ class AuditeeDataManipulationController extends Controller
                 session()->flush();
                 return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
             }
+            $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
+            $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+            $employeeDepartment = $employeeData->department->name;
+            $batchData = BatchController::getBatches() ?? [];
+            $batches = collect($batchData)->filter(function ($batch) use ($employeeDepartment) {
+                return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
+            })->values();
             $employeeGroupsData = GroupController::getEmployeeGroups();
             $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
 
             $commonData = [
                 'exception' => $processedData['exception'] ?? [],
                 'departments' => ExceptionManipulationController::departmentData() ?? [],
-                'batches' => BatchController::getBatches() ?? [],
+                'batches' => $batches,
                 'groups' => $groups,
                 'processTypes' => ProcessTypeController::getProcessTypes() ?? [],
                 'riskRates' => RiskRateController::getRiskRates() ?? [],
