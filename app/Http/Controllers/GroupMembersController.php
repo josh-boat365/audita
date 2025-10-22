@@ -22,7 +22,9 @@ class GroupMembersController extends Controller
         $sortedMembers = collect($groupMembersData)->sortByDesc('createdAt');
         $groupMembers = ExceptionController::paginate($sortedMembers, 15, $request);
 
-        $employees = $this->getEmployeeData();
+        $employees = collect($this->getEmployeeData())->map(function ($employee) {
+            return (object) $employee;
+        });
         $groups = GroupController::getActivityGroups();
 
         // Group the already paginated members
@@ -49,7 +51,9 @@ class GroupMembersController extends Controller
 
     public function create()
     {
-        $employees = $this->getEmployeeData();
+        $employees = collect($this->getEmployeeData())->map(function ($employee) {
+            return (object) $employee;
+        });
         $all_groups = GroupController::getActivityGroups();
         $groups = collect($all_groups)->filter(fn($group) => $group->active == true); //active groups
 
@@ -143,18 +147,24 @@ class GroupMembersController extends Controller
 
     public function edit($id)
     {
-        $employees = $this->getEmployeeData();
+        $employees = collect($this->getEmployeeData())->map(function ($employee) {
+            return (object) $employee;
+        });
+
+
         $groups = GroupController::getActivityGroups();
 
         try {
             // Make the GET request to the external API
             $response = $this->getAGroupMember($id);
 
+            $groupMemberIds = collect($this->getGroupMembers())->where('id', $id)->unique()->toArray();
+            $groupMemberEmployeeId = $groupMember->employeeId ?? null; // Get the employeeId from the group member
             // Check the response status and return appropriate response
             if (!empty($response)) {
                 $groupMember = $response;
 
-                return view('group-setup.members.edit', compact('employees', 'groupMember', 'groups'));
+                return view('group-setup.members.edit', compact('employees', 'groupMember', 'groupMemberIds', 'groupMemberEmployeeId', 'groups'));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Group Member does not exist');

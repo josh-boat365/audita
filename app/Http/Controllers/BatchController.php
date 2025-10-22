@@ -32,18 +32,24 @@ class BatchController extends Controller
         });
 
         $batches = self::getBatches();
-        $sortedBatches = collect($batches)->sortByDesc('createdAt');
+
+        $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
+
+        $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+        $employeeDepartment = $employeeData->department->name;
+        
+        $sortedBatches = collect($batches)->filter(function ($batch) use ($employeeDepartment) {
+            return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
+        })
+            ->sortByDesc('createdAt');
 
         $batchData = ExceptionController::paginate($sortedBatches, 15, $request);
 
-        $employeeData = ExceptionController::getLoggedInUserInformation();
-
-        $employeeFullName = $employeeData->firstName .' '. $employeeData->surname;
 
         // dd($employeeFullName);
 
 
-        return view('batch-setup.index', compact('activeGroups', 'units', 'batchData', 'employeeFullName'));
+        return view('batch-setup.index', compact('activeGroups', 'units', 'batchData', 'employeeFullName', 'employeeDepartment'));
     }
 
     /**
@@ -65,7 +71,7 @@ class BatchController extends Controller
             'active' => 'required|integer',
             'status' => 'required|string|max:7',
             'auditorUnitId' => 'required|integer',
-            'activityGroupId' => 'required|integer',
+            // 'activityGroupId' => 'required|integer',
         ]);
 
         $access_token = session('api_token');
@@ -76,7 +82,7 @@ class BatchController extends Controller
             'active' => $request->input('active') == 1 ? true : false,
             'status' => $request->input('status'),
             'auditorUnitId' => $request->input('auditorUnitId'),
-            'activityGroupId' => $request->input('activityGroupId'),
+            // 'activityGroupId' => $request->input('activityGroupId'),
         ];
 
         try {
@@ -116,7 +122,7 @@ class BatchController extends Controller
     public function edit($id)
     {
         $auditUnits = UnitController::getAuditUnitData();
-        $activityGroups = GroupController::getActivityGroups();
+        // $activityGroups = GroupController::getActivityGroups();
 
         try {
             // Make the GET request to the external API
@@ -128,7 +134,7 @@ class BatchController extends Controller
 
                 // dd($batch_data);
 
-                return view('batch-setup.edit', compact('batch_data', 'auditUnits', 'activityGroups'));
+                return view('batch-setup.edit', compact('batch_data', 'auditUnits'));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Batch does not exist');
@@ -141,7 +147,6 @@ class BatchController extends Controller
             ]);
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
-
     }
 
     /**
@@ -155,7 +160,7 @@ class BatchController extends Controller
             'active' => 'required|integer',
             'status' => 'required|string|max:7',
             'auditorUnitId' => 'required|integer',
-            'activityGroupId' => 'required|integer',
+            // 'activityGroupId' => 'required|integer',
         ]);
 
         $access_token = session('api_token');
@@ -167,7 +172,7 @@ class BatchController extends Controller
             'active' => $request->input('active') == 1 ? true : false,
             'status' => $request->input('status'),
             'auditorUnitId' => $request->input('auditorUnitId'),
-            'activityGroupId' => $request->input('activityGroupId'),
+            // 'activityGroupId' => $request->input('activityGroupId'),
         ];
 
         try {
@@ -258,7 +263,7 @@ class BatchController extends Controller
         $access_token = session('api_token');
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionBatch/'. $id);
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionBatch/' . $id);
 
             if ($response->successful()) {
                 $batch = $response->object() ?? [];

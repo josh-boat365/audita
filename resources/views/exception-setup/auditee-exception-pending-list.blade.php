@@ -12,9 +12,9 @@
             <div class="col-12">
                 <div class="page-title-box ">
                     <h4 class="mb-sm-0 font-size-18"></h4>
-                    <h1 class="mb-0">Audit Control Exceptions For Branch</h1>
-                    <p class="text-muted mb-0">Respond to all exceptions raised and push them to the audit control
-                        officer for analysis.</p>
+                    <h1 class="mb-0">Pending Audit Control Exceptions For Branch</h1>
+                    <p class="text-muted mb-0">Respond to all pending exceptions and push them to the audit control
+                        officer for resolution.</p>
                 </div>
             </div>
         </div>
@@ -53,21 +53,11 @@
                                     </span>
                                 </div>
                                 <div class="">
-                                    <p class="badge badge-soft-secondary">
+                                    <p class="badge badge-soft-danger">
                                         <b>{{ $exception['countForRespondedExceptionsByAuditee'] }}</b> responded
                                         exception(s) of <b>{{ $exception['exceptionCount'] }}</b> total exception(s)
                                     </p>
                                     <br>
-                                    {{--  @if ($exception['countForNotResolvedExceptionsByAuditee'] > 0)
-                                            {
-                                            <p class="badge badge-soft-danger">
-                                                <b>{{ $exception['countForNotResolvedExceptionsByAuditee'] }}</b> not
-                                                resolved
-                                                exception(s) of <b>{{ $exception['exceptionCount'] }}</b> total
-                                                exception(s)
-                                            </p>
-                                            }
-                                        @endif  --}}
                                 </div>
                             </td>
                             <td> {{ Carbon\Carbon::parse($exception['submittedAt'])->format('jS F, Y ') }} </td>

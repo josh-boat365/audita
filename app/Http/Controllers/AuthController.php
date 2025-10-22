@@ -34,6 +34,8 @@ class AuthController extends Controller
             'password' => 'required|string|max:255',
         ]);
 
+        // dd($request->all());
+
         // Prepare data for the API request
         $data = [
             'appName' => 'Auditor',
@@ -42,13 +44,13 @@ class AuthController extends Controller
             'validateAppAcess' => true
         ];
 
+        // dd($data);
 
         try {
-            //http://bp-ho-gcupdate.Bestpointgh.com:8093/verification/LocalAccount/UserNameOrPhoneOrEmailAndPassword
-            //http://192.168.1.200:5126/Auditor/Login
-            // Send the POST request to the API
-            $response = Http::withoutVerifying()->post('http://bp-ho-gcupdate.Bestpointgh.com:8093/verification/LocalAccount/UserNameOrPhoneOrEmailAndPassword', $data);
 
+            // Send the POST request to the API
+            $response = Http::withoutVerifying()->post('http://192.168.1.200:5126/Auditor/Login', $data);
+                // dd($response->json());
             // Check for a successful response and the presence of access token
             if ($response->successful() && isset($response['access_token'])) {
                 $data = $response->object();
@@ -66,6 +68,8 @@ class AuthController extends Controller
                 ]);
 
 
+
+
                 // Clear rate limit on success
                 RateLimiter::clear($throttleKey);
 
@@ -74,12 +78,13 @@ class AuthController extends Controller
                 // 2 - Head of Internal Audit
                 // 4 - Head of Internal Control & Compliance
                 $topManagers = [1, 2, 4];
-                $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
-                $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+                $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
+                $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
 
                 if (in_array($employeeRoleId, $topManagers)) {
                     return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');
                 }
+                // dd($employeeRoleId);
 
                 return redirect()->route('my.group.dashboard', $employeeId)->with('toast_success', 'Logged in successfully');
             }
@@ -90,7 +95,9 @@ class AuthController extends Controller
             // Log the error if authentication fails
             Log::warning('Authentication failed for user', ['user' => $request->input('username')]);
             // Return error if authentication fails
-            return redirect()->back()->with('toast_error', 'Invalid credentials. Please try again.');
+            $userAccessMessage = ($response->json()['error'] ?? 'Invalid credentials. Please try again.');
+
+            return redirect()->back()->with('toast_error',  $userAccessMessage);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             // Log the exception details for connection issues
             Log::error('Connection error during authentication', [
@@ -161,8 +168,8 @@ class AuthController extends Controller
             // ], 200);
 
             $topManagers = [1, 2, 4];
-            $employeeRoleId = ExceptionController::getLoggedInUserInformation()->empRoleId;
-            $employeeId = ExceptionController::getLoggedInUserInformation()->id;
+            $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
+            $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
 
             if (in_array($employeeRoleId, $topManagers)) {
                 return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');

@@ -16,6 +16,7 @@
         "laravel/tinker": "^2.9",
         "opcodesio/log-viewer": "^3.14",
         "phpoffice/phpword": "^1.4",
+        "rap2hpoutre/laravel-log-viewer": "^2.5",
         "realrashid/sweet-alert": "^7.2"
     },
     "require-dev": {

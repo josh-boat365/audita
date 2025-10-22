@@ -4,15 +4,21 @@
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
-                <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                    <h4 class="mb-sm-0 font-size-18">List of Exceptions</h4>
+                <div class="page-title-box mt-2">
+                    <h1 class="mb-0">Internal Control Exceptions For Branch</h1>
+                    <p class="text-muted mt-2 mb-0">Respond to exceptions raised by Internal Control Auditors</p>
                 </div>
             </div>
         </div>
         <!-- end page title -->
-
-        <a href="{{ route('exception.create') }}" class="btn btn-success btn-rounded waves-effect waves-light "><i
-                class="bx bxs-plus"></i>Create</a>
+        @if ($employeeDepartmentId === 8 || $employeeDepartmentId === 7)
+            {{--  IF USER IS IN THE INTERNAL CONTROL DEPARTMENT OR AUDIT CONTROL DEPARTMENT SHOW - DEPARTMENT ID - 8 OR 7  --}}
+            {{--  Show Create Button  --}}
+            <a href="{{ route('exception.create') }}" class="btn btn-success btn-rounded waves-effect waves-light "><i
+                    class="bx bxs-plus"></i>Create</a>
+        @else
+            <div></div>
+        @endif
 
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
 
@@ -21,7 +27,8 @@
             <table class="table table-bordered  table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Exception</th>
+                        <th>Exception Title</th>
+                        <th>Exception Description</th>
                         <th>Root Cause</th>
                         <th>Auditor</th>
                         <th>Process Type</th>
@@ -37,28 +44,29 @@
                     {{--  {{ dd($exceptions) }}  --}}
                     @forelse ($exceptions as $exception)
                         <tr>
-                            <th scope="row"><a href="#">{!! $exception->exception !!}</a></th>
-                            <td> {{ $exception->rootCause }} </td>
-                            <td> {{ $exception->auditorName }} </td>
+                            <th scope="row"><a href="#">{{ $exception->exceptionTitle ?? '-----' }}</a></th>
+                            <th scope="row">{{ $exception->exception ?? '-----' }}</th>
+                            <td> {{ $exception->rootCause ?? 'Not Determined' }} </td>
+                            <td> {{ $exception->auditorName ?? 'N/A' }} </td>
 
                             <td>
                                 <span class="dropdown badge rounded-pill bg-primary">
-                                    {{ $exception->processType }}
+                                    {{ $exception->processType ?? 'N/A' }}
                                 </span>
                             </td>
                             <td>
 
                                 <span
-                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : 'bg-success') }}">
+                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : ($exception->riskRate == 'Low' ? 'bg-success' : 'bg-secondary')) }}">
 
-                                    {{ $exception->riskRate }}
+                                    {{ $exception->riskRate ?? 'Not Determined' }}
                                 </span>
 
                             </td>
                             <td> {{ $exception->department }} </td>
                             <td> <span
                                     class="dropdown badge rounded-pill {{ $exception->status == 'PENDING' ? 'bg-dark' : 'bg-success' }}">
-                                    {{ $exception->status }}
+                                    {{ $exception->status ?? 'N/A' }}
                                 </span>
                             </td>
                             <td> {{ Carbon\Carbon::parse($exception->occurrenceDate)->format('jS F, Y ') }}
@@ -77,11 +85,15 @@
                                     @if (
                                         ($exception->auditorId === $employeeId && (empty($exception->fileAttached) && empty($exception->comment))) ||
                                             ($exception->auditorId !== $employeeId && (empty($exception->fileAttached) && empty($exception->comment))))
-                                        <a href="" data-bs-toggle="modal"
-                                            data-bs-target=".bs-delete-modal-lg-{{ $exception->id }}">
-                                            <span class="badge round bg-danger font-size-13"><i
-                                                    class="bx bxs-trash"></i> delete</span>
-                                        </a>
+                                        @if ($employeeDepartmentId === 8 || $employeeDepartmentId === 7)
+                                            <a href="" data-bs-toggle="modal"
+                                                data-bs-target=".bs-delete-modal-lg-{{ $exception->id }}">
+                                                <span class="badge round bg-danger font-size-13"><i
+                                                        class="bx bxs-trash"></i> delete</span>
+                                            </a>
+                                        @else
+                                            <div></div>
+                                        @endif
                                         <!-- Modal for Delete Confirmation -->
                                         <div class="modal fade bs-delete-modal-lg-{{ $exception->id }}" tabindex="-1"
                                             role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
@@ -125,7 +137,11 @@
 
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">No Batch Found</td>
+                            <td colspan="12" class="text-center text-muted py-4">
+                                <i class="bx bx-file fs-1 text-muted"></i>
+                                <p class="mb-0">No pending exceptions </p>
+                                <small>All exceptions have been processed</small>
+                            </td>
                         </tr>
                     @endforelse
 

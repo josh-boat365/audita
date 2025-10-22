@@ -36,7 +36,7 @@
                                         <textarea class="form-control" rows="3" name="exception" placeholder="Enter exception details......" required>{{ $exceptionItem->exception }}</textarea>
                                         <div class="invalid-feedback">Please enter an exception.</div>
                                     </div>
-                                    
+
                                     <div class="mb-3">
                                         <label class="form-label">Root Cause</label>
                                         <textarea class="form-control" rows="3" name="rootCause" placeholder="Enter root cause details......">{{ $exceptionItem->rootCause }}</textarea>
@@ -44,9 +44,21 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Branch/Auditee Response</label>
+                                        <label class="form-label">Auditee/Management Response </label>
                                         <textarea class="form-control editable-textarea" rows="3" name="statusComment"
                                             placeholder="Enter exception response">{{ $exceptionItem->statusComment ?? '' }}</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Recommendation by Auditor</label>
+                                        <textarea class="form-control editable-textarea" rows="3" name="recommendation"
+                                            placeholder="Enter exception recommendation">{{ $exceptionItem->recommendation ?? '' }}</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Risk Involved</label>
+                                        <textarea class="form-control editable-textarea" rows="3" name="riskAnalysis"
+                                            placeholder="Enter risk involved">{{ $exceptionItem->riskAnalysis ?? '' }}</textarea>
                                     </div>
 
 
@@ -87,6 +99,7 @@
                                             <option value="">Select.....</option>
                                             <option value="APPROVED" @selected($exceptionItem->status === 'APPROVED')>Approved</option>
                                             <option value="RESOLVED" @selected($exceptionItem->status === 'RESOLVED')>Resolved</option>
+                                            <option value="NOT-RESOLVED" @selected($exceptionItem->status === 'NOT-RESOLVED')>Not-Resolved</option>
                                         </select>
                                         <div class="invalid-feedback">Please select exception status.</div>
                                     </div>
@@ -110,6 +123,16 @@
                                             @foreach ($batches as $batch)
                                                 <option value="{{ $batch->id }}" @selected($batch->id === $exceptionItem->exceptionBatchId)>
                                                     {{ $batch->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Group<span class="required">*</span></label>
+                                        <select class="form-select " name="activityGroupId" required>
+                                            <option>Select.....</option>
+                                            @foreach ($groups as $group)
+                                                <option value="{{ $group->id }}" @selected($group->id === $exceptionItem->activityGroupId)>
+                                                    {{ $group->name }}</option>
                                             @endforeach
                                         </select>
                                     </div>

@@ -104,16 +104,16 @@
             <div class="col-xl-6">
                 <div class="card">
                     <div class="card-body">
-                        <h4 class="card-title mb-4">Exception Status</h4>
-                        <div class="chart-container" style="height: 300px;">
+                        <h4 class="card-title mb-4">Status Distribution</h4>
+                        <div class="chart-container" style="height: 250px;">
                             <canvas id="statusChart"></canvas>
                         </div>
                         <div class="mt-3 text-center small">
-                            @foreach ($statusData as $status => $count)
+                            @foreach ($statusData as $status => $data)
                                 <span class="me-3">
                                     <i
                                         class="fas fa-circle text-{{ $status === 'RESOLVED' ? 'success' : 'warning' }}"></i>
-                                    {{ $status }} ({{ $count }})
+                                    {{ $status }} ({{ $data['count'] }})
                                 </span>
                             @endforeach
                         </div>
@@ -124,9 +124,30 @@
                 <div class="card">
                     <div class="card-body">
                         <h4 class="card-title mb-4">Risk Level Distribution</h4>
-                        <div class="chart-container" style="height: 300px;">
-                            <canvas id="riskChart"></canvas>
+                        <div class="chart-container" style="height: 250px;">
+                            @if ($riskData->isNotEmpty())
+                                <canvas id="riskChart"></canvas>
+                            @else
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <div class="text-center text-muted">
+                                        <i class="bx bx-pie-chart-alt fs-1 text-muted"></i>
+                                        <p class="mb-0">No risk data available</p>
+                                        <small>Risk levels will appear here when data is available</small>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
+
+                        @if ($riskData->isNotEmpty())
+                            <div class="mt-3 text-center small">
+                                @foreach ($riskData as $risk => $data)
+                                    <span class="me-3">
+                                        <i class="fas fa-circle" style="color: {{ $riskColors[$risk] }}"></i>
+                                        {{ $risk }} ({{ $data['count'] }})
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -169,7 +190,8 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Exception</th>
+                                        <th>Exception Title</th>
+                                        <th>Exception Description</th>
                                         <th>Department</th>
                                         <th>Status</th>
                                         <th>Due Date</th>
@@ -178,6 +200,7 @@
                                 <tbody>
                                     @forelse($highRiskExceptions as $exception)
                                         <tr>
+                                            <td>{{ Str::limit($exception->exceptionTitle, 40) }}</td>
                                             <td>{{ Str::limit($exception->exception, 40) }}</td>
                                             <td>{{ $exception->department }}</td>
                                             <td>
@@ -211,19 +234,30 @@
         <!-- end row -->
 
         @push('scripts')
+            {{--  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  --}}
             <script>
                 $(document).ready(function() {
-                    // Status Chart - Using Bootstrap colors
+                    // Status Chart
+                    // Status Chart
                     new Chart(document.getElementById('statusChart'), {
                         type: 'doughnut',
                         data: {
                             labels: {!! json_encode($statusData->keys()) !!},
                             datasets: [{
-                                data: {!! json_encode($statusData->values()) !!},
-                                backgroundColor: [
-                                    '#198754', // RESOLVED - Bootstrap success
-                                    '#ffc107' // PENDING - Bootstrap warning
-                                ],
+                                data: {!! json_encode($statusData->pluck('count')) !!},
+                                backgroundColor: function(context) {
+                                    const labels = {!! json_encode($statusData->keys()) !!};
+                                    const statusColors = {
+                                        'PENDING': '#ffc107', // warning - yellow
+                                        'APPROVED': '#0d6efd', // primary - blue
+                                        'NOT-RESOLVED': '#dc3545', // danger - red
+                                        'RESOLVED': '#198754' // success - green
+                                    };
+
+                                    // Map each label to its corresponding color
+                                    return labels.map(label => statusColors[label] ||
+                                        '#6c757d'); // default gray for unknown statuses
+                                }(),
                                 hoverBorderColor: "rgba(234, 236, 244, 1)",
                             }],
                         },
@@ -231,15 +265,14 @@
                             maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    display: false,
+                                    display: false
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
                                             let label = context.label || '';
                                             let value = context.raw || 0;
-                                            let total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            let percentage = Math.round((value / total) * 100);
+                                            let percentage = {!! json_encode($statusData->pluck('percentage')) !!}[context.dataIndex];
                                             return `${label}: ${value} (${percentage}%)`;
                                         }
                                     }
@@ -248,19 +281,16 @@
                         }
                     });
 
-                    // Risk Chart - Using Bootstrap colors
+
+                    // Risk Chart
                     new Chart(document.getElementById('riskChart'), {
                         type: 'bar',
                         data: {
                             labels: {!! json_encode($riskData->keys()) !!},
                             datasets: [{
-                                label: "Exceptions",
-                                backgroundColor: [
-                                    '#198754', // Low - Bootstrap danger
-                                    '#dc3545', // High - Bootstrap warning
-                                    '#ffc107' // Medium - Bootstrap success
-                                ],
-                                data: {!! json_encode($riskData->values()) !!},
+                                label: "Count",
+                                data: {!! json_encode($riskData->pluck('count')) !!},
+                                backgroundColor: {!! json_encode($riskColors->values()) !!},
                             }],
                         },
                         options: {

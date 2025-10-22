@@ -56,15 +56,15 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-3">
-                                        <a href="{{ route('members.edit', $member->id) }}">
+                                        {{--  <a href="{{ route('members.edit', $member->id) }}">
                                             <span class="badge rounded-pill bg-primary fonte-size-13">
                                                 <i class="bx bxs-pencil"></i> edit
                                             </span>
-                                        </a>
+                                        </a>  --}}
                                         <a href="#" data-bs-toggle="modal"
                                             data-bs-target=".bs-delete-modal-lg-{{ $member->id }}">
                                             <span class="badge rounded-pill bg-danger fonte-size-13">
-                                                <i class="bx bxs-trash"></i> delete
+                                                <i class="bx bxs-trash"></i> remove
                                             </span>
                                         </a>
 
@@ -158,10 +158,11 @@
                     <div class="mb-3">
                         <label class="form-label">Select Group Member</label>
                         <div>
+                            {{--  {{ dd($employees) }}  --}}
                             <select class="select2 form-control select2-multiple" multiple="multiple"
                                 data-placeholder="Choose ..." id="customSelect" name="employeeId">
                                 @foreach ($employees as $employee)
-                                    <option value="{{ $employee->id }}">{{ $employee->firstName }},
+                                    <option value="{{ $employee->id ?? '' }}">{{ $employee->firstName }},
                                         {{ $employee->surname }} - {{ $employee->empRoleName }}</option>
                                 @endforeach
 

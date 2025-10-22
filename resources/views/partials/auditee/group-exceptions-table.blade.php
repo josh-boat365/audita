@@ -2,7 +2,6 @@
 
 @php
     // Sort exceptions: non-RESOLVED items first, then RESOLVED items
-    $checkForNotResolved = 1;
     $status = $pendingException->status;
     $sortedExceptions = collect($exceptions ?? [])
         ->sortBy(function ($exception) use ($status) {
@@ -10,15 +9,12 @@
             if ($status === 'ANALYSIS') {
                 return $exception->status === 'RESOLVED' ? 1 : 0;
             }
-
             // For other statuses, sort by recommendedStatus
             return $exception->recommendedStatus === 'RESOLVED' ? 1 : 0;
         })
         ->values()
         ->all();
 @endphp
-
-{{--  {{ dd($sortedExceptions) }}  --}}
 
 <div class="table-responsive">
     <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
@@ -28,7 +24,7 @@
                 <th scope="col">Exception Title</th>
                 <th scope="col">Exception Description</th>
                 <th scope="col">Sub Category</th>
-                <th scope="col">Management Response</th>
+                <th scope="col">Exception Response</th>
                 <th scope="col">Action</th>
             </tr>
         </thead>
@@ -103,11 +99,6 @@
                             @include('partials.auditee.action-buttons', [
                                 'exceptionItem' => $exceptionItem,
                                 'pendingExceptionBatchStatus' => $pendingException->status,
-                                'pushBackButtonCheck' => $pushBackButtonCheck,
-                                'auditorButtonCheck' => $auditorButtonCheck,
-                                'employeeDepartmentId' => $employeeDepartmentId,
-                                'auditorDepartments' => $auditorDepartments,
-                                'pendingExceptionBatchStatusId' => $pendingException->id,
                             ])
                         </td>
                     </tr>
@@ -128,8 +119,6 @@
     @endphp
 
     @if ($allResolved && $pendingException->status !== 'ANALYSIS')
-        {{--  @if ($allResolved && $pendingException->status !== 'ANALYSIS')  --}}
-
         <div class="mt-3 mb-4 float-end">
             {{-- Action Button for Pushing to Resolved --}}
             <form class="exception-form" action="{{ route('exception.supervisor.action') }}" method="POST">
@@ -141,20 +130,6 @@
                 </button>
             </form>
         </div>
-    @elseif($allResolved && in_array($employeeDepartmentId, $auditorDepartments))
-        <div class="mt-3 mb-4 float-end">
-            {{-- Action Button for Pushing to Resolved --}}
-            <form action="{{ route('exception.supervisor.action') }}" method="POST">
-                @csrf
-                <input type="hidden" name="batchExceptionId" value="{{ $pendingException->id ?? '' }}">
-                <input type="hidden" name="status" value="RESOLVED">
-                <button type="submit" class="btn btn-dark">
-                    <i class="bx bx-analyse"></i> Set Batch to Resolved/Completed
-                </button>
-            </form>
-        </div>
-    @else
-        <div></div>
     @endif
 
 </div>

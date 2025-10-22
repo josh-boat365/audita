@@ -28,7 +28,7 @@ class GroupController extends Controller
         $groups = ExceptionController::paginate($sortedGroups, 15, $request);
 
 
-        $employeeData = ExceptionController::getLoggedInUserInformation();
+        $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
 
@@ -238,6 +238,36 @@ class GroupController extends Controller
             $groups = [];
             Log::error('Error fetching activity group data', ['error' => $e->getMessage()]);
             toast('Error fetching activity group data', 'error');
+        }
+
+        return $groups;
+    }
+
+
+    public static function getEmployeeGroups()
+    {
+        $access_token = session('api_token');
+
+        $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
+
+        try {
+            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/GroupMember/employee/'. $employeeId);
+
+            if ($response->successful()) {
+                $groups = $response->object() ?? [];
+            } elseif ($response->status() == 404) {
+                $groups = [];
+                Log::warning('Employee Group API returned 404 Not Found');
+                toast('Employee group data not found', 'warning');
+            } else {
+                $groups = [];
+                Log::error('Employee API request failed', ['status' => $response->status()]);
+                toast('Error fetching employee group data', 'error');
+            }
+        } catch (\Exception $e) {
+            $groups = [];
+            Log::error('Error fetching employee group data', ['error' => $e->getMessage()]);
+            toast('Error fetching employee group data', 'error');
         }
 
         return $groups;

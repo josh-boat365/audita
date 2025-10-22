@@ -21,7 +21,8 @@
             <table class="table table-bordered  table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Exception</th>
+                        <th>Exception Title</th>
+                        <th>Exception Description</th>
                         <th>Root Cause</th>
                         <th>Auditor</th>
                         <th>Auditee</th>
@@ -38,8 +39,9 @@
                     {{--  {{ dd($exceptions) }}  --}}
                     @forelse ($exceptions as $exception)
                         <tr>
-                            <th scope="row"><a href="#">{{ $exception->exception }}</a></th>
-                            <td> {{ $exception->rootCause }} </td>
+                            <th scope="row"><a href="#">{{ $exception->exceptionTitle ?? '----' }}</a></th>
+                            <th scope="row">{{ $exception->exception ?? '----' }}</th>
+                            <td> {{ $exception->rootCause ?? '-----' }} </td>
                             <td> {{ $exception->auditorName ?? 'N/A' }} </td>
                             <td> {{ $exception->auditeeName ?? 'N/A' }} </td>
 
@@ -51,9 +53,9 @@
                             <td>
 
                                 <span
-                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : 'bg-success') }}">
+                                    class="dropdown badge rounded-pill {{ $exception->riskRate == 'High' ? 'bg-danger' : ($exception->riskRate == 'Medium' ? 'bg-warning' : ($exception->riskRate == 'Low' ? 'bg-success':'bg-secondary')) }}">
 
-                                    {{ $exception->riskRate }}
+                                    {{ $exception->riskRate ?? 'Not Determined' }}
                                 </span>
 
                             </td>

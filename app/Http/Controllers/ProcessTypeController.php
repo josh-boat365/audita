@@ -96,7 +96,12 @@ class ProcessTypeController extends Controller
 
             if ($response->successful()) {
 
-                return redirect()->back()->with('toast_success', 'Sub Process Type created successfully');
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sub Process Type created successfully',
+                    'data' => $data['name'],
+                    'processTypeId' => $data['processTypeId']
+                ]);
             } else {
                 // Log the error response
                 Log::error('Failed to create sub process type', [

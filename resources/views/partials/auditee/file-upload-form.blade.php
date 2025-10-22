@@ -9,7 +9,7 @@
             enctype="multipart/form-data">
             @csrf
             <label class="form-label">Attach Files</label>
-            <div class="dropzone file-upload-dropzone">
+            <div class="dropzone file-upload-dropzone-{{ $exceptionItem->id }}">
                 <div class="dz-message needsclick">
                     <div class="mb-3">
                         <i class="display-4 text-muted bx bxs-cloud-upload"></i>
@@ -30,7 +30,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         Dropzone.autoDiscover = false;
-        var myDropzone = new Dropzone(".file-upload-dropzone", {
+        var myDropzone = new Dropzone(".file-upload-dropzone-{{ $exceptionItem->id }}", {
             url: "{{ route('exception.file.upload', $exceptionItem->id) }}",
             paramName: "files[]",
             maxFilesize: 5,

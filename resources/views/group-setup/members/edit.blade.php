@@ -28,13 +28,15 @@
                             <label class="form-label">Select Group Member</label>
                             <div>
                                 <select class="select2 form-control" id="customSelect" name="employeeId">
-                                    <option selected> Select member......</option>
+                                    <option value="">Select member...</option>
                                     @foreach ($employees as $employee)
-                                        <option value="{{ $employee->id }}" @selected($employee->id === $groupMember->employeeId)>
-                                            {{ $employee->firstName }},
-                                            {{ $employee->surname }} - {{ $employee->empRoleName }}</option>
-                                    @endforeach
 
+                                        <option value="{{ $employee->id }}"
+                                            {{ $employee->id == $groupMemberEmployeeId ? 'selected' : '' }}>
+                                            {{ $employee->firstName }}, {{ $employee->surname }} -
+                                            {{ $employee->empRoleName }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>

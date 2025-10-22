@@ -159,16 +159,29 @@
                     <div class="card-body">
                         <h4 class="card-title mb-4">Risk Level Distribution</h4>
                         <div class="chart-container" style="height: 250px;">
-                            <canvas id="riskChart"></canvas>
+                            @if ($riskData->isNotEmpty())
+                                <canvas id="riskChart"></canvas>
+                            @else
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <div class="text-center text-muted">
+                                        <i class="bx bx-pie-chart-alt fs-1 text-muted"></i>
+                                        <p class="mb-0">No risk data available</p>
+                                        <small>Risk levels will appear here when data is available</small>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
-                        <div class="mt-3 text-center small">
-                            @foreach ($riskData as $risk => $data)
-                                <span class="me-3">
-                                    <i class="fas fa-circle" style="color: {{ $riskColors[$risk] }}"></i>
-                                    {{ $risk }} ({{ $data['count'] }})
-                                </span>
-                            @endforeach
-                        </div>
+
+                        @if ($riskData->isNotEmpty())
+                            <div class="mt-3 text-center small">
+                                @foreach ($riskData as $risk => $data)
+                                    <span class="me-3">
+                                        <i class="fas fa-circle" style="color: {{ $riskColors[$risk] }}"></i>
+                                        {{ $risk }} ({{ $data['count'] }})
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -265,7 +278,8 @@
                             <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Exception</th>
+                                        <th>Exception Title</th>
+                                        <th>Exception Description</th>
                                         <th>Department</th>
                                         <th>Process Type</th>
                                         <th>Status</th>
@@ -275,6 +289,7 @@
                                 <tbody>
                                     @forelse($highRiskExceptions as $exception)
                                         <tr>
+                                            <td>{{ Str::limit($exception['exceptionTitle'], 40) }}</td>
                                             <td>{{ Str::limit($exception['exception'], 40) }}</td>
                                             <td>{{ $exception['department'] }}</td>
                                             <td>{{ $exception['processType'] }}</td>
@@ -380,7 +395,19 @@
                             labels: {!! json_encode($statusData->keys()) !!},
                             datasets: [{
                                 data: {!! json_encode($statusData->pluck('count')) !!},
-                                backgroundColor: ['#198754', '#ffc107'],
+                                backgroundColor: function(context) {
+                                    const labels = {!! json_encode($statusData->keys()) !!};
+                                    const statusColors = {
+                                        'PENDING': '#ffc107', // warning - yellow
+                                        'APPROVED': '#0d6efd', // primary - blue
+                                        'NOT-RESOLVED': '#dc3545', // danger - red
+                                        'RESOLVED': '#198754' // success - green
+                                    };
+
+                                    // Map each label to its corresponding color
+                                    return labels.map(label => statusColors[label] ||
+                                        '#6c757d'); // default gray for unknown statuses
+                                }(),
                                 hoverBorderColor: "rgba(234, 236, 244, 1)",
                             }],
                         },

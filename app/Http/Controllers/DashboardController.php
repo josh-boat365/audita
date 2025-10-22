@@ -152,30 +152,40 @@ class DashboardController extends Controller
             });
 
             // 2. Risk Rate Distribution (Enhanced with severity levels)
-            $riskData = $reports->groupBy('riskRate')->map(function ($items, $risk) {
-                $severity = match ($risk) {
-                    'High' => 3,
-                    'Medium' => 2,
-                    'Low' => 1,
-                    default => 0
-                };
-                return [
-                    'count' => $items->count(),
-                    'severity' => $severity
-                ];
-            })->sortByDesc('severity');
+            $riskData = $reports->groupBy('riskRate')
+                ->filter(function ($items, $risk) {
+                    // Only include valid risk levels, exclude null/empty/unknown values
+                    return in_array($risk, ['High', 'Medium', 'Low']);
+                })
+                ->map(function ($items, $risk) {
+                    $severity = match ($risk) {
+                        'High' => 3,
+                        'Medium' => 2,
+                        'Low' => 1,
+                    };
+                    return [
+                        'count' => $items->count(),
+                        'severity' => $severity
+                    ];
+                })
+                ->sortByDesc('severity');
 
-            // Risk Data colors prepared colors
+            // Risk Data colors - only for valid risk levels
             $riskColors = $riskData->keys()->mapWithKeys(function ($key) {
                 return [
                     $key => match ($key) {
                         'High' => '#dc3545',    // Red
                         'Medium' => '#ffc107',   // Yellow
                         'Low' => '#28a745',      // Green
-                        default => '#6c757d'     // Grey (fallback)
                     }
                 ];
             });
+
+            // If no valid risk data exists, create empty collections to prevent errors
+            if ($riskData->isEmpty()) {
+                $riskData = collect();
+                $riskColors = collect();
+            }
 
             // 3. Department Distribution (With trend comparison)
             $currentMonth = now()->format('Y-m');
@@ -263,6 +273,7 @@ class DashboardController extends Controller
 
                     return [
                         'id' => $report->id,
+                        'exceptionTitle' => $report->exception,
                         'exception' => $report->exception,
                         'department' => $report->department,
                         'occurrenceDate' => \Carbon\Carbon::parse($report->occurrenceDate)->format('M d, Y'),
@@ -315,6 +326,7 @@ class DashboardController extends Controller
                 // Metrics (Enhanced)
                 'totalExceptions' => $reports->count(),
                 'resolvedCount' => $reports->where('status', 'RESOLVED')->count(),
+                'notResolvedCount' => $reports->where('status', 'NOT-RESOLVED')->count(),
                 'pendingCount' => $reports->where('status', 'PENDING')->count(),
                 'overdueCount' => $reports->filter(function ($report) {
                     if ($report->status !== 'RESOLVED' && $report->proposeResolutionDate) {
@@ -355,6 +367,7 @@ class DashboardController extends Controller
                 'exceptionCategories' => collect(),
                 'totalExceptions' => 0,
                 'resolvedCount' => 0,
+                'notResolvedCount' => 0,
                 'pendingCount' => 0,
                 'overdueCount' => 0,
                 'avgResolutionDays' => 0,
@@ -383,9 +396,12 @@ class DashboardController extends Controller
         }
 
         try {
+            // dd($employeeId);
             // Fetch all necessary data
             $reports = collect(ReportsController::getAllReports());
+            // dd($reports);
             $batches = collect(BatchController::getBatches());
+            // dd($batches);
             $groups = collect(GroupController::getActivityGroups());
             $groupMembers = collect(GroupMembersController::getGroupMembers());
 
@@ -393,44 +409,93 @@ class DashboardController extends Controller
             $validBatches = $batches->filter(fn($batch) => $batch->active && $batch->status === 'OPEN')
                 ->keyBy('id');
 
+
             $validGroups = $groups->filter(fn($group) => $group->active)
                 ->keyBy('id');
+
+            // dd($validGroups);
 
             // Get groups the employee belongs to
             $employeeGroups = $groupMembers->where('employeeId', $employeeId)
                 ->pluck('activityGroupId')
                 ->unique();
 
+            // dd($employeeGroups);
+
             if ($employeeGroups->isEmpty()) {
                 return redirect()->route('dashboard')
                     ->with('toast_warning', 'You are not a member of any active groups');
             }
 
-            // Create batch to group mapping
-            $batchGroupMap = $batches->pluck('activityGroupId', 'id');
 
             // Filter reports - only those belonging to employee's groups
             $filteredReports = $reports->filter(function ($report) use (
                 $validBatches,
                 $validGroups,
-                $employeeGroups,
-                $batchGroupMap
+                $employeeGroups
             ) {
-                $groupId = $batchGroupMap[$report->exceptionBatchId] ?? null;
+                // Check if the report's activity group is valid (active)
+                $hasValidGroup = $validGroups->has($report->activityGroupId);
+                // Check if the report's batch is valid (active and OPEN)
+                $hasValidBatch = $validBatches->has($report->exceptionBatchId);
 
-                return $validBatches->has($report->exceptionBatchId) &&
-                    $validGroups->has($groupId) &&
-                    $employeeGroups->contains($groupId);
-            });
+
+                // Check if employee belongs to the report's activity group
+                $belongsToGroup = $employeeGroups->contains($report->activityGroupId);
+
+                return $hasValidGroup && $hasValidBatch && $belongsToGroup;
+            })->values();
+
+            // dd($filteredReports);
 
             if ($filteredReports->isEmpty()) {
                 return redirect()->route('dashboard')
                     ->with('toast_info', 'No exception reports found for your groups');
             }
 
+
+
             // Process data for dashboard
-            $statusData = $filteredReports->groupBy('status')->map->count();
-            $riskData = $filteredReports->groupBy('riskRate')->map->count();
+            $statusData = $filteredReports->groupBy('status')->map(function ($items, $status) use ($reports) {
+                return [
+                    'count' => $items->count(),
+                    'percentage' => round(($items->count() / $reports->count()) * 100, 1)
+                ];
+            });
+
+            $riskData = $filteredReports->groupBy('riskRate')->filter(function ($items, $risk) {
+                // Only include valid risk levels, exclude null/empty/unknown values
+                return in_array($risk, ['High', 'Medium', 'Low']);
+            })
+                ->map(function ($items, $risk) {
+                    $severity = match ($risk) {
+                        'High' => 3,
+                        'Medium' => 2,
+                        'Low' => 1,
+                    };
+                    return [
+                        'count' => $items->count(),
+                        'severity' => $severity
+                    ];
+                })
+                ->sortByDesc('severity');
+
+            // Risk Data colors - only for valid risk levels
+            $riskColors = $riskData->keys()->mapWithKeys(function ($key) {
+                return [
+                    $key => match ($key) {
+                        'High' => '#dc3545',    // Red
+                        'Medium' => '#ffc107',   // Yellow
+                        'Low' => '#28a745',      // Green
+                    }
+                ];
+            });
+
+            // If no valid risk data exists, create empty collections to prevent errors
+            if ($riskData->isEmpty()) {
+                $riskData = collect();
+                $riskColors = collect();
+            }
             $departmentData = $filteredReports->groupBy('department')->map->count()->sortDesc();
             $processTypeData = $filteredReports->groupBy('processType')->map->count();
 
@@ -474,6 +539,7 @@ class DashboardController extends Controller
             return view('my-dashboard', [
                 'statusData' => $statusData,
                 'riskData' => $riskData,
+                'riskColors' => $riskColors,
                 'departmentData' => $departmentData,
                 'processTypeData' => $processTypeData,
                 'monthlyTrends' => $monthlyTrends,
