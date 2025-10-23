@@ -2,11 +2,9 @@
 
 namespace App\View\Components;
 
-use App\Http\Controllers\ExceptionController;
 use App\Http\Controllers\ExceptionManipulationController;
 use Illuminate\View\View;
 use Illuminate\View\Component;
-use Illuminate\Support\Facades\Http;
 
 class BaseLayout extends Component
 {
@@ -23,8 +21,7 @@ class BaseLayout extends Component
             $employeeRoleId = ExceptionManipulationController::getLoggedInUserInformation()->empRoleId;
             $employeeDepartmentId = ExceptionManipulationController::getLoggedInUserInformation()->departmentId;
 
-            $exception = new ExceptionManipulationController();
-            $response = $exception->getPendingExceptions($employeeId);
+            $response = ExceptionManipulationController::getPendingExceptions($employeeId);
             $pending_exception_count =   collect($response)->count();
 
             // top managers

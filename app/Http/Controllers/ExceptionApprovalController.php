@@ -6,9 +6,20 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\ExceptionController;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class ExceptionApprovalController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     /**
      * Retrieves pending exceptions for supervisor approval
      *
@@ -17,28 +28,18 @@ class ExceptionApprovalController extends Controller
     public function exceptionSupList()
     {
         // 1. Session and Token Validation
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in exceptionSupList');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         try {
-            // 2. API Request Setup
-            $apiEndpoint = 'http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions';
-            Log::info('Fetching pending exceptions from API', ['endpoint' => $apiEndpoint]);
+            // 2. Make API Request with Retry Logic
+            $response = $this->apiService->get(
+                $this->apiService->getEndpoint('pending_batch_exceptions'),
+                $this->getApiToken()
+            );
 
-            // 3. Make API Request with Retry Logic
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100, function ($exception) {
-                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
-                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-                })
-                ->get($apiEndpoint);
-
-            // 4. Handle API Response
+            // 3. Handle API Response
             if (!$response->successful()) {
                 Log::error('API (pending-batch-exceptions) request failed', [
                     'status' => $response->status(),
@@ -49,7 +50,7 @@ class ExceptionApprovalController extends Controller
                     ->with('toast_error', 'Failed to fetch pending exceptions. Please try again later.');
             }
 
-            // 5. Process Response Data
+            // 4. Process Response Data
             $exceptions = $response->json();
 
             if (!is_array($exceptions)) {
@@ -57,7 +58,7 @@ class ExceptionApprovalController extends Controller
                 throw new \RuntimeException('Invalid data received from server');
             }
 
-            // 6. Process Exceptions or Create Empty Dataset
+            // 5. Process Exceptions or Create Empty Dataset
             if (empty($exceptions)) {
                 Log::info('No pending exceptions found');
                 $pendingExceptions = [[
@@ -107,7 +108,7 @@ class ExceptionApprovalController extends Controller
                     ->all();
             }
 
-            // 7. Return View with Processed Data
+            // 6. Return View with Processed Data
             return view('exception-setup.supervisor-approval-list', [
                 'pendingExceptions' => $pendingExceptions,
                 'isEmpty' => empty($pendingExceptions) ||
@@ -150,22 +151,16 @@ class ExceptionApprovalController extends Controller
 
 
 
-
-
-
-
     public function supervisorApproveOrDeclineSingleException(Request $request)
     {
-        $access_token = session('api_token');
-
-        if (empty($access_token)) {
+        if (!$this->hasValidApiToken()) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Session expired, please login to access the application'
                 ], 401);
             }
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+            return $this->redirectToLoginIfNoToken('Session expired, login to access the application');
         }
 
         try {
@@ -187,10 +182,11 @@ class ExceptionApprovalController extends Controller
                 $data['statusComment'] = $request->input('statusComment');
             }
 
-            // dd($data);
-
-            $response = Http::withToken($access_token)
-                ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-single-exception-status/', $data);
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('update_single_exception_status'),
+                $data,
+                $this->getApiToken()
+            );
 
             if ($response->successful()) {
                 $actionMessage = $request->status == 'AMENDMENT' ? 'pushed for amendment' : 'declined';
@@ -253,18 +249,14 @@ class ExceptionApprovalController extends Controller
     public function supervisorActionOnBatchException(Request $request)
     { //Edit or Approved or Declined
 
-        // dd($request->all());
-
-        $access_token = session('api_token');
-
-        if (empty($access_token)) {
+        if (!$this->hasValidApiToken()) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Session expired, please login to access the application'
                 ], 401);
             }
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+            return $this->redirectToLoginIfNoToken('Session expired, login to access the application');
         }
 
         try {
@@ -285,10 +277,11 @@ class ExceptionApprovalController extends Controller
                 $data['statusComment'] = $request->input('statusComment');
             }
 
-            // dd($data);
-
-            $response = Http::withToken($access_token)
-                ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-batch-exception-status/', $data);
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('update_batch_status'),
+                $data,
+                $this->getApiToken()
+            );
 
             if ($response->successful()) {
                 // Define status messages mapping
@@ -376,28 +369,18 @@ class ExceptionApprovalController extends Controller
     public function exceptionAuditorList(Request $request)
     {
         // 1. Session and Token Validation
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in exceptionSupList');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         try {
-            // 2. API Request Setup
-            $apiEndpoint = 'http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions';
-            Log::info('Fetching pending exceptions from API', ['endpoint' => $apiEndpoint]);
+            // 2. Make API Request with Retry Logic
+            $response = $this->apiService->get(
+                $this->apiService->getEndpoint('pending_batch_exceptions'),
+                $this->getApiToken()
+            );
 
-            // 3. Make API Request with Retry Logic
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100, function ($exception) {
-                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
-                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-                })
-                ->get($apiEndpoint);
-
-            // 4. Handle API Response
+            // 3. Handle API Response
             if (!$response->successful()) {
                 Log::error('API (pending-batch-exceptions) request failed', [
                     'status' => $response->status(),
@@ -408,7 +391,7 @@ class ExceptionApprovalController extends Controller
                     ->with('toast_error', 'Failed to fetch pending exceptions. Please try again later.');
             }
 
-            // 5. Process Response Data
+            // 4. Process Response Data
             $exceptions = $response->object();
 
             if (!is_array($exceptions)) {
@@ -416,7 +399,7 @@ class ExceptionApprovalController extends Controller
                 throw new \RuntimeException('Invalid data received from server');
             }
 
-            // 6. Process Exceptions or Create Empty Dataset
+            // 5. Process Exceptions or Create Empty Dataset
             if (empty($exceptions)) {
                 Log::info('No pending exceptions found');
                 $pendingExceptions = [[
@@ -474,7 +457,7 @@ class ExceptionApprovalController extends Controller
                     // Check if group is valid (active)
                     $hasValidGroup = $validGroups->has($groupId);
 
-                    // Check if status 
+                    // Check if status
                     $hasValidStatus = in_array($exception->status, ['DECLINED', 'AMENDMENT', 'APPROVED']);
 
                     // Check access: employee belongs to group OR is a top manager
@@ -507,7 +490,7 @@ class ExceptionApprovalController extends Controller
                     ->all();
             }
 
-            // 7. Return View with Processed Data
+            // 6. Return View with Processed Data
             return view('exception-setup.auditor-approval-list', [
                 'pendingExceptions' => $pendingExceptions,
                 'isEmpty' => empty($pendingExceptions) ||
@@ -536,11 +519,8 @@ class ExceptionApprovalController extends Controller
     public function auditorPushForAnalysis(Request $request)
     {
         // Validate session
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in auditorPushForAnalysis');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         // Validate request data
@@ -556,22 +536,16 @@ class ExceptionApprovalController extends Controller
     public function auditorAnalysisExceptionList()
     {
         // 1. Session and Token Validation
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in auditorAnalysisExceptionList');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         try {
             // 2. Fetch data from API
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100, function ($exception) {
-                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
-                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-                })
-                ->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions');
+            $response = $this->apiService->get(
+                $this->apiService->getEndpoint('pending_batch_exceptions'),
+                $this->getApiToken()
+            );
 
             // 3. Handle API failure - return empty view
             if (!$response->successful()) {
@@ -704,16 +678,14 @@ class ExceptionApprovalController extends Controller
 
     public function auditeeResponse(Request $request)
     {
-        $access_token = session('api_token');
-
-        if (empty($access_token)) {
+        if (!$this->hasValidApiToken()) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Session expired, please login to access the application'
                 ], 401);
             }
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+            return $this->redirectToLoginIfNoToken('Session expired, login to access the application');
         }
 
         try {
@@ -725,19 +697,18 @@ class ExceptionApprovalController extends Controller
                 'statusComment' => 'required|string|max:255',
             ]);
 
-            // dd($validatedData);
-
             $data = [
                 'id' => (int) $validatedData['exceptionItemId'],
                 'recommendedStatus' => $validatedData['status'],
                 'statusComment' => $validatedData['statusComment'],
             ];
 
-            // dd($data);
-
             // Make API request to update exception status
-            $response = Http::withToken($access_token)
-                ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/auditee-update/', $data);
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('exception_auditee_update'),
+                $data,
+                $this->getApiToken()
+            );
 
             if ($response->successful()) {
                 $message = 'Exception response has been submitted successfully';

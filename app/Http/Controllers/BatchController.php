@@ -4,21 +4,28 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\GroupController;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class BatchController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $access_token = session('api_token');
-
-        if (empty($access_token)) {
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
         }
 
         $all_groups = collect(GroupController::getActivityGroups());
@@ -37,17 +44,13 @@ class BatchController extends Controller
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
         $employeeDepartment = $employeeData->department->name;
-        
+
         $sortedBatches = collect($batches)->filter(function ($batch) use ($employeeDepartment) {
             return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
         })
             ->sortByDesc('createdAt');
 
         $batchData = ExceptionController::paginate($sortedBatches, 15, $request);
-
-
-        // dd($employeeFullName);
-
 
         return view('batch-setup.index', compact('activeGroups', 'units', 'batchData', 'employeeFullName', 'employeeDepartment'));
     }
@@ -86,25 +89,21 @@ class BatchController extends Controller
         ];
 
         try {
-            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionBatch', $data);
+            $response = $this->apiService->post(
+                $this->apiService->getEndpoint('exception_batch'),
+                $data,
+                $this->getApiToken()
+            );
 
-            if ($response->successful()) {
+            return $this->handleApiResponse(
+                $response,
+                'Batch created successfully',
+                'batch',
+                'Create batch'
+            );
 
-                return redirect()->route('batch')->with('toast_success', 'Batch created successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to create batch', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to create batch');
-            }
         } catch (\Exception $e) {
-            Log::error('Exception occurred while creating batch', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'creating batch', ['data' => $data]);
         }
     }
 
@@ -163,8 +162,6 @@ class BatchController extends Controller
             // 'activityGroupId' => 'required|integer',
         ]);
 
-        $access_token = session('api_token');
-
         $data = [
             'id' => $id,
             'name' => $request->input('name'),
@@ -176,24 +173,21 @@ class BatchController extends Controller
         ];
 
         try {
-            $response = Http::withToken($access_token)->put('http://192.168.1.200:5126/Auditor/ExceptionBatch/', $data);
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('exception_batch'),
+                $data,
+                $this->getApiToken()
+            );
 
-            if ($response->successful()) {
-                return redirect()->route('batch')->with('toast_success', 'Batch updated successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to update batch', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to update batch');
-            }
+            return $this->handleApiResponse(
+                $response,
+                'Batch updated successfully',
+                'batch',
+                'Update batch'
+            );
+
         } catch (\Exception $e) {
-            Log::error('Exception occurred while updating batch', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'updating batch', ['data' => $data]);
         }
     }
 
@@ -202,41 +196,33 @@ class BatchController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        // Get the access token from the session
-        $accessToken = session('api_token'); // Replace with your actual access token
-
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($accessToken)
-                ->delete("http://192.168.1.200:5126/Auditor/ExceptionBatch/{$id}");
+            $response = $this->apiService->delete(
+                "{$this->apiService->getEndpoint('exception_batch')}/{$id}",
+                $this->getApiToken()
+            );
 
-            // Check the response status and return appropriate response
-            if ($response->successful()) {
-                return redirect()->route('batch')->with('toast_success', 'Batch deleted successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to delete Batch', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to delete Batch');
-            }
+            return $this->handleApiResponse(
+                $response,
+                'Batch deleted successfully',
+                'batch',
+                'Delete batch'
+            );
+
         } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Exception occurred while deleting Batch', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'deleting batch', ['batch_id' => $id]);
         }
     }
 
     public static function getBatches()
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionBatch');
+            $response = $service->get(
+                $service->getEndpoint('exception_batch'),
+                session('api_token')
+            );
 
             if ($response->successful()) {
                 $batches = $response->object() ?? [];
@@ -260,10 +246,13 @@ class BatchController extends Controller
 
     public static function getABatch($id)
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionBatch/' . $id);
+            $response = $service->get(
+                "{$service->getEndpoint('exception_batch')}/{$id}",
+                session('api_token')
+            );
 
             if ($response->successful()) {
                 $batch = $response->object() ?? [];

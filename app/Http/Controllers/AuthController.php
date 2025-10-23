@@ -11,10 +11,18 @@ use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
+use App\Services\AuditorApiService;
 
 
 class AuthController extends Controller
 {
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     public function login(Request $request)
     {
         // Define rate limit key and limit threshold
@@ -25,7 +33,7 @@ class AuthController extends Controller
         // Check rate limit
         if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
             $seconds = RateLimiter::availableIn($throttleKey);
-            return back()->with('toast_error', ['message' => "Too many login attempts. Please try again in $seconds seconds."]);
+            return back()->with('toast_error', "Too many login attempts. Please try again in $seconds seconds.");
         }
 
         // Validate request input
@@ -34,46 +42,31 @@ class AuthController extends Controller
             'password' => 'required|string|max:255',
         ]);
 
-        // dd($request->all());
-
-        // Prepare data for the API request
-        $data = [
-            'appName' => 'Auditor',
-            'user' => $request->input('username'),
-            'password' => $request->input('password'),
-            'validateAppAcess' => true
-        ];
-
-        // dd($data);
-
         try {
+            // Use the centralized API service for authentication
+            $result = $this->apiService->login(
+                $request->input('username'),
+                $request->input('password'),
+                true
+            );
 
-            // Send the POST request to the API
-            $response = Http::withoutVerifying()->post('http://192.168.1.200:5123/Auditor/Login', $data);
-                // dd($response->json());
-            // Check for a successful response and the presence of access token
-            if ($response->successful() && isset($response['access_token'])) {
-                $data = $response->object();
-
-                // dd($data);
+            // Check if login was successful
+            if ($result['success']) {
+                $data = $result['data'];
 
                 // Store access token and user profile data in the session
                 session([
                     'api_token' => $data->access_token,
-                    // 'token_issued_at' => time(), // Initialize last activity time
                     'user_name' => $data->profile->fullName,
                     'user_email' => $data->profile->email,
                     'employee_id' => $data->profile->id,
                     'empRole' => 4,
                 ]);
 
-
-
-
                 // Clear rate limit on success
                 RateLimiter::clear($throttleKey);
 
-                // top managers
+                // Top managers role IDs
                 // 1 - Managing Director
                 // 2 - Head of Internal Audit
                 // 4 - Head of Internal Control & Compliance
@@ -84,37 +77,23 @@ class AuthController extends Controller
                 if (in_array($employeeRoleId, $topManagers)) {
                     return redirect()->intended('/dashboard')->with('toast_success', 'Logged in successfully');
                 }
-                // dd($employeeRoleId);
 
-                return redirect()->route('my.group.dashboard', $employeeId)->with('toast_success', 'Logged in successfully');
+                return redirect()->route('my.group.dashboard', $employeeId)
+                    ->with('toast_success', 'Logged in successfully');
             }
 
             // Increment the rate limit on failed login attempt
             RateLimiter::hit($throttleKey, $decayMinutes * 60);
 
-            // Log the error if authentication fails
-            Log::warning('Authentication failed for user', ['user' => $request->input('username')]);
-            // Return error if authentication fails
-            $userAccessMessage = ($response->json()['error'] ?? 'Invalid credentials. Please try again.');
+            // Return error message from API service
+            return redirect()->back()->with('toast_error', $result['error']);
 
-            return redirect()->back()->with('toast_error',  $userAccessMessage);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Log the exception details for connection issues
-            Log::error('Connection error during authentication', [
-                'user' => $request->input('username'),
-                'error' => $e->getMessage(),
-            ]);
-
-            // Increment the rate limit on exception
-            RateLimiter::hit($throttleKey, $decayMinutes * 60);
-
-            // Return specific error message for no internet connection
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         } catch (\Exception $e) {
-            // Log the exception details for other errors
+            // Log the exception details
             Log::error('Error during authentication', [
                 'user' => $request->input('username'),
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Increment the rate limit on exception

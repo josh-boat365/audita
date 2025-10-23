@@ -4,19 +4,27 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class ProcessTypeController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $access_token = session('api_token');
-
-        if (empty($access_token)) {
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
         }
 
         $processTypesData = $this->getProcessTypes();
@@ -26,11 +34,6 @@ class ProcessTypeController extends Controller
 
         return view('process-type-setup.index', compact('processTypes'));
     }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-
 
 
     /**
@@ -43,33 +46,27 @@ class ProcessTypeController extends Controller
             'active' => 'required|integer',
         ]);
 
-        $access_token = session('api_token');
-
         $data = [
             'name' => $request->input('name'),
             'active' => $request->input('active') == 1 ? true : false,
         ];
 
         try {
-            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ProcessType', $data);
+            $response = $this->apiService->post(
+                $this->apiService->getEndpoint('process_type'),
+                $data,
+                $this->getApiToken()
+            );
 
-            if ($response->successful()) {
+            return $this->handleApiResponse(
+                $response,
+                'Process Type created successfully',
+                'process-type',
+                'Create process type'
+            );
 
-                return redirect()->route('process-type')->with('toast_success', 'Process Type created successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to create process type', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to create process type');
-            }
         } catch (\Exception $e) {
-            Log::error('Exception occurred while creating process type', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'creating process type', ['data' => $data]);
         }
     }
 
@@ -83,8 +80,6 @@ class ProcessTypeController extends Controller
             'active' => 'required|integer',
         ]);
 
-        $access_token = session('api_token');
-
         $data = [
             'name' => $request->input('name'),
             'processTypeId' => $request->input('processTypeId'),
@@ -92,10 +87,13 @@ class ProcessTypeController extends Controller
         ];
 
         try {
-            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/SubProcessType', $data);
+            $response = $this->apiService->post(
+                $this->apiService->getEndpoint('sub_process_type'),
+                $data,
+                $this->getApiToken()
+            );
 
             if ($response->successful()) {
-
                 return response()->json([
                     'success' => true,
                     'message' => 'Sub Process Type created successfully',
@@ -103,7 +101,6 @@ class ProcessTypeController extends Controller
                     'processTypeId' => $data['processTypeId']
                 ]);
             } else {
-                // Log the error response
                 Log::error('Failed to create sub process type', [
                     'status' => $response->status(),
                     'response' => $response->body()
@@ -111,11 +108,7 @@ class ProcessTypeController extends Controller
                 return redirect()->back()->with('toast_error', 'Sorry, failed to create sub process type');
             }
         } catch (\Exception $e) {
-            Log::error('Exception occurred while creating sub process type', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'creating sub process type', ['data' => $data]);
         }
     }
 
@@ -141,12 +134,7 @@ class ProcessTypeController extends Controller
                 return redirect()->back()->with('toast_error', 'Process Type does not exist');
             }
         } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Exception occurred while fetching process type', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'fetching process type', ['process_type_id' => $id]);
         }
     }
 
@@ -161,37 +149,28 @@ class ProcessTypeController extends Controller
             'active' => 'required|integer',
         ]);
 
-        $access_token = session('api_token');
-
         $data = [
             'id' => $id,
             'name' => $request->input('name'),
             'active' => $request->input('active') == 1 ? true : false,
         ];
-        // dd($data);
 
         try {
-            $response = Http::withToken($access_token)->put(
-                'http://192.168.1.200:5126/Auditor/ProcessType/',
-                $data
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('process_type'),
+                $data,
+                $this->getApiToken()
             );
 
-            if ($response->successful()) {
-                return redirect()->route('process-type')->with('toast_success', 'Process Type updated successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to update process type', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to update process type');
-            }
+            return $this->handleApiResponse(
+                $response,
+                'Process Type updated successfully',
+                'process-type',
+                'Update process type'
+            );
+
         } catch (\Exception $e) {
-            Log::error('Exception occurred while updating process type', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'updating process type', ['data' => $data]);
         }
     }
 
@@ -200,45 +179,37 @@ class ProcessTypeController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        // Get the access token from the session
-        $accessToken = session('api_token'); // Replace with your actual access token
-
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($accessToken)
-                ->delete("http://192.168.1.200:5126/Auditor/ProcessType/{$id}");
+            $response = $this->apiService->delete(
+                "{$this->apiService->getEndpoint('process_type')}/{$id}",
+                $this->getApiToken()
+            );
 
-            // Check the response status and return appropriate response
-            if ($response->successful()) {
-                return redirect()->route('process-type')->with('toast_success', 'Process Type deleted successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to delete process type', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to delete process type');
-            }
+            return $this->handleApiResponse(
+                $response,
+                'Process Type deleted successfully',
+                'process-type',
+                'Delete process type'
+            );
+
         } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Exception occurred while deleting process type', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'deleting process type', ['process_type_id' => $id]);
         }
     }
 
     /**
-     * Fetch branch data from the API
+     * Fetch process type data from the API
      */
 
     public static function getProcessTypes()
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ProcessType');
+            $response = $service->get(
+                $service->getEndpoint('process_type'),
+                session('api_token')
+            );
 
             if ($response->successful()) {
                 $processType = $response->object() ?? [];
@@ -267,10 +238,13 @@ class ProcessTypeController extends Controller
 
     public static function getSubProcessTypes()
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/SubProcessType');
+            $response = $service->get(
+                $service->getEndpoint('sub_process_type'),
+                session('api_token')
+            );
 
             if ($response->successful()) {
                 $processType = $response->object() ?? [];
@@ -297,49 +271,14 @@ class ProcessTypeController extends Controller
     }
 
 
-    // public static function getSubProcessTypesByProcessTypeId($processTypeId)
-    // {
-    //     $access_token = session('api_token');
-
-    //     try {
-    //         $response = Http::withToken($access_token)->get(
-    //             'http://192.168.1.200:5126/Auditor/SubProcessType',$processTypeId
-    //         );
-    //         if ($response->successful()) {
-
-    //             $subProcessTypes = $response->object() ?? [];
-    //             //pluck by processTypeId
-    //             $subProcessTypes = collect($subProcessTypes)->where('processTypeId', $processTypeId)->values()->all() ?? [];
-
-    //         } elseif ($response->status() == 404) {
-    //             $subProcessTypes = [];
-    //             Log::warning('Sub Process Type API returned 404 Not Found');
-    //             toast('Sub Process Type data not found', 'warning');
-    //         } else {
-
-    //             $subProcessTypes = [];
-    //             Log::error('Sub Process Type API request failed', [
-    //                 'status' => $response->status(),
-    //                 'response' => $response->body()
-    //             ]);
-    //             toast('Error fetching sub process type data', 'error');
-    //         }
-    //     } catch (\Exception $e) {
-    //         $subProcessTypes = [];
-    //         Log::error('Error fetching sub process type data', ['error' => $e->getMessage()]);
-    //         toast('Error fetching sub process type data', 'error');
-    //     }
-    //      // return $subProcessTypes;
-    //     return response()->json($subProcessTypes);
-    // }
-
     public static function getSubProcessTypesByProcessTypeId($processTypeId = null)
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            $response = Http::withToken($access_token)->get(
-                'http://192.168.1.200:5126/Auditor/SubProcessType'
+            $response = $service->get(
+                $service->getEndpoint('sub_process_type'),
+                session('api_token')
             );
 
             if ($response->successful()) {
@@ -365,10 +304,11 @@ class ProcessTypeController extends Controller
 
     public function getAProcessType($id)
     {
-        $access_token = session('api_token');
-
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ProcessType/' . $id);
+            $response = $this->apiService->get(
+                "{$this->apiService->getEndpoint('process_type')}/{$id}",
+                $this->getApiToken()
+            );
 
             if ($response->successful()) {
                 $processType = $response->object() ?? [];

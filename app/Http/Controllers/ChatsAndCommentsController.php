@@ -4,10 +4,19 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class ChatsAndCommentsController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
 
     public function storeComment(Request $request, $id)
     {
@@ -15,53 +24,44 @@ class ChatsAndCommentsController extends Controller
             'comment' => 'required|string|max:255',
         ]);
 
-        $access_token = session('api_token');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
+        }
 
         $data = [
             'exceptionTrackerId' => $id,
             'comment' => $request->input('comment'),
         ];
 
-        // dd($data);
-
         try {
-            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionComment', $data);
+            $response = $this->apiService->post(
+                $this->apiService->getEndpoint('exception_comment'),
+                $data,
+                $this->getApiToken()
+            );
 
-            if ($response->successful()) {
-                return redirect()->back()->with('toast_success', 'Comment added successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to add comment', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to add comment');
-            }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception comment API', ['error' => $e->getMessage()]);
+            return $this->handleApiResponse(
+                $response,
+                'Comment added successfully',
+                'back',
+                'Add comment'
+            );
 
-            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return [];
         } catch (\Exception $e) {
-            Log::error('Exception occurred while adding comment', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'adding comment', ['exception_id' => $id]);
         }
     }
 
-
     public function updateComment(Request $request, $id)
     {
-        // dd($request->all());
         $request->validate([
             'comment' => 'required|string|max:255',
             'exceptionTrackerId' => 'required|integer',
         ]);
 
-        $access_token = session('api_token');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
+        }
 
         $data = [
             'id' => $id,
@@ -69,111 +69,80 @@ class ChatsAndCommentsController extends Controller
             'comment' => $request->input('comment'),
         ];
 
-
         try {
-            $response = Http::withToken($access_token)->put('http://192.168.1.200:5126/Auditor/ExceptionComment', $data);
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('exception_comment'),
+                $data,
+                $this->getApiToken()
+            );
 
-            if ($response->successful()) {
-                return redirect()->back()->with('toast_success', 'Comment updated successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to update comment', [
-                    'status' => $response->status(),
-                    'response' => $response->body(),
-                    'comment_id' => $id
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to update comment');
-            }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception comment API for update', [
-                'error' => $e->getMessage(),
-                'comment_id' => $id
-            ]);
+            return $this->handleApiResponse(
+                $response,
+                'Comment updated successfully',
+                'back',
+                'Update comment'
+            );
 
-            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return redirect()->back();
         } catch (\Exception $e) {
-            Log::error('Exception occurred while updating comment', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'comment_id' => $id
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'updating comment', ['comment_id' => $id]);
         }
     }
 
-
     public function deleteComment($id)
     {
-        $access_token = session('api_token');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
+        }
 
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($access_token)
-                ->delete("http://192.168.1.200:5126/Auditor/ExceptionComment/{$id}");
+            $response = $this->apiService->delete(
+                "{$this->apiService->getEndpoint('exception_comment')}/{$id}",
+                $this->getApiToken()
+            );
 
-            // Check the response status and return appropriate response
-            if ($response->successful()) {
-                return redirect()->back()->with('toast_success', 'Exception Comment Deleted successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to delete Exception Comment', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception Comment');
-            }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception Comment delete API', ['error' => $e->getMessage()]);
+            return $this->handleApiResponse(
+                $response,
+                'Exception Comment deleted successfully',
+                'back',
+                'Delete comment'
+            );
 
-            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return [];
         } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Exception occurred while deleting Exception Comment', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'deleting comment', ['comment_id' => $id]);
         }
     }
 
     public static function getExceptionComments($exceptionId)
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionComment');
+            $response = $service->get(
+                $service->getEndpoint('exception_comment'),
+                session('api_token')
+            );
 
             if ($response->successful()) {
-
                 $api_response = $response->object() ?? [];
-                $comments = collect($api_response)->filter(fn($comment) => $comment->exceptionTrackerId == $exceptionId)->all() ?? [];
+                $comments = collect($api_response)
+                    ->filter(fn($comment) => $comment->exceptionTrackerId == $exceptionId)
+                    ->all() ?? [];
+                return $comments;
             } elseif ($response->status() == 404) {
-                $comments = [];
                 Log::warning('Exception comments API returned 404 Not Found');
                 toast('Exception comments data not found', 'warning');
+                return [];
             } else {
-                $comments = [];
                 Log::error('Exception comments API request failed', ['status' => $response->status()]);
                 toast('Error fetching exception comments data', 'error');
+                return [];
             }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception comment API', ['error' => $e->getMessage()]);
-
-            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return [];
         } catch (\Exception $e) {
-            $comments = [];
             Log::error('Error fetching exception comments', ['error' => $e->getMessage()]);
             toast('An error occurred. Please try again later', 'error');
+            return [];
         }
-        return $comments;
     }
-
 
     public function exceptionFileUpload(Request $request, $id)
     {
@@ -187,18 +156,16 @@ class ChatsAndCommentsController extends Controller
             return response()->json(['status' => 'error', 'message' => 'No file uploaded'], 400);
         }
 
-        $accessToken = session('api_token');
-        if (!$accessToken) {
+        if (!$this->hasValidApiToken()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized: Missing API token'], 401);
         }
 
-        $apiUrl = 'http://192.168.1.200:5126/Auditor/ExceptionFileUpload';
         $uploadedFiles = [];
 
         try {
             foreach ($files as $file) {
                 // Get the MIME type
-                $mimeType = $file->getMimeType(); // Example: "image/jpeg", "application/pdf"
+                $mimeType = $file->getMimeType();
                 $base64File = base64_encode(file_get_contents($file->getRealPath()));
 
                 // Append the MIME type header to the base64 data
@@ -207,16 +174,20 @@ class ChatsAndCommentsController extends Controller
                 $payload = [
                     'exceptionTrackerId' => $id,
                     'fileName' => $file->getClientOriginalName(),
-                    'fileData' => $fileData, // Correctly formatted with MIME type
+                    'fileData' => $fileData,
                 ];
 
-                $response = Http::withToken($accessToken)->post($apiUrl, $payload);
+                $response = $this->apiService->post(
+                    $this->apiService->getEndpoint('exception_file_upload'),
+                    $payload,
+                    $this->getApiToken()
+                );
 
                 if ($response->successful()) {
                     $uploadedFiles[] = [
                         'fileName' => $file->getClientOriginalName(),
                         'uploadDate' => now()->toDateTimeString(),
-                        'fileData' => $fileData, // Store file with header
+                        'fileData' => $fileData,
                     ];
                 }
             }
@@ -230,25 +201,23 @@ class ChatsAndCommentsController extends Controller
             }
 
             return response()->json(['status' => 'error', 'message' => 'File upload failed'], 500);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception file upload API', ['error' => $e->getMessage()]);
 
-            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return [];
         } catch (\Exception $e) {
-            return response()->json(['status' => 'error', 'message' => 'Something went wrong, check your internet and try again'], 500);
+            Log::error('Error uploading files', [
+                'exception_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Something went wrong, check your internet and try again'
+            ], 500);
         }
     }
-
-
 
     public function downloadExceptionFile($fileId)
     {
         try {
-            $accessToken = session('api_token');
-
-            if (!$accessToken) {
+            if (!$this->hasValidApiToken()) {
                 Log::error('Unauthorized: Missing API token for file download');
                 return response()->json([
                     'status' => 'error',
@@ -256,8 +225,10 @@ class ChatsAndCommentsController extends Controller
                 ], 401);
             }
 
-            $apiUrl = "http://192.168.1.200:5126/Auditor/ExceptionFileUpload/{$fileId}";
-            $response = Http::withToken($accessToken)->get($apiUrl);
+            $response = $this->apiService->get(
+                "{$this->apiService->getEndpoint('exception_file_upload')}/{$fileId}",
+                $this->getApiToken()
+            );
 
             Log::info('Download API Response', [
                 'status' => $response->status(),
@@ -272,23 +243,18 @@ class ChatsAndCommentsController extends Controller
             }
 
             $fileData = $response->json();
-
             $files = explode(',', $fileData['fileData'], 2);
             $base64Data = $files[1];
 
             return response()->json([
                 'status' => 'success',
                 'fileName' => $fileData['fileName'],
-                'fileData' => $base64Data, // This includes the file header!
+                'fileData' => $base64Data,
             ]);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception file download API', ['error' => $e->getMessage()]);
 
-            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return [];
         } catch (\Exception $e) {
             Log::error('Error downloading file', [
+                'file_id' => $fileId,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -300,38 +266,28 @@ class ChatsAndCommentsController extends Controller
         }
     }
 
-
-
-
     public static function exceptionFileDelete($exceptionId)
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($access_token)
-                ->delete("http://192.168.1.200:5126/Auditor/ExceptionFileUpload/{$exceptionId}");
+            $response = $service->delete(
+                "{$service->getEndpoint('exception_file_upload')}/{$exceptionId}",
+                session('api_token')
+            );
 
-            // Check the response status and return appropriate response
             if ($response->successful()) {
                 return redirect()->back()->with('toast_success', 'Exception File removed successfully');
             } else {
-                // Log the error response
                 Log::error('Failed to delete Exception File', [
                     'status' => $response->status(),
                     'response' => $response->body()
                 ]);
                 return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception File');
             }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            // Handle connection errors (e.g., API server is down)
-            Log::error('Connection Error: Unable to reach Exception file delete API', ['error' => $e->getMessage()]);
-
-            toast('Failed to connect to the server. Please check your internet or try again later.', 'error');
-            return [];
         } catch (\Exception $e) {
-            // Log the exception
             Log::error('Exception occurred while deleting Exception File', [
+                'exception_id' => $exceptionId,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -339,13 +295,10 @@ class ChatsAndCommentsController extends Controller
         }
     }
 
-
     public function deleteExceptionFile($fileId)
     {
         try {
-            $accessToken = session('api_token');
-
-            if (!$accessToken) {
+            if (!$this->hasValidApiToken()) {
                 Log::error('Unauthorized: Missing API token for file deletion');
                 return response()->json([
                     'status' => 'error',
@@ -353,8 +306,10 @@ class ChatsAndCommentsController extends Controller
                 ], 401);
             }
 
-            $apiUrl = "http://192.168.1.200:5126/Auditor/ExceptionFileUpload/{$fileId}";
-            $response = Http::withToken($accessToken)->delete($apiUrl);
+            $response = $this->apiService->delete(
+                "{$this->apiService->getEndpoint('exception_file_upload')}/{$fileId}",
+                $this->getApiToken()
+            );
 
             Log::info('Delete API Response', [
                 'status' => $response->status(),
@@ -372,8 +327,10 @@ class ChatsAndCommentsController extends Controller
                 'status' => 'success',
                 'message' => 'File deleted successfully'
             ]);
+
         } catch (\Exception $e) {
             Log::error('Error deleting file', [
+                'file_id' => $fileId,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

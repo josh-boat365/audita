@@ -7,14 +7,24 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Client\RequestException;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class ExceptionStatusChange extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     public function exceptionPushBackToAuditor(Request $request)
     {
         try {
             // Validate request data
-            // dd($request->all());
             $validated = $request->validate([
                 'status' => 'nullable|string',
                 'statusComment' => 'nullable|string',
@@ -23,7 +33,9 @@ class ExceptionStatusChange extends Controller
                 // 'requestType' => 'nullable|string',
             ]);
 
-            $access_token = session('api_token');
+            if (!$this->hasValidApiToken()) {
+                return $this->redirectToLoginIfNoToken();
+            }
 
             $data = [
                 'singleExceptionId' => $validated['exceptionId'],
@@ -33,8 +45,11 @@ class ExceptionStatusChange extends Controller
                 // 'requestType' => $validated['requestType'] ?? null,
             ];
 
-            // dd($validated);
-            $updateResponse = Http::withToken($access_token)->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-single-exception-status', $data);
+            $updateResponse = $this->apiService->put(
+                $this->apiService->getEndpoint('update_single_exception_status'),
+                $data,
+                $this->getApiToken()
+            );
 
             if ($updateResponse->successful()) {
                 Log::info('Exception push back to auditor successful', ['exception_id' => $validated['exceptionId']]);
@@ -69,18 +84,22 @@ class ExceptionStatusChange extends Controller
             'resolution' => 'required|string'
         ]);
 
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
+        }
+
         $data = [
             'id' => $id,
             'recommendedStatus' => $request->input('resolution')
         ];
 
-        // Get the access token from the session
-        $accessToken = session('api_token');
-
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($accessToken)
-                ->put("http://192.168.1.200:5126/Auditor/ExceptionTracker/auditee-update/", $data);
+            // Make the PUT request to the external API
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('exception_auditee_update'),
+                $data,
+                $this->getApiToken()
+            );
 
             // Check the response status and return appropriate response
             if ($response->successful()) {
@@ -102,19 +121,24 @@ class ExceptionStatusChange extends Controller
             return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
+
     public function closeException(Request $request, string $id)
     {
-        // Get the access token from the session
-        $accessToken = session('api_token');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
+        }
 
         $data = [
             'id' => $id
         ];
 
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($accessToken)
-                ->put("http://192.168.1.200:5126/Auditor/ExceptionTracker/close-exception", $data);
+            // Make the PUT request to the external API
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('exception_close'),
+                $data,
+                $this->getApiToken()
+            );
 
             // Check the response status and return appropriate response
             if ($response->successful()) {
@@ -141,8 +165,6 @@ class ExceptionStatusChange extends Controller
         }
     }
 
-
-    
 
 
 }

@@ -2,16 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use PhpOffice\PhpWord\PhpWord;
 use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpWord\IOFactory;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 
 class ReportsController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -61,7 +71,12 @@ class ReportsController extends Controller
         $access_token = session('api_token');
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker');
+            $apiService = app(AuditorApiService::class);
+
+            $response = $apiService->get(
+                $apiService->getEndpoint('exception_tracker'),
+                $access_token
+            );
 
             if ($response->successful()) {
 
@@ -89,10 +104,9 @@ class ReportsController extends Controller
 
 
 
-
     private function validateSession()
     {
-        if (empty(session('api_token'))) {
+        if (!$this->hasValidApiToken()) {
             session()->flush();
             return redirect()->route(route: 'login')->with('toast_warning', 'Session expired, login to access the application');
         }

@@ -4,18 +4,27 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class GroupMembersController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
         }
 
         $groupMembersData = $this->getGroupMembers();
@@ -76,8 +85,6 @@ class GroupMembersController extends Controller
             'employeeId.*' => 'required|integer',
         ]);
 
-        $access_token = session('api_token');
-
         try {
             $employeeIds = $request->input('employeeId');
             $activityGroupId = $request->input('activityGroupId');
@@ -107,7 +114,11 @@ class GroupMembersController extends Controller
             // Add only new members to the group
             $responses = [];
             foreach ($newMembers as $member) {
-                $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/GroupMember', $member);
+                $response = $this->apiService->post(
+                    $this->apiService->getEndpoint('group_member'),
+                    $member,
+                    $this->getApiToken()
+                );
                 $responses[] = $response;
             }
 
@@ -132,11 +143,9 @@ class GroupMembersController extends Controller
                 return redirect()->back()->with('toast_error', 'Sorry, failed to add some Group Members to group');
             }
         } catch (\Exception $e) {
-            Log::error('Exception occurred while adding Group Members to group', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            return $this->handleApiException($e, 'adding group members', [
+                'activity_group_id' => $request->input('activityGroupId')
             ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
 
@@ -170,12 +179,7 @@ class GroupMembersController extends Controller
                 return redirect()->back()->with('toast_error', 'Group Member does not exist');
             }
         } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Exception occurred while fetching Group Member to group', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'fetching group member', ['member_id' => $id]);
         }
     }
 
@@ -189,7 +193,6 @@ class GroupMembersController extends Controller
             'employeeId' => 'required|integer',
         ]);
 
-        $access_token = session('api_token');
         $activityGroupId = $request->input('activityGroupId');
         $employeeId = $request->input('employeeId');
 
@@ -210,26 +213,21 @@ class GroupMembersController extends Controller
                 'employeeId' => $employeeId,
             ];
 
-            $response = Http::withToken($access_token)->put(
-                'http://192.168.1.200:5126/Auditor/GroupMember/',
-                $data
+            $response = $this->apiService->put(
+                $this->apiService->getEndpoint('group_member'),
+                $data,
+                $this->getApiToken()
             );
 
-            if ($response->successful()) {
-                return redirect()->route('members')->with('toast_success', 'Group Member updated successfully');
-            } else {
-                Log::error('Failed to update group member', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to update group member');
-            }
+            return $this->handleApiResponse(
+                $response,
+                'Group Member updated successfully',
+                'members',
+                'Update group member'
+            );
+
         } catch (\Exception $e) {
-            Log::error('Exception occurred while updating group member', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'updating group member', ['data' => $data ?? []]);
         }
     }
 
@@ -239,44 +237,34 @@ class GroupMembersController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        // Get the access token from the session
-        $accessToken = session('api_token'); // Replace with your actual access token
-
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($accessToken)
-                ->delete("http://192.168.1.200:5126/Auditor/GroupMember/{$id}");
+            $response = $this->apiService->delete(
+                "{$this->apiService->getEndpoint('group_member')}/{$id}",
+                $this->getApiToken()
+            );
 
-            // Check the response status and return appropriate response
-            if ($response->successful()) {
-                return redirect()->route('members')->with('toast_success', 'Group deleted successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to delete group', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to delete group');
-            }
+            return $this->handleApiResponse(
+                $response,
+                'Group Member deleted successfully',
+                'members',
+                'Delete group member'
+            );
+
         } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Exception occurred while deleting group', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
+            return $this->handleApiException($e, 'deleting group member', ['member_id' => $id]);
         }
     }
 
     /**
-     * Fetch branch data from the API
+     * Fetch employee data from the HRMS API (external API)
      */
     public static function getEmployeeData()
     {
-        $access_token = session('api_token');
-
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5124/HRMS/Employee/GetAllEmployeesWithRoles');
+            // Note: This uses a different API (HRMS on port 5124, not Auditor API on 5126)
+            // Hardcoded for now as it's a different service
+            $response = \Illuminate\Support\Facades\Http::withToken(session('api_token'))
+                ->get('http://192.168.1.200:5124/HRMS/Employee/GetAllEmployeesWithRoles');
 
             if ($response->successful()) {
                 $branches = $response->object() ?? [];
@@ -297,10 +285,13 @@ class GroupMembersController extends Controller
 
     public static function getGroupMembers()
     {
-        $access_token = session('api_token');
+        $service = app(AuditorApiService::class);
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/GroupMember');
+            $response = $service->get(
+                $service->getEndpoint('group_member'),
+                session('api_token')
+            );
 
             if ($response->successful()) {
                 $group_members = $response->object() ?? [];
@@ -321,12 +312,14 @@ class GroupMembersController extends Controller
 
         return $group_members;
     }
+
     public function getAGroupMember($id)
     {
-        $access_token = session('api_token');
-
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/GroupMember/' . $id);
+            $response = $this->apiService->get(
+                "{$this->apiService->getEndpoint('group_member')}/{$id}",
+                $this->getApiToken()
+            );
 
             if ($response->successful()) {
                 $groups = $response->object() ?? [];

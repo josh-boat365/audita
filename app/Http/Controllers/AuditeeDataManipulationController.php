@@ -2,28 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 
 class AuditeeDataManipulationController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     public function auditeeExceptionList()
     {
         // Validate session token
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in auditeeExceptionList');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         try {
             // Fetch data from API
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100)
-                ->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions');
+            $response = $this->apiService->get(
+                $this->apiService->getEndpoint('pending_batch_exceptions'),
+                $this->getApiToken()
+            );
 
             // Handle API failure
             if (!$response->successful()) {
@@ -129,22 +136,16 @@ class AuditeeDataManipulationController extends Controller
     public function auditeePendingExceptionList()
     {
         // 1. Session and Token Validation
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in auditeePendingExceptionList');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         try {
             // 2. Fetch data from API
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100, function ($exception) {
-                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
-                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-                })
-                ->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions');
+            $response = $this->apiService->get(
+                $this->apiService->getEndpoint('pending_batch_exceptions'),
+                $this->getApiToken()
+            );
 
             // 3. Handle API failure - return empty view
             if (!$response->successful()) {
@@ -396,7 +397,7 @@ class AuditeeDataManipulationController extends Controller
 
     private function validateSession()
     {
-        if (empty(session('api_token'))) {
+        if (!$this->hasValidApiToken()) {
             session()->flush();
             return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
         }
@@ -406,15 +407,15 @@ class AuditeeDataManipulationController extends Controller
     private function fetchExceptionData($batchId)
     {
         try {
-            $access_token = session('api_token');
-
-            if (empty($access_token)) {
+            if (!$this->hasValidApiToken()) {
                 session()->flush();
                 return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
             }
 
-            $response = Http::withToken($access_token)
-                ->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/' . $batchId);
+            $response = $this->apiService->get(
+                $this->apiService->getEndpoint('batch_exception') . '/' . $batchId,
+                $this->getApiToken()
+            );
 
             if (!$response->successful()) {
                 Log::error('Failed to fetch exception details', [
@@ -436,7 +437,7 @@ class AuditeeDataManipulationController extends Controller
     {
         try {
             // Validate session
-            if (empty(session('api_token'))) {
+            if (!$this->hasValidApiToken()) {
                 session()->flush();
                 return redirect()->route('login')
                     ->with('toast_warning', 'Session expired, login to access the application');
@@ -526,12 +527,11 @@ class AuditeeDataManipulationController extends Controller
     private function prepareViewData($processedData, $status)
     {
         try {
-            $access_token = session('api_token');
-
-            if (empty($access_token)) {
+            if (!$this->hasValidApiToken()) {
                 session()->flush();
                 return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
             }
+
             $employeeGroupsData = GroupController::getEmployeeGroups();
             $groups = collect($employeeGroupsData->activityGroups ?? [])->values();
 
@@ -565,9 +565,7 @@ class AuditeeDataManipulationController extends Controller
     private function renderView($status, $viewData)
     {
         try {
-            $access_token = session('api_token');
-
-            if (empty($access_token)) {
+            if (!$this->hasValidApiToken()) {
                 session()->flush();
                 return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
             }

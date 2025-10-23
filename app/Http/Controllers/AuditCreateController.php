@@ -2,22 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Database\Eloquent\Collection;
 use App\Http\Controllers\ExceptionManipulationController;
 
 class AuditCreateController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $access_token = session('api_token');
-        if (empty($access_token)) {
+        if (!$this->hasValidApiToken()) {
             return redirect()->back()->with('toast_warning', 'Session Expired, Kindly Login Again');
         }
 
@@ -79,8 +88,6 @@ class AuditCreateController extends Controller
 
 
 
-        $access_token = session('api_token');
-
         // Prepare the data structure expected by the API
         $data = [
             'processTypeId' => $request->input('processTypeId'),
@@ -132,9 +139,11 @@ class AuditCreateController extends Controller
         // dd($data);
 
         try {
-            $response = Http::withToken($access_token)
-                ->timeout(120) // Increase timeout for file uploads
-                ->post('http://192.168.1.200:5126/Auditor/ExceptionTracker/batch-request', $data);
+            $response = $this->apiService->post(
+                $this->apiService->getEndpoint('exception_batch_request'),
+                $data,
+                $this->getApiToken()
+            );
 
             if ($response->successful()) {
                 return redirect()->back()->with('toast_success', 'Bulk exceptions created successfully');
@@ -168,19 +177,16 @@ class AuditCreateController extends Controller
     public function list()
     {
         // Validate session token
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in auditeeExceptionList');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         try {
             // Fetch data from API
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100)
-                ->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions');
+            $response = $this->apiService->get(
+                $this->apiService->getEndpoint('pending_batch_exceptions'),
+                $this->getApiToken()
+            );
 
             // Handle API failure
             if (!$response->successful()) {
@@ -299,11 +305,8 @@ class AuditCreateController extends Controller
 
         // dd($exceptionId, $exceptionStatus);
 
-        $accessToken = session('api_token');
-        if (empty($accessToken)) {
-            Log::warning('Session token missing in openBatch');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         $departments = ExceptionManipulationController::departmentData() ?? [];
@@ -317,16 +320,19 @@ class AuditCreateController extends Controller
             ->groupBy('processTypeId')
             ->toArray();
 
-        $request = HTTP::withToken($accessToken)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/' . $exceptionId);
-        $exceptions = $request->object();
+        $response = $this->apiService->get(
+            $this->apiService->getEndpoint('batch_exception') . '/' . $exceptionId,
+            $this->getApiToken()
+        );
+        $exceptions = $response->object();
 
-        if (!$request->successful()) {
+        if (!$response->successful()) {
             Log::error('Failed to fetch batch exception', [
-                'status' => $request->status(),
-                'response' => $request->body()
+                'status' => $response->status(),
+                'response' => $response->body()
             ]);
             return redirect()->back()
-                ->with('toast_error', 'Failed to fetch batch exception. Please try again later.' . $request->body());
+                ->with('toast_error', 'Failed to fetch batch exception. Please try again later.' . $response->body());
         }
 
         return view('exception-setup.auditor-status-view', [

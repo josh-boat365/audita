@@ -2,23 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Http;
 
 class GroupExceptionsFilter extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
 
     public function openBatch(Request $request, $exceptionId, $exceptionStatus)
     {
 
         // dd($request->all());
 
-        $accessToken = session('api_token');
-        if (empty($accessToken)) {
-            Log::warning('Session token missing in openBatch');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         $departments = ExceptionManipulationController::departmentData() ?? [];
@@ -32,13 +38,16 @@ class GroupExceptionsFilter extends Controller
             ->groupBy('processTypeId')
             ->toArray();
 
-        $request = HTTP::withToken($accessToken)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/' . $exceptionId);
-        $exceptions = $request->object();
+        $response = $this->apiService->get(
+            $this->apiService->getEndpoint('exception_tracker') . '/' . $exceptionId,
+            $this->getApiToken()
+        );
+        $exceptions = $response->object();
 
-        if (!$request->successful()) {
+        if (!$response->successful()) {
             Log::error('Failed to fetch batch exception', [
-                'status' => $request->status(),
-                'response' => $request->body()
+                'status' => $response->status(),
+                'response' => $response->body()
             ]);
             return redirect()->back()
                 ->with('toast_error', 'Failed to fetch batch exception. Please try again later.');
@@ -57,11 +66,8 @@ class GroupExceptionsFilter extends Controller
 
     public function openException(Request $request, $exceptionId)
     {
-        $accessToken = session('api_token');
-        if (empty($accessToken)) {
-            Log::warning('Session token missing in openException');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         return view('exception-setup.group-exception-status-view', [
@@ -82,30 +88,24 @@ class GroupExceptionsFilter extends Controller
     {
 
         // 1. Session and Token Validation
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in exceptionSupList');
-            return redirect()->route('login')
-                ->with('toast_warning', 'Session expired, please login to continue');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken('Session expired, please login to continue');
         }
 
         try {
             // 2. API Request Setup
-            $apiEndpoint = 'http://192.168.1.200:5126/Auditor/ExceptionTracker';
+            $apiEndpoint = $this->apiService->getEndpoint('exception_tracker');
             Log::info('Fetching pending exceptions from API', ['endpoint' => $apiEndpoint]);
 
             // 3. Make API Request with Retry Logic
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100, function ($exception) {
-                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
-                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-                })
-                ->get($apiEndpoint);
+            $response = $this->apiService->get(
+                $apiEndpoint,
+                $this->getApiToken()
+            );
 
             // 4. Handle API Response
             if (!$response->successful()) {
-                Log::error('API (pending-batch-exceptions) request failed', [
+                Log::error('API (exception_tracker) request failed', [
                     'status' => $response->status(),
                     'response' => $response->body()
                 ]);
@@ -195,7 +195,7 @@ class GroupExceptionsFilter extends Controller
             return redirect()->back()
                 ->with('toast_error', 'Connection problem with the exception service. Please try again later.');
         } catch (\Exception $e) {
-            Log::critical('Unexpected error in exceptionSupList', [
+            Log::critical('Unexpected error in groupExceptionStatus', [
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
                 'trace' => $e->getTraceAsString()
@@ -210,9 +210,7 @@ class GroupExceptionsFilter extends Controller
     public function filterExceptions(Request $request)
     {
         // 1. Session and Token Validation
-        $access_token = session('api_token');
-        if (empty($access_token)) {
-            Log::warning('Session token missing in filterExceptions');
+        if (!$this->hasValidApiToken()) {
             return response()->json([
                 'error' => 'Session expired',
                 'redirect' => route('login')
@@ -235,20 +233,17 @@ class GroupExceptionsFilter extends Controller
             Log::info('Filtering exceptions with parameters', $filters);
 
             // 3. API Request Setup
-            $apiEndpoint = 'http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions';
+            $apiEndpoint = $this->apiService->getEndpoint('pending_batch_exceptions');
 
             // 4. Make API Request with Retry Logic
-            $response = Http::withToken($access_token)
-                ->timeout(30)
-                ->retry(3, 100, function ($exception) {
-                    Log::warning('API request attempt failed', ['error' => $exception->getMessage()]);
-                    return $exception instanceof \Illuminate\Http\Client\ConnectionException;
-                })
-                ->get($apiEndpoint);
+            $response = $this->apiService->get(
+                $apiEndpoint,
+                $this->getApiToken()
+            );
 
             // 5. Handle API Response
             if (!$response->successful()) {
-                Log::error('API (pending-batch-exceptions) request failed', [
+                Log::error('API (pending_batch_exceptions) request failed', [
                     'status' => $response->status(),
                     'response' => $response->body()
                 ]);
@@ -566,15 +561,14 @@ class GroupExceptionsFilter extends Controller
     public function getFilterOptions(Request $request)
     {
         // Session validation
-        $access_token = session('api_token');
-        if (empty($access_token)) {
+        if (!$this->hasValidApiToken()) {
             return response()->json(['error' => 'Session expired'], 401);
         }
 
         try {
             // Get all exceptions (same logic as main method)
-            $apiEndpoint = 'http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions';
-            $response = Http::withToken($access_token)->timeout(30)->get($apiEndpoint);
+            $apiEndpoint = $this->apiService->getEndpoint('pending_batch_exceptions');
+            $response = $this->apiService->get($apiEndpoint, $this->getApiToken());
 
             if (!$response->successful()) {
                 Log::error('Failed to fetch filter options', [

@@ -5,15 +5,30 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class ExceptionManipulationController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     public static function getExceptions()
     {
+        $service = app(AuditorApiService::class);
         $access_token = session('api_token');
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker');
+            $response = $service->get(
+                $service->getEndpoint('exception_tracker'),
+                $access_token
+            );
 
             if ($response->successful()) {
                 $exceptions = $response->object() ?? [];
@@ -43,10 +58,14 @@ class ExceptionManipulationController extends Controller
 
     public static function getBatchExceptions()
     {
+        $service = app(AuditorApiService::class);
         $access_token = session('api_token');
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/pending-batch-exceptions');
+            $response = $service->get(
+                $service->getEndpoint('pending_batch_exceptions'),
+                $access_token
+            );
 
             if ($response->successful()) {
                 $exceptions = $response->object() ?? [];
@@ -78,10 +97,14 @@ class ExceptionManipulationController extends Controller
 
     public static function getAnException($id)
     {
+        $service = app(AuditorApiService::class);
         $access_token = session('api_token');
 
         try {
-            $response = Http::withToken($access_token)->get('http://192.168.1.200:5126/Auditor/ExceptionTracker/' . $id);
+            $response = $service->get(
+                "{$service->getEndpoint('exception_tracker')}/{$id}",
+                $access_token
+            );
 
             if ($response->successful()) {
                 $exception = $response->object() ?? [];
@@ -151,7 +174,7 @@ class ExceptionManipulationController extends Controller
         // You only see exceptions in a particular group you are part of, but top managers can see all exceptions
         // MODIFIED: Now filters only Internal Control exceptions
 
-        $instance = new self();
+        $instance = new self(app(AuditorApiService::class));
 
         // Fetch data from APIs
         $exceptions = $instance->getExceptions(); // Same as all reports data
@@ -235,7 +258,7 @@ class ExceptionManipulationController extends Controller
         // Filtering is based on groups - if you don't belong to a group, you don't see an exception
         // You only see exceptions in a particular group you are part of, but top managers can see all exceptions
 
-        $instance = new self();
+        $instance = new self(app(AuditorApiService::class));
 
         // Fetch data from APIs
         $exceptions = $instance->getBatchExceptions(); // Same as all reports data
@@ -300,13 +323,13 @@ class ExceptionManipulationController extends Controller
 
 
 
-    public function getPendingExceptions($employeeId)
+    public static function getPendingExceptions($employeeId)
     {
         // Filtering is based on groups - if you don't belong to a group, you don't see an exception
         // You only see exceptions in a particular group you are part of, but top managers can see all exceptions
 
         // Fetch data from APIs
-        $exceptions = $this->getExceptions();
+        $exceptions = self::getExceptions();
         $batches = BatchController::getBatches();
         $groups = GroupController::getActivityGroups();
         $groupMembers = GroupMembersController::getGroupMembers();
@@ -328,7 +351,7 @@ class ExceptionManipulationController extends Controller
             ->unique();
 
         // Get employee role
-        $employeeRoleId = $this->getLoggedInUserInformation()->empRoleId;
+        $employeeRoleId = self::getLoggedInUserInformation()->empRoleId;
 
         // Top managers
         // 1 - Managing Director

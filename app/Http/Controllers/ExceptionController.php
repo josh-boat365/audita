@@ -7,24 +7,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\BatchController;
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Http\Controllers\ExceptionManipulationController;
+use App\Services\AuditorApiService;
+use App\Http\Traits\HandlesApiErrors;
 
 class ExceptionController extends Controller
 {
+    use HandlesApiErrors;
+
+    protected AuditorApiService $apiService;
+
+    public function __construct(AuditorApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $access_token = session('api_token');
-
-        if (empty($access_token)) {
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
         }
 
         $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
@@ -34,30 +39,24 @@ class ExceptionController extends Controller
 
         $exceptions = $this->paginate($sortDescending, 15, $request);
 
-        // dd($employeeDepartmentId);
-
         return view('exception-setup.index', compact('exceptions', 'employeeId', 'employeeDepartmentId'));
     }
 
 
     public function pendingExceptions(Request $request)
     {
-        $access_token = session('api_token');
-
-        if (empty($access_token)) {
-            return redirect()->route('login')->with('toast_warning', 'Session expired, login to access the application');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
         }
 
         $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
-        // dd($employeeId);
         $instance = new ExceptionManipulationController();
         $pendingExceptions = $instance->getPendingExceptions($employeeId);
         $sortDescending = collect($pendingExceptions)->sortByDesc('createdAt');
 
         $exceptions = $this->paginate($sortDescending, 15, $request);
 
-
-        //store exception count in session
+        // Store exception count in session
         session(['pending_exception_count' => $exceptions->count()]);
 
         return view('exception-setup.pending', compact('exceptions', 'employeeId'));
@@ -134,25 +133,23 @@ class ExceptionController extends Controller
         ];
 
         try {
-            $response = Http::withToken($access_token)->post('http://192.168.1.200:5126/Auditor/ExceptionTracker', $data);
+            $response = $this->apiService->post(
+                $this->apiService->getEndpoint('exception_tracker'),
+                $data,
+                $this->getApiToken()
+            );
 
-            if ($response->successful()) {
+            return $this->handleApiResponse(
+                $response,
+                'Exception created successfully',
+                'exception.list',
+                'Create exception'
+            );
 
-                return redirect()->route('exception.list')->with('toast_success', 'Exception created successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to create Exception', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to create Exception');
-            }
         } catch (\Exception $e) {
-            Log::error('Exception occurred while creating Exception', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            return $this->handleApiException($e, 'creating exception', [
+                'data' => $data
             ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
 
@@ -288,15 +285,9 @@ class ExceptionController extends Controller
         // Update batch request check to handle undefined key
         $isBatchRequest = isset($validated['requestType']) && $validated['requestType'] === 'BATCH';
 
-        // dd($validated);
-
-
-        $accessToken = session('api_token');
-
         // Check for authentication
-        if (!$accessToken) {
-            Log::error('No API token found in session');
-            return redirect()->back()->with('toast_error', 'Authentication required. Please login again.');
+        if (!$this->hasValidApiToken()) {
+            return $this->redirectToLoginIfNoToken();
         }
 
         try {
@@ -316,21 +307,17 @@ class ExceptionController extends Controller
             $batchData = null;
 
             // FIRST: Update the individual exception
-            $updateResponse = RateLimiter::attempt(
-                'exception-update:' . $id,
-                5,
-                function () use ($accessToken, $data) {
-                    return Http::withToken($accessToken)
-                        ->timeout(30)
-                        ->retry(3, 100)
-                        ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker', $data);
-                },
-                60
+            $updateResponse = $this->apiService->put(
+                $this->apiService->getEndpoint('exception_tracker'),
+                $data,
+                $this->getApiToken(),
+                true, // use rate limiting
+                'exception-update:' . $id
             );
 
-            if (!$updateResponse || !$updateResponse->successful()) {
+            if (!$updateResponse->successful()) {
                 Log::error('Failed to update Exception', [
-                    'status' => $updateResponse ? $updateResponse->status() : 'no-response',
+                    'status' => $updateResponse->status(),
                     'exception_id' => $id,
                     'batch_request' => $isBatchRequest
                 ]);
@@ -347,67 +334,61 @@ class ExceptionController extends Controller
                 ]);
 
                 // Get updated batch data AFTER the individual exception was updated
-                $batchStatusCheckAttempt = RateLimiter::attempt(
-                    'batch-status-check:' . $validated['requestTrackerId'],
-                    5,
-                    function () use ($accessToken, $validated, &$batchData) {
-                        $batchResponse = Http::withToken($accessToken)
-                            ->timeout(30)
-                            ->retry(3, 100)
-                            ->get("http://192.168.1.200:5126/Auditor/ExceptionTracker/get-batch-exception/{$validated['requestTrackerId']}");
-
-                        if ($batchResponse->successful()) {
-                            $batchData = $batchResponse->object();
-                            return true;
-                        }
-                        return false;
-                    }
+                $batchCheckResponse = $this->apiService->get(
+                    "{$this->apiService->getEndpoint('batch_exception')}/{$validated['requestTrackerId']}",
+                    $this->getApiToken(),
+                    true, // use rate limiting
+                    'batch-status-check:' . $validated['requestTrackerId']
                 );
 
-                if ($batchStatusCheckAttempt && isset($batchData->exceptions)) {
-                    $totalExceptions = 0;
-                    $resolvedCount = 0;
-                    $approvedCount = 0;
-                    $notResolvedCount = 0;
+                if ($batchCheckResponse->successful()) {
+                    $batchData = $batchCheckResponse->object();
 
-                    // Count all exception statuses in the batch
-                    foreach ($batchData->exceptions as $exception) {
-                        $totalExceptions++;
+                    if (isset($batchData->exceptions)) {
+                        $totalExceptions = 0;
+                        $resolvedCount = 0;
+                        $approvedCount = 0;
+                        $notResolvedCount = 0;
 
-                        if (isset($exception->status)) {
-                            if ($exception->status === 'RESOLVED') {
-                                $resolvedCount++;
-                            } elseif ($exception->status === 'APPROVED') {
-                                $approvedCount++;
-                            } elseif ($exception->status === 'NOT-RESOLVED') {
-                                $notResolvedCount++;
+                        // Count all exception statuses in the batch
+                        foreach ($batchData->exceptions as $exception) {
+                            $totalExceptions++;
+
+                            if (isset($exception->status)) {
+                                if ($exception->status === 'RESOLVED') {
+                                    $resolvedCount++;
+                                } elseif ($exception->status === 'APPROVED') {
+                                    $approvedCount++;
+                                } elseif ($exception->status === 'NOT-RESOLVED') {
+                                    $notResolvedCount++;
+                                }
                             }
                         }
-                    }
 
-                    Log::info('Batch status analysis', [
-                        'requestTrackerId' => $validated['requestTrackerId'],
-                        'totalExceptions' => $totalExceptions,
-                        'resolvedCount' => $resolvedCount,
-                        'approvedCount' => $approvedCount,
-                        'notResolvedCount' => $notResolvedCount
-                    ]);
-
-                    // Determine if batch should be marked as RESOLVED
-                    // All exceptions must be RESOLVED (no APPROVED or NOT-RESOLVED remaining)
-                    $shouldUpdateBatchStatus = ($totalExceptions > 0 && $resolvedCount === $totalExceptions);
-
-                    if ($shouldUpdateBatchStatus) {
-                        Log::info('All exceptions in batch are RESOLVED, updating batch status', [
+                        Log::info('Batch status analysis', [
                             'requestTrackerId' => $validated['requestTrackerId'],
                             'totalExceptions' => $totalExceptions,
-                            'resolvedCount' => $resolvedCount
+                            'resolvedCount' => $resolvedCount,
+                            'approvedCount' => $approvedCount,
+                            'notResolvedCount' => $notResolvedCount
                         ]);
-                    } else {
-                        Log::info('Batch not ready for RESOLVED status', [
-                            'requestTrackerId' => $validated['requestTrackerId'],
-                            'reason' => $resolvedCount < $totalExceptions ? 'Not all exceptions resolved' : 'No exceptions found'
-                        ]);
+
+                        // Determine if batch should be marked as RESOLVED
+                        // All exceptions must be RESOLVED (no APPROVED or NOT-RESOLVED remaining)
+                        $shouldUpdateBatchStatus = ($totalExceptions > 0 && $resolvedCount === $totalExceptions);
+
+                        if ($shouldUpdateBatchStatus) {
+                            Log::info('All exceptions in batch are RESOLVED, updating batch status', [
+                                'requestTrackerId' => $validated['requestTrackerId'],
+                                'totalExceptions' => $totalExceptions,
+                                'resolvedCount' => $resolvedCount
+                            ]);
+                        } else {
+                            Log::info('Batch not ready for RESOLVED status', [
+                                'requestTrackerId' => $validated['requestTrackerId'],
+                                'reason' => $resolvedCount < $totalExceptions ? 'Not all exceptions resolved' : 'No exceptions found'
+                            ]);
+                        }
                     }
                 } else {
                     Log::warning('Failed to fetch batch data for status check', [
@@ -422,14 +403,15 @@ class ExceptionController extends Controller
                     'batchExceptionId' => $validated['requestTrackerId']
                 ]);
 
-                $batchStatusResponse = Http::withToken($accessToken)
-                    ->timeout(30)
-                    ->retry(3, 100)
-                    ->put('http://192.168.1.200:5126/Auditor/ExceptionTracker/update-batch-exception-status', [
+                $batchStatusResponse = $this->apiService->put(
+                    $this->apiService->getEndpoint('update_batch_status'),
+                    [
                         'batchExceptionId' => $validated['requestTrackerId'],
                         'status' => 'RESOLVED',
                         '_token' => csrf_token()
-                    ]);
+                    ],
+                    $this->getApiToken()
+                );
 
                 if ($batchStatusResponse->successful()) {
                     Log::info('Batch status updated to RESOLVED successfully', [
@@ -454,16 +436,10 @@ class ExceptionController extends Controller
 
             return redirect()->back()->with('toast_success', 'Exception updated successfully');
         } catch (\Exception $e) {
-            Log::error('Exception occurred while updating Exception', [
+            return $this->handleApiException($e, 'updating exception', [
                 'exception_id' => $id,
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'is_batch_request' => $isBatchRequest ?? false
             ]);
-
-            return redirect()->back()->with(
-                'toast_error',
-                'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>'
-            );
         }
     }
 
@@ -475,32 +451,23 @@ class ExceptionController extends Controller
 
     public function destroy(Request $request, string $id)
     {
-        // Get the access token from the session
-        $accessToken = session('api_token');
-
         try {
-            // Make the DELETE request to the external API
-            $response = Http::withToken($accessToken)
-                ->delete("http://192.168.1.200:5126/Auditor/ExceptionTracker/{$id}");
+            $response = $this->apiService->delete(
+                "{$this->apiService->getEndpoint('exception_tracker')}/{$id}",
+                $this->getApiToken()
+            );
 
-            // Check the response status and return appropriate response
-            if ($response->successful()) {
-                return redirect()->route('exception.list')->with('toast_success', 'Exception deleted successfully');
-            } else {
-                // Log the error response
-                Log::error('Failed to delete Exception', [
-                    'status' => $response->status(),
-                    'response' => $response->body()
-                ]);
-                return redirect()->back()->with('toast_error', 'Sorry, failed to delete Exception: ' . $response->body());
-            }
+            return $this->handleApiResponse(
+                $response,
+                'Exception deleted successfully',
+                'exception.list',
+                'Delete exception'
+            );
+
         } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Exception occurred while deleting Exception', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            return $this->handleApiException($e, 'deleting exception', [
+                'exception_id' => $id
             ]);
-            return redirect()->back()->with('toast_error', 'Something went wrong, check your internet and try again, <b>Or Contact Application Support</b>');
         }
     }
 
