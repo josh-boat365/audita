@@ -45,12 +45,31 @@ class ReportsController extends Controller
         }
 
         $reportsData = collect($this->getAllReports());
-        $batches = BatchController::getBatches();
-        $groups = GroupController::getActivityGroups();
+        // dd($reportsData);
+        $batchData = BatchController::getBatches();
+        $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
+
+        $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+        $employeeDepartment = $employeeData->department->name;
+
+
+        $batches = collect($batchData)->filter(function ($batch) use ($employeeDepartment) {
+            return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
+        });
+
+        // dd($batches);
+
+        // $groups = GroupController::getActivityGroups();
+
 
         $statuses = ['APPROVED', 'ANALYSIS', 'RESOLVED'];
         $retrieveExceptions = FilterExceptionController::handleException($reportsData,  $statuses);
         $reports = $retrieveExceptions;
+
+        $groups = $this->getGroupsForAuditorUnit($reportsData, $batches);
+        // dd($groups);
+
+        // dd($reports);
 
 
         return view('reports.auditor-report', compact('reports', 'batches', 'groups'));
@@ -84,6 +103,23 @@ class ReportsController extends Controller
         }
         return $Reports;
     }
+
+    function getGroupsForAuditorUnit($reports, $batches) {
+    $batchIds = $batches->pluck('id')->toArray();
+
+    // Get unique group IDs from reports that belong to these batches
+    $relevantGroupIds = $reports
+        ->filter(fn($report) => in_array($report->exceptionBatchId, $batchIds))
+        ->pluck('activityGroupId')
+        ->unique()
+        ->toArray();
+
+    // Filter and return only relevant groups
+    return collect(GroupController::getActivityGroups())
+        ->filter(fn($group) => in_array($group->id, $relevantGroupIds));
+}
+
+
 
 
 
