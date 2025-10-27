@@ -73,7 +73,7 @@ class AuditCreateController extends Controller
             'exceptions' => 'required|array|min:1',
             'exceptions.*.exceptionTitle' => 'required|string|max:255',
             'exceptions.*.exception' => 'required|string',
-            'exceptions.*.subProcessTypeId' => 'required|integer',
+            // 'exceptions.*.subProcessTypeId' => 'required|integer',
             'exceptions.*.files.*' => 'nullable|file|max:10240', // Max 10MB per file
         ]);
 
@@ -100,7 +100,7 @@ class AuditCreateController extends Controller
                 'exception' => $exception['exception'],
                 'status' => 'PENDING', // Default status
                 'processTypeId' => $request->input('processTypeId'),
-                'subProcessTypeId' => $exception['subProcessTypeId'],
+                // 'subProcessTypeId' => $exception['subProcessTypeId'],
                 'departmentId' => $request->input('departmentId'),
                 'exceptionBatchId' => $request->input('exceptionBatchId'),
                 'activityGroupId' => $request->input('activityGroupId'),
