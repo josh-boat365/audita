@@ -77,6 +77,8 @@ class AuditCreateController extends Controller
             'exceptions.*.files.*' => 'nullable|file|max:10240', // Max 10MB per file
         ]);
 
+        // dd($request->all());
+
 
 
         $access_token = session('api_token');
