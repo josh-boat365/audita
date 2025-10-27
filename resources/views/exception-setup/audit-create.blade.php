@@ -506,7 +506,7 @@
                 });
 
                 // Function to load sub-process types for a process type
-                {{--  function loadSubProcessTypes(processTypeId, callback) {
+                function loadSubProcessTypes(processTypeId, callback) {
                     if (!processTypeId) return;
 
                     const url = "{{ url('/get-sub-process-types') }}/" + processTypeId;
@@ -523,10 +523,10 @@
                             Swal.fire('Error', 'Failed to load sub-process types', 'error');
                         }
                     });
-                }  --}}
+                }
 
                 // Update a row's sub-process dropdown
-                {{--  function updateRowSubProcessTypes(row, subProcessTypes) {
+                function updateRowSubProcessTypes(row, subProcessTypes) {
                     const select = row.querySelector('.sub-process-type');
                     const currentValue = select.value;
 
@@ -538,7 +538,7 @@
                     if (currentValue && subProcessTypes.some(st => st.id == currentValue)) {
                         select.value = currentValue;
                     }
-                }  --}}
+                }
 
                 // When process type filter changes
                 $('#processTypeFilter').change(function () {
@@ -671,10 +671,9 @@
                     rows.forEach((row, index) => {
                         const title = row.querySelector('[name*="[exceptionTitle]"]').value;
                         const description = row.querySelector('[name*="[exception]"]').value;
-                        {{--  const subProcessType = row.querySelector('[name*="[subProcessTypeId]"]').value;  --}}
+                        const subProcessType = row.querySelector('[name*="[subProcessTypeId]"]').value;
 
-                        {{--  if (!title || !description || !subProcessType) {  --}}
-                        if (!title || !description) {
+                        if (!title || !description || !subProcessType) {
                             isValid = false;
                             invalidRows.push(index + 1);
                             row.classList.add('table-danger');
@@ -731,11 +730,11 @@
                         // Add exception data
                         const title = row.querySelector('[name*="[exceptionTitle]"]').value;
                         const description = row.querySelector('[name*="[exception]"]').value;
-                        {{--  const subProcessTypeId = row.querySelector('[name*="[subProcessTypeId]"]').value;  --}}
+                        const subProcessTypeId = row.querySelector('[name*="[subProcessTypeId]"]').value;
 
                         formData.append(`exceptions[${index}][exceptionTitle]`, title);
                         formData.append(`exceptions[${index}][exception]`, description);
-                        {{--  formData.append(`exceptions[${index}][subProcessTypeId]`, subProcessTypeId);  --}}
+                        formData.append(`exceptions[${index}][subProcessTypeId]`, subProcessTypeId);
 
                         // Add files if any
                         if (rowFiles[rowId] && rowFiles[rowId].length > 0) {
