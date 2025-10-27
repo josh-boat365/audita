@@ -11,10 +11,10 @@
         <!-- end page title -->
 
         <div class="d-flex gap-2 mb-4 justify-content-end">
-            <button data-bs-toggle="modal" data-bs-target="#addSubProcessTypeModal"
+            {{--  <button data-bs-toggle="modal" data-bs-target="#addSubProcessTypeModal"
                 class="btn btn-primary btn-rounded waves-effect waves-light">
                 <i class="bx bx-plus"></i> Add subProcessType
-            </button>
+            </button>  --}}
             <button id="addRowBtn" class="btn btn-success btn-rounded waves-effect waves-light">
                 <i class="bx bx-plus"></i> Add Row
             </button>
@@ -169,12 +169,12 @@
                 <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                     <thead class="table-light">
                         <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Exception Title</th>
-                            <th scope="col">Exception Description</th>
-                            <th scope="col">Sub Category</th>
-                            <th scope="col">Attachments</th>
-                            <th scope="col">Action</th>
+                            <th>#</th>
+                            <th>Exception Title</th>
+                            <th>Exception Description</th>
+                            {{--  <th scope="col">Sub Category</th>  --}}
+                            {{--  <th scope="col">Attachments</th>  --}}
+                            <th style="width: 1rem">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -220,7 +220,7 @@
                 addRowBtn.disabled = true;
 
                 // AJAX Sub Process Type Form Submission
-                $('#addSubProcessTypeForm').on('submit', function (e) {
+                {{--  $('#addSubProcessTypeForm').on('submit', function (e) {
                     e.preventDefault();
 
                     const formData = new FormData(this);
@@ -289,14 +289,14 @@
                             submitBtn.prop('disabled', false).text(btnText);
                         }
                     });
-                });
+                });  --}}
 
                 // Reset form when modal is closed
-                $('#addSubProcessTypeModal').on('hidden.bs.modal', function () {
+                {{--  $('#addSubProcessTypeModal').on('hidden.bs.modal', function () {
                     $('#addSubProcessTypeForm')[0].reset();
                     $('#submitSubProcessType').prop('disabled', false).text('Add Sub Process Type');
                     $('#submitSubProcessType').find('.spinner-border').hide();
-                });
+                });  --}}
 
                 // Handle file attachment modal opening
                 $(document).on('click', '.attach-files-btn', function () {
@@ -506,7 +506,7 @@
                 });
 
                 // Function to load sub-process types for a process type
-                function loadSubProcessTypes(processTypeId, callback) {
+                {{--  function loadSubProcessTypes(processTypeId, callback) {
                     if (!processTypeId) return;
 
                     const url = "{{ url('/get-sub-process-types') }}/" + processTypeId;
@@ -523,10 +523,10 @@
                             Swal.fire('Error', 'Failed to load sub-process types', 'error');
                         }
                     });
-                }
+                }  --}}
 
                 // Update a row's sub-process dropdown
-                function updateRowSubProcessTypes(row, subProcessTypes) {
+                {{--  function updateRowSubProcessTypes(row, subProcessTypes) {
                     const select = row.querySelector('.sub-process-type');
                     const currentValue = select.value;
 
@@ -538,7 +538,7 @@
                     if (currentValue && subProcessTypes.some(st => st.id == currentValue)) {
                         select.value = currentValue;
                     }
-                }
+                }  --}}
 
                 // When process type filter changes
                 $('#processTypeFilter').change(function () {
@@ -581,14 +581,18 @@
                                           name="exceptions[${rowCount}][exception]"
                                           placeholder="Enter exception description" required></textarea>
                             </td>
-                            <td>
+                            {{--  <td>
                                 <select class="form-select sub-process-type"
                                         name="exceptions[${rowCount}][subProcessTypeId]">
                                     <option value="">Loading...</option>
                                 </select>
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline-warning attach-files-btn position-relative"
+                            </td>  --}}
+                            {{--  <td>
+
+                            </td>  --}}
+                            <td class="text-center">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-warning attach-files-btn position-relative"
                                         data-bs-toggle="modal"
                                         data-bs-target="#fileAttachmentsModal"
                                         data-row-id="${rowCount}"
@@ -598,11 +602,11 @@
                                         0
                                     </span>
                                 </button>
-                            </td>
-                            <td>
+
                                 <button type="button" class="btn btn-sm btn-danger delete-row">
                                     <i class="bx bxs-trash"></i> Delete
                                 </button>
+                                </div
                             </td>
                         `;
 
@@ -667,9 +671,10 @@
                     rows.forEach((row, index) => {
                         const title = row.querySelector('[name*="[exceptionTitle]"]').value;
                         const description = row.querySelector('[name*="[exception]"]').value;
-                        const subProcessType = row.querySelector('[name*="[subProcessTypeId]"]').value;
+                        {{--  const subProcessType = row.querySelector('[name*="[subProcessTypeId]"]').value;  --}}
 
-                        if (!title || !description || !subProcessType) {
+                        {{--  if (!title || !description || !subProcessType) {  --}}
+                        if (!title || !description) {
                             isValid = false;
                             invalidRows.push(index + 1);
                             row.classList.add('table-danger');
@@ -726,11 +731,11 @@
                         // Add exception data
                         const title = row.querySelector('[name*="[exceptionTitle]"]').value;
                         const description = row.querySelector('[name*="[exception]"]').value;
-                        const subProcessTypeId = row.querySelector('[name*="[subProcessTypeId]"]').value;
+                        {{--  const subProcessTypeId = row.querySelector('[name*="[subProcessTypeId]"]').value;  --}}
 
                         formData.append(`exceptions[${index}][exceptionTitle]`, title);
                         formData.append(`exceptions[${index}][exception]`, description);
-                        formData.append(`exceptions[${index}][subProcessTypeId]`, subProcessTypeId);
+                        {{--  formData.append(`exceptions[${index}][subProcessTypeId]`, subProcessTypeId);  --}}
 
                         // Add files if any
                         if (rowFiles[rowId] && rowFiles[rowId].length > 0) {
