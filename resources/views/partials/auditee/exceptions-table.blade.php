@@ -1,21 +1,21 @@
 {{-- partials.auditee.exceptions-table --}}
 
 @php
-    // Sort exceptions: non-RESOLVED items first, then RESOLVED items
-    $checkForNotResolved = 1;
-    $status = $pendingException->status;
-    $sortedExceptions = collect($exceptions ?? [])
-        ->sortBy(function ($exception) use ($status) {
-            // For ANALYSIS status, sort by exception status
-            if ($status === 'ANALYSIS') {
-                return $exception->status === 'RESOLVED' ? 1 : 0;
-            }
+// Sort exceptions: non-RESOLVED items first, then RESOLVED items
+$checkForNotResolved = 1;
+$status = $pendingException->status;
+$sortedExceptions = collect($exceptions ?? [])
+    ->sortBy(function ($exception) use ($status) {
+        // For ANALYSIS status, sort by exception status
+        if ($status === 'ANALYSIS') {
+            return $exception->status === 'RESOLVED' ? 1 : 0;
+        }
 
-            // For other statuses, sort by recommendedStatus
-            return $exception->recommendedStatus === 'RESOLVED' ? 1 : 0;
-        })
-        ->values()
-        ->all();
+        // For other statuses, sort by recommendedStatus
+        return $exception->recommendedStatus === 'RESOLVED' ? 1 : 0;
+    })
+    ->values()
+    ->all();
 @endphp
 
 {{--  {{ dd($sortedExceptions) }}  --}}
@@ -24,36 +24,36 @@
     <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
         <thead class="table-light">
             <tr>
-                <th scope="col">#</th>
-                <th scope="col">Exception Title</th>
-                <th scope="col">Exception Description</th>
-                <th scope="col">Sub Category</th>
-                <th scope="col">Management Response</th>
-                <th scope="col">Action</th>
+                <th style="width: 50px">#</th>
+                <th style="width: 200px">Exception Title</th>
+                <th>Exception Description</th>
+                {{--  <th scope="col">Sub Category</th>  --}}
+                <th style="width: 300px">Management Response</th>
+                <th style="width: 100px">Action</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($sortedExceptions as $key => $exceptionItem)
                 @if (!empty($exceptionItem))
                     @php
-                        // Determine row color class based on status
-                        $rowColorClass = '';
+        // Determine row color class based on status
+        $rowColorClass = '';
 
-                        if ($pendingException->status === 'ANALYSIS') {
-                            // For ANALYSIS status, check exception status
-                            if ($exceptionItem->status === 'RESOLVED') {
-                                $rowColorClass = 'table-success';
-                            } elseif ($exceptionItem->status === 'NOT-RESOLVED') {
-                                $rowColorClass = 'table-danger';
-                            }
-                        } else {
-                            // For non-ANALYSIS status, check recommendedStatus and status
-                            if ($exceptionItem->recommendedStatus === 'RESOLVED') {
-                                $rowColorClass = 'table-success';
-                            } elseif ($exceptionItem->status === 'NOT-RESOLVED') {
-                                $rowColorClass = 'table-danger';
-                            }
-                        }
+        if ($pendingException->status === 'ANALYSIS') {
+            // For ANALYSIS status, check exception status
+            if ($exceptionItem->status === 'RESOLVED') {
+                $rowColorClass = 'table-success';
+            } elseif ($exceptionItem->status === 'NOT-RESOLVED') {
+                $rowColorClass = 'table-danger';
+            }
+        } else {
+            // For non-ANALYSIS status, check recommendedStatus and status
+            if ($exceptionItem->recommendedStatus === 'RESOLVED') {
+                $rowColorClass = 'table-success';
+            } elseif ($exceptionItem->status === 'NOT-RESOLVED') {
+                $rowColorClass = 'table-danger';
+            }
+        }
                     @endphp
 
                     <tr data-exception-id="{{ $exceptionItem->id ?? '' }}" class="{{ $rowColorClass }}">
@@ -76,7 +76,7 @@
                         </td>
 
                         <!-- Sub Category -->
-                        <td>
+                        {{--  <td>
                             <select @disabled($pendingException->status !== 'ANALYSIS') class="form-select sub-process-type"
                                 name="exceptions[{{ $exceptionItem->id ?? '' }}][subProcessTypeId]">
                                 <option value="">Select...</option>
@@ -90,7 +90,7 @@
                                     @endforeach
                                 @endif
                             </select>
-                        </td>
+                        </td>  --}}
 
                         <!-- Exception Response -->
                         <td>
@@ -101,14 +101,14 @@
                         <!-- Action Buttons -->
                         <td>
                             @include('partials.auditee.action-buttons', [
-                                'exceptionItem' => $exceptionItem,
-                                'pendingExceptionBatchStatus' => $pendingException->status,
-                                'pushBackButtonCheck' => $pushBackButtonCheck,
-                                'auditorButtonCheck' => $auditorButtonCheck,
-                                'employeeDepartmentId' => $employeeDepartmentId,
-                                'auditorDepartments' => $auditorDepartments,
-                                'pendingExceptionBatchStatusId' => $pendingException->id,
-                            ])
+            'exceptionItem' => $exceptionItem,
+            'pendingExceptionBatchStatus' => $pendingException->status,
+            'pushBackButtonCheck' => $pushBackButtonCheck,
+            'auditorButtonCheck' => $auditorButtonCheck,
+            'employeeDepartmentId' => $employeeDepartmentId,
+            'auditorDepartments' => $auditorDepartments,
+            'pendingExceptionBatchStatusId' => $pendingException->id,
+        ])
                         </td>
                     </tr>
                 @endif
@@ -121,10 +121,10 @@
     </table>
 
     @php
-        // Check if all recommendedStatus values are 'RESOLVED'
-        $allResolved = collect($sortedExceptions)->every(function ($exception) {
-            return $exception->recommendedStatus === 'RESOLVED';
-        });
+// Check if all recommendedStatus values are 'RESOLVED'
+$allResolved = collect($sortedExceptions)->every(function ($exception) {
+    return $exception->recommendedStatus === 'RESOLVED';
+});
     @endphp
 
     @if ($allResolved && $pendingException->status !== 'ANALYSIS')
