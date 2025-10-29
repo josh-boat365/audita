@@ -204,6 +204,8 @@ class AuditCreateController extends Controller
             // Get user and lookup data
             $loggedInUser = ExceptionManipulationController::getLoggedInUserInformation();
             $employeeId = $loggedInUser->id;
+            $employeeName = $loggedInUser->firstName . " " . $loggedInUser->surname;
+
             $employeeRoleId = $loggedInUser->empRoleId;
             $topManagers = [1, 2, 4]; // MD, Head of IA, Head of IC&C
 
@@ -222,9 +224,11 @@ class AuditCreateController extends Controller
                 ->pluck('activityGroupId')
                 ->unique();
 
+
+
             // Process exceptions
             $pendingExceptions = collect($exceptions)
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId, $employeeName) {
                     // Get the actual group ID from the exception
                     $groupId = $exception->activityGroupId;
 
@@ -234,6 +238,8 @@ class AuditCreateController extends Controller
                     // Check if group is valid (active)
                     $hasValidGroup = $validGroups->has($groupId);
 
+                    $createdBy = $exception->submittedBy == $employeeName;
+
 
                     // Check if status is one of the tracked statuses
                     $hasValidStatus = in_array($exception->status, ['PENDING', 'REVIEW', 'AMENDMENT', 'DECLINED']);
@@ -241,7 +247,7 @@ class AuditCreateController extends Controller
                     // Check access: employee belongs to group OR is a top manager
                     $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
 
-                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess && $createdBy;
                 })
                 ->map(function ($exception) use ($loggedInUser) {
                     $nestedExceptions = collect($exception->exceptions ?? []);
