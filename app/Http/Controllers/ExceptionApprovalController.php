@@ -613,6 +613,7 @@ class ExceptionApprovalController extends Controller
             $loggedInUser = ExceptionManipulationController::getLoggedInUserInformation();
             $employeeId = $loggedInUser->id;
             $employeeRoleId = $loggedInUser->empRoleId;
+            $employeeName = $loggedInUser->firstName . " " . $loggedInUser->surname;
             $topManagers = [1, 2, 4]; // MD, Head of IA, Head of IC&C
 
             // 7. Get valid batches and groups
@@ -631,7 +632,7 @@ class ExceptionApprovalController extends Controller
 
             // 8. Process and filter exceptions
             $pendingExceptions = collect($exceptions)
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId, $employeeName) {
                 // Get the actual group ID from the exception
                 $groupId = $exception->activityGroupId;
 
@@ -641,6 +642,8 @@ class ExceptionApprovalController extends Controller
                 // Check if group is valid (active)
                 $hasValidGroup = $validGroups->has($groupId);
 
+                $createdBy = $exception->submittedBy === $employeeName;
+
 
                 // Check if status is one of the tracked statuses
                 $hasValidStatus = in_array($exception->status, ['ANALYSIS']);
@@ -648,7 +651,7 @@ class ExceptionApprovalController extends Controller
                 // Check access: employee belongs to group OR is a top manager
                 $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
 
-                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess && $createdBy;
 
                 })
                 ->map(function ($exception) {
