@@ -305,8 +305,8 @@ class DashboardController extends Controller
             // dd($employeeGroups);
 
             if ($employeeGroups->isEmpty()) {
-                return redirect()->route('dashboard')
-                    ->with('toast_warning', 'You are not a member of any active groups');
+                return redirect()->route('login')
+                    ->with('toast_warning', 'You are not a member of any active groups/branches. Contact your Auditor.');
             }
 
 
