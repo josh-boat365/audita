@@ -58,7 +58,7 @@ class FilterExceptionController extends Controller
             $hasValidGroup = $validGroups->has($groupId);
 
             // Check if status is not DECLINED
-            $hasValidStatus = !in_array($exception->status, $statuses);
+            $hasValidStatus = in_array($exception->status, $statuses);
 
             // Check access: employee belongs to group OR is a top manager
             $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);

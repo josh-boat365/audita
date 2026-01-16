@@ -22,7 +22,7 @@ $employeeName = session('user_name') ?? 'Unknown User';
                 <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                     <h4 class="mb-sm-0 font-size-18"><a href="{{ route('exception.supervisor.list') }}">Exceptions</a> >
                         {{ $pendingException->submittedBy ?? '' }} >
-                        {{ $pendingException->exceptionBatch->activityGroupName ?? '' }} > <a
+                        {{ $pendingException->activityGroup ?? '' }} > <a
                             href="#">{{ $pendingException->departmentName ?? '' }}</a>
                     </h4>
                 </div>
@@ -33,10 +33,14 @@ $employeeName = session('user_name') ?? 'Unknown User';
 
         <div class="d-flex gap-2 mb-4 justify-content-end">
             @if ($employeeRoleId == $auditManagerRoleId)
-                <!-- Review Batch Button -->
-                <button type="button" class="btn btn-warning btn-rounded waves-effect waves-light" id="reviewBatchBtn">
-                    Push Batch For Review
+                <!-- Edit Batch Button -->
+                <button type="button" class="btn btn-dark btn-rounded waves-effect waves-light" id="amendBatchBtn">
+                    Amend Batch
                 </button>
+                    <!-- Review Batch Button -->
+                    <button type="button" class="btn btn-warning btn-rounded waves-effect waves-light" id="reviewBatchBtn">
+                        Push Batch For Review
+                    </button>
             @else
                 <!-- Edit Batch Button -->
                 <button type="button" class="btn btn-dark btn-rounded waves-effect waves-light" id="amendBatchBtn">
@@ -110,7 +114,7 @@ $employeeName = session('user_name') ?? 'Unknown User';
                                 <select class="form-select select2" id="groupFilter">
                                     <option>Select.....</option>
                                     @foreach ($groups as $group)
-                                        <option value="{{ $group->id }}" @selected($group->id === $groupId)>{{ $group->name }}</option>
+                                        <option value="{{ $group->id }}" @selected($group->id == $groupId)>{{ $group->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -153,11 +157,11 @@ $employeeName = session('user_name') ?? 'Unknown User';
             <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                 <thead class="table-light">
                     <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Exception Title</th>
-                        <th scope="col">Exception Description</th>
-                        <th scope="col">Sub Process Type</th>
-                        <th scope="col">Actions</th>
+                        <th style="width:50px ">#</th>
+                        <th style="width:200px ">Exception Title</th>
+                        <th>Exception Description</th>
+                        {{--  <th scope="col">Sub Process Type</th>  --}}
+                        <th style="width:100px ">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -172,7 +176,7 @@ $employeeName = session('user_name') ?? 'Unknown User';
                                             <textarea class="form-control editable-textarea" rows="3" name="exceptionDescription"
                                                 placeholder="Enter exception description">{{ $exceptionItem->exception }}</textarea>
                                         </td>
-                                        <td>
+                                        {{--  <td>
                                             <select class="form-select sub-process-type" name="subProcessTypeId">
                                                 <option value="">Select...</option>
                                                 @if (isset($groupedSubProcessTypes[$pendingException->processTypeId]))
@@ -184,7 +188,7 @@ $employeeName = session('user_name') ?? 'Unknown User';
                                                     @endforeach
                                                 @endif
                                             </select>
-                                        </td>
+                                        </td>  --}}
                                         <td>
                                             <div class="d-flex gap-2">
                                                 {{-- <button type="button" class="btn btn-secondary btn-sm push-for-amendment-btn"

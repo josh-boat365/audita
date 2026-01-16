@@ -100,12 +100,12 @@
             <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                 <thead class="table-light">
                     <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Exception Title</th>
-                        <th scope="col">Exception Description</th>
-                        <th scope="col">Management Response</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Actions</th>
+                        <th style="width: 50px">#</th>
+                        <th style="width: 200px">Exception Title</th>
+                        <th >Exception Description</th>
+                        <th style="width: 100px">Management Response</th>
+                        <th style="width: 75px">Status</th>
+                        <th style="width: 100px">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -113,16 +113,16 @@
                     <tr id="exception-row-{{ $exceptionItem->id }}">
                         <td>{{ ++$key }}</td>
                         <td>
-                            <textarea disabled class="form-control editable-textarea" rows="3" name="exceptionTitle"
+                            <textarea disabled class="form-control editable-textarea" rows="5" name="exceptionTitle"
                                 placeholder="Enter exception title">{{ $exceptionItem->exceptionTitle }}</textarea>
                         </td>
                         <td>
-                            <textarea disabled class="form-control editable-textarea" rows="3"
+                            <textarea disabled class="form-control editable-textarea" rows="5"
                                 name="exceptionDescription"
                                 placeholder="Enter exception description">{{ $exceptionItem->exception }}</textarea>
                         </td>
                         <td>
-                            <textarea disabled class="form-control editable-textarea" rows="3"
+                            <textarea disabled class="form-control editable-textarea" rows="5"
                                 name="exceptionDescription"
                                 placeholder="Enter exception description">{{ $exceptionItem->statusComment ?? 'No Comment Yet' }}</textarea>
                         </td>

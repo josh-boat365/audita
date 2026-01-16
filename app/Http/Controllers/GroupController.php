@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use Illuminate\Bus\Batch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -21,7 +22,6 @@ class GroupController extends Controller
         }
 
         $branches = $this->getBranchData();
-
         $groupsData = $this->getActivityGroups();
         $sortedGroups = collect($groupsData)->sortByDesc('createdAt');
 
@@ -31,6 +31,7 @@ class GroupController extends Controller
         $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+
 
         return view('group-setup.index', compact('branches', 'groups', 'employeeFullName'));
     }

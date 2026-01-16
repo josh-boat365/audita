@@ -411,6 +411,7 @@ class AuditeeDataManipulationController extends Controller
 
     private function fetchExceptionData($batchId)
     {
+
         try {
             $access_token = session('api_token');
 

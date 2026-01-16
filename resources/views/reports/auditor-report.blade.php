@@ -30,9 +30,9 @@
                                 </label>
                                 <select id="branchFilter" class="form-select" required>
                                     <option value="">Select Branch...</option>
-                                    @foreach (array_unique(array_column($groups, 'branchName')) as $branchName)
+                                @foreach ($groups->pluck('branchName')->unique() as $branchName)
                                     <option value="{{ $branchName }}">{{ $branchName }}</option>
-                                    @endforeach
+                                @endforeach
                                 </select>
                             </div>
 

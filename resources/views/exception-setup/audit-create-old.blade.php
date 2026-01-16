@@ -11,9 +11,52 @@
         <!-- end page title -->
 
         <div class="d-flex gap-2 mb-4 justify-content-end">
+            <button data-bs-toggle="modal" data-bs-target="#addSubProcessTypeModal"
+                class="btn btn-primary btn-rounded waves-effect waves-light">
+                <i class="bx bx-plus"></i> Add subProcessType
+            </button>
             <button id="addRowBtn" class="btn btn-success btn-rounded waves-effect waves-light">
                 <i class="bx bx-plus"></i> Add Row
             </button>
+        </div>
+
+        {{-- modal for adding subProcessType --}}
+        <div class="modal fade" id="addSubProcessTypeModal" tabindex="-1" role="dialog"
+            aria-labelledby="myLargeModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-top">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addSubProcessTypeModalLabel">Add Sub Process Type</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addSubProcessTypeForm">
+                            @csrf
+                            <div class="mb-3">
+                                <label for="subProcessTypeName" class="form-label">Sub Process Type Name</label>
+                                <input type="text" class="form-control" id="subProcessTypeName" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="processTypeSelect" class="form-label">Process Type</label>
+                                <select class="form-select" id="processTypeSelect" name="processTypeId" required>
+                                    <option> Select ......</option>
+                                    @foreach ($processTypes as $processType)
+                                        <option value="{{ $processType->id }}">{{ $processType->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <input type="hidden" name="active" value="1">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="submitSubProcessType">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"
+                                        style="display: none;"></span>
+                                    Add Sub Process Type
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {{-- Modal for File Attachments --}}
@@ -126,11 +169,12 @@
                 <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                     <thead class="table-light">
                         <tr>
-                            <th scope="col" style="width: 50px;">#</th>
-                            <th scope="col" style="width: 200px;">Exception Title</th>
+                            <th scope="col">#</th>
+                            <th scope="col">Exception Title</th>
                             <th scope="col">Exception Description</th>
-                            {{--  <th scope="col" style="width: 80px;">Attachments</th>  --}}
-                            <th scope="col" style="width: 100px;">Action</th>
+                            <th scope="col">Sub Category</th>
+                            <th scope="col">Attachments</th>
+                            <th scope="col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -174,6 +218,85 @@
 
                 // Initially disable the add row button
                 addRowBtn.disabled = true;
+
+                // AJAX Sub Process Type Form Submission
+                $('#addSubProcessTypeForm').on('submit', function (e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(this);
+                    const submitBtn = $('#submitSubProcessType');
+                    const spinner = submitBtn.find('.spinner-border');
+                    const btnText = submitBtn.text().trim();
+
+                    // Show loading state
+                    spinner.show();
+                    submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Adding...');
+
+                    $.ajax({
+                        url: "{{ route('sub.process.type') }}",
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function (response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: 'Sub Process Type added successfully',
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                timerProgressBar: true,
+                            });
+
+                            $('#addSubProcessTypeForm')[0].reset();
+                            $('#addSubProcessTypeModal').modal('hide');
+
+                            const currentProcessTypeId = $('#processTypeFilter').val();
+                            if (currentProcessTypeId && currentProcessTypeId === response.processTypeId) {
+                                loadSubProcessTypes(currentProcessTypeId, function (subProcessTypes) {
+                                    document.querySelectorAll('#exceptionsTable tbody tr').forEach(row => {
+                                        updateRowSubProcessTypes(row, subProcessTypes);
+                                    });
+                                });
+                            }
+                        },
+                        error: function (xhr) {
+                            let errorMessage = 'An error occurred while adding the sub process type';
+
+                            if (xhr.responseJSON) {
+                                if (xhr.responseJSON.message) {
+                                    errorMessage = xhr.responseJSON.message;
+                                } else if (xhr.responseJSON.errors) {
+                                    const errors = Object.values(xhr.responseJSON.errors).flat();
+                                    errorMessage = errors.join(', ');
+                                }
+                            }
+
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: errorMessage,
+                                confirmButtonText: 'OK'
+                            });
+                        },
+                        complete: function () {
+                            spinner.hide();
+                            submitBtn.prop('disabled', false).text(btnText);
+                        }
+                    });
+                });
+
+                // Reset form when modal is closed
+                $('#addSubProcessTypeModal').on('hidden.bs.modal', function () {
+                    $('#addSubProcessTypeForm')[0].reset();
+                    $('#submitSubProcessType').prop('disabled', false).text('Add Sub Process Type');
+                    $('#submitSubProcessType').find('.spinner-border').hide();
+                });
 
                 // Handle file attachment modal opening
                 $(document).on('click', '.attach-files-btn', function () {
@@ -280,18 +403,18 @@
                         const fileItem = document.createElement('div');
                         fileItem.className = 'list-group-item d-flex justify-content-between align-items-center';
                         fileItem.innerHTML = `
-                                                    <div>
-                                                        <i class="bx bx-file me-2"></i>
-                                                        <strong>${fileObj.file.name}</strong>
-                                                        <br>
-                                                        <small class="text-muted">${fileObj.description}</small>
-                                                        <br>
-                                                        <small class="text-muted">${(fileObj.file.size / 1024).toFixed(2)} KB</small>
-                                                    </div>
-                                                    <button type="button" class="btn btn-sm btn-danger remove-file-btn" data-row-id="${rowId}" data-file-index="${index}">
-                                                        <i class="bx bx-trash"></i>
-                                                    </button>
-                                                `;
+                                <div>
+                                    <i class="bx bx-file me-2"></i>
+                                    <strong>${fileObj.file.name}</strong>
+                                    <br>
+                                    <small class="text-muted">${fileObj.description}</small>
+                                    <br>
+                                    <small class="text-muted">${(fileObj.file.size / 1024).toFixed(2)} KB</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger remove-file-btn" data-row-id="${rowId}" data-file-index="${index}">
+                                    <i class="bx bx-trash"></i>
+                                </button>
+                            `;
                         filesList.appendChild(fileItem);
                     });
                 }
@@ -379,20 +502,57 @@
                     document.querySelector(filter).addEventListener('change', function () {
                         validateFilters();
                         this.closest('.col-md-3').classList.remove('has-error');
-
-                        // Update hidden form fields when filters change
-                        updateHiddenFormFields();
                     });
                 });
 
-                // Function to update hidden form fields
-                function updateHiddenFormFields() {
-                    document.getElementById('formProcessTypeId').value = document.getElementById('processTypeFilter').value || '';
-                    document.getElementById('formGroupId').value = document.getElementById('groupFilter').value || '';
-                    document.getElementById('formDepartmentId').value = document.getElementById('departmentFilter').value || '';
-                    document.getElementById('formBatchId').value = document.getElementById('batchFilter').value || '';
-                    document.getElementById('formOccurrenceDate').value = document.getElementById('occurrenceDateFilter').value || '';
+                // Function to load sub-process types for a process type
+                function loadSubProcessTypes(processTypeId, callback) {
+                    if (!processTypeId) return;
+
+                    const url = "{{ url('/get-sub-process-types') }}/" + processTypeId;
+
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        success: function (data) {
+                            if (callback) callback(data);
+                        },
+                        error: function (xhr) {
+                            console.error('Error loading sub-process types:', xhr.responseText);
+                            console.error('Request URL:', url);
+                            Swal.fire('Error', 'Failed to load sub-process types', 'error');
+                        }
+                    });
                 }
+
+                // Update a row's sub-process dropdown
+                function updateRowSubProcessTypes(row, subProcessTypes) {
+                    const select = row.querySelector('.sub-process-type');
+                    const currentValue = select.value;
+
+                    select.innerHTML = '<option value="">Select...</option>';
+                    subProcessTypes.forEach(subType => {
+                        select.innerHTML += `<option value="${subType.id}">${subType.name}</option>`;
+                    });
+
+                    if (currentValue && subProcessTypes.some(st => st.id == currentValue)) {
+                        select.value = currentValue;
+                    }
+                }
+
+                // When process type filter changes
+                $('#processTypeFilter').change(function () {
+                    const processTypeId = $(this).val();
+                    document.getElementById('formProcessTypeId').value = processTypeId;
+
+                    if (!processTypeId) return;
+
+                    loadSubProcessTypes(processTypeId, function (subProcessTypes) {
+                        document.querySelectorAll('#exceptionsTable tbody tr').forEach(row => {
+                            updateRowSubProcessTypes(row, subProcessTypes);
+                        });
+                    });
+                });
 
                 // Add new row with validation
                 addRowBtn.addEventListener('click', function () {
@@ -401,53 +561,62 @@
                         return;
                     }
 
-                    // Update hidden fields before adding row
-                    updateHiddenFormFields();
+                    const processTypeId = document.getElementById('processTypeFilter').value;
 
-                    rowCount++;
-                    const newRow = document.createElement('tr');
-                    newRow.dataset.rowId = rowCount;
-                    newRow.innerHTML = `
-                                            <td>${rowCount}</td>
-                                            <td>
-                                                <textarea class="form-control editable-textarea"
-                                                          rows="2"
-                                                          name="exceptions[${rowCount}][exceptionTitle]"
-                                                          placeholder="Enter exception title" required></textarea>
-                                            </td>
-                                            <td>
-                                                <textarea class="form-control editable-textarea exception-description"
-                                                          rows="5"
-                                                          name="exceptions[${rowCount}][exception]"
-                                placeholder="Enter detailed exception description. You can use:
-                            • Bullet points
-                            • Multiple paragraphs
-                            • Detailed explanations
+                    loadSubProcessTypes(processTypeId, function (subProcessTypes) {
+                        rowCount++;
+                        const newRow = document.createElement('tr');
+                        newRow.dataset.rowId = rowCount;
+                        newRow.innerHTML = `
+                            <td>${rowCount}</td>
+                            <td>
+                                <textarea class="form-control editable-textarea"
+                                          rows="3"
+                                          name="exceptions[${rowCount}][exceptionTitle]"
+                                          placeholder="Enter exception title" required></textarea>
+                            </td>
+                            <td>
+                                <textarea class="form-control editable-textarea"
+                                          rows="3"
+                                          name="exceptions[${rowCount}][exception]"
+                                          placeholder="Enter exception description" required></textarea>
+                            </td>
+                            <td>
+                                <select class="form-select sub-process-type"
+                                        name="exceptions[${rowCount}][subProcessTypeId]">
+                                    <option value="">Loading...</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-warning attach-files-btn position-relative"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#fileAttachmentsModal"
+                                        data-row-id="${rowCount}"
+                                        title="File Attachments">
+                                    <i class="bx bx-paperclip"></i>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger attachment-badge" style="display: none;">
+                                        0
+                                    </span>
+                                </button>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-danger delete-row">
+                                    <i class="bx bxs-trash"></i> Delete
+                                </button>
+                            </td>
+                        `;
 
-                            Tip: Press Shift+Enter for new lines" required></textarea>
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="d-flex gap-2 justify-content-center">
-                                                <button type="button" class="btn btn-sm btn-outline-warning attach-files-btn position-relative"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#fileAttachmentsModal"
-                                                        data-row-id="${rowCount}"
-                                                        title="File Attachments">
-                                                    <i class="bx bx-paperclip"></i>
-                                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger attachment-badge" style="display: none;">
-                                                        0
-                                                    </span>
-                                                </button>
+                        tableBody.appendChild(newRow);
+                        updateRowSubProcessTypes(newRow, subProcessTypes);
+                        newRow.querySelector('textarea').focus();
 
-                                                <button type="button" class="btn btn-sm btn-danger delete-row">
-                                                    <i class="bx bxs-trash"></i>
-                                                </button>
-                                                </div>
-                                            </td>
-                                        `;
-
-                    tableBody.appendChild(newRow);
-                    newRow.querySelector('textarea').focus();
+                        // Update hidden form fields
+                        document.getElementById('formProcessTypeId').value = processTypeId;
+                        document.getElementById('formGroupId').value = document.getElementById('groupFilter').value;
+                        document.getElementById('formDepartmentId').value = document.getElementById('departmentFilter').value;
+                        document.getElementById('formBatchId').value = document.getElementById('batchFilter').value;
+                        document.getElementById('formOccurrenceDate').value = document.getElementById('occurrenceDateFilter').value;
+                    });
                 });
 
                 // Delete row functionality
@@ -492,35 +661,15 @@
                         return;
                     }
 
-                    // Check if filters are still valid
-                    if (!validateFilters()) {
-                        showValidationError();
-                        return;
-                    }
-
-                    // Update hidden fields one more time before submission
-                    updateHiddenFormFields();
-
-                    // Verify processTypeId is set
-                    const processTypeId = document.getElementById('formProcessTypeId').value;
-                    if (!processTypeId || processTypeId === 'Select.....') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Process Type Required',
-                            text: 'Please select a Process Type before submitting',
-                            confirmButtonText: 'OK'
-                        });
-                        return;
-                    }
-
                     let isValid = true;
                     const invalidRows = [];
 
                     rows.forEach((row, index) => {
                         const title = row.querySelector('[name*="[exceptionTitle]"]').value;
                         const description = row.querySelector('[name*="[exception]"]').value;
+                        const subProcessType = row.querySelector('[name*="[subProcessTypeId]"]').value;
 
-                        if (!title || !description) {
+                        if (!title || !description || !subProcessType) {
                             isValid = false;
                             invalidRows.push(index + 1);
                             row.classList.add('table-danger');
@@ -563,14 +712,12 @@
                     // Add CSRF token
                     formData.append('_token', document.querySelector('input[name="_token"]').value);
 
-                    // Add hidden form fields with explicit values
+                    // Add hidden form fields
                     formData.append('processTypeId', document.getElementById('formProcessTypeId').value);
                     formData.append('departmentId', document.getElementById('formDepartmentId').value);
                     formData.append('exceptionBatchId', document.getElementById('formBatchId').value);
                     formData.append('activityGroupId', document.getElementById('formGroupId').value);
                     formData.append('occurrenceDate', document.getElementById('formOccurrenceDate').value);
-
-                    console.log('Submitting with processTypeId:', document.getElementById('formProcessTypeId').value);
 
                     // Build exceptions array with proper sequential indexing
                     rows.forEach((row, index) => {
@@ -579,9 +726,11 @@
                         // Add exception data
                         const title = row.querySelector('[name*="[exceptionTitle]"]').value;
                         const description = row.querySelector('[name*="[exception]"]').value;
+                        const subProcessTypeId = row.querySelector('[name*="[subProcessTypeId]"]').value;
 
                         formData.append(`exceptions[${index}][exceptionTitle]`, title);
                         formData.append(`exceptions[${index}][exception]`, description);
+                        formData.append(`exceptions[${index}][subProcessTypeId]`, subProcessTypeId);
 
                         // Add files if any
                         if (rowFiles[rowId] && rowFiles[rowId].length > 0) {
@@ -613,7 +762,6 @@
                             });
                         },
                         error: function (xhr) {
-                            console.error('Error response:', xhr);
                             let errorMessage = 'Failed to create exceptions';
                             if (xhr.responseJSON && xhr.responseJSON.message) {
                                 errorMessage = xhr.responseJSON.message;
@@ -688,27 +836,6 @@
 
             .list-group-item {
                 padding: 0.75rem 1rem;
-            }
-
-            /* Increase description column width */
-            #exceptionsTable th:nth-child(3),
-            #exceptionsTable td:nth-child(3) {
-                min-width: 500px;
-            }
-
-            .exception-description {
-                font-family: inherit;
-                line-height: 1.6;
-                resize: vertical;
-            }
-
-            .editable-textarea {
-                transition: border-color 0.15s ease-in-out;
-            }
-
-            .editable-textarea:focus {
-                border-color: #80bdff;
-                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
             }
         </style>
     @endpush

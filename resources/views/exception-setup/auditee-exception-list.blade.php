@@ -1,16 +1,11 @@
 <x-base-layout>
 
-    <!-- Add SweetAlert2 CSS in the head section -->
-    @push('styles')
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.min.css">
-    @endpush
-
     <div class="container-fluid px-1">
 
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
-                <div class="page-title-box ">
+                <div class="page-title-box">
                     <h4 class="mb-sm-0 font-size-18"></h4>
                     <h1 class="mb-0">Audit Control Exceptions For Branch</h1>
                     <p class="text-muted mb-0">Respond to all exceptions raised and push them to the audit control
@@ -20,10 +15,167 @@
         </div>
         <!-- end page title -->
 
+        <!-- Summary Cards -->
+        @php
+            $exceptions = collect($pendingExceptions);
+            $totalExceptions = $exceptions->sum('exceptionCount');
+            $totalResponded = $exceptions->sum('countForRespondedExceptionsByAuditee');
+            $totalBatches = $exceptions->count();
+            $responseRate = $totalExceptions > 0 ? round(($totalResponded / $totalExceptions) * 100, 1) : 0;
+
+            // Count by status
+            $pendingApprovalCount = $exceptions->where('status', 'APPROVED')->sum('exceptionCount');
+            $otherStatusCount = $exceptions->where('status', '!=', 'APPROVED')->sum('exceptionCount');
+        @endphp
+
+        <div class="row mt-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card mini-stats-wid">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-grow-1">
+                                <p class="text-muted fw-medium mb-2">Total Exceptions</p>
+                                <h4 class="mb-0" id="totalExceptions">{{ $totalExceptions }}</h4>
+                            </div>
+                            <div class="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
+                                <span class="avatar-title rounded-circle bg-primary">
+                                    <i class="bx bx-error font-size-24"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card mini-stats-wid">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-grow-1">
+                                <p class="text-muted fw-medium mb-2">Responded</p>
+                                <h4 class="mb-0 text-success" id="totalResponded">{{ $totalResponded }}</h4>
+                            </div>
+                            <div class="avatar-sm rounded-circle bg-success align-self-center mini-stat-icon">
+                                <span class="avatar-title rounded-circle bg-success">
+                                    <i class="bx bx-check-double font-size-24"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card mini-stats-wid">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-grow-1">
+                                <p class="text-muted fw-medium mb-2">Pending Approval</p>
+                                <h4 class="mb-0 text-warning" id="pendingApproval">{{ $pendingApprovalCount }}</h4>
+                            </div>
+                            <div class="avatar-sm rounded-circle bg-warning align-self-center mini-stat-icon">
+                                <span class="avatar-title rounded-circle bg-warning">
+                                    <i class="bx bx-time-five font-size-24"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card mini-stats-wid">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-grow-1">
+                                <p class="text-muted fw-medium mb-2">Response Rate</p>
+                                <h4 class="mb-0 text-info" id="responseRate">{{ $responseRate }}%</h4>
+                            </div>
+                            <div class="avatar-sm rounded-circle bg-info align-self-center mini-stat-icon">
+                                <span class="avatar-title rounded-circle bg-info">
+                                    <i class="bx bx-trending-up font-size-24"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="mt-4 mb-4" style="background-color: gray; height: 1px;"></div>
 
+        <!-- Filters Section -->
+        @php
+            $uniqueAuditors = collect($pendingExceptions)->pluck('submittedBy')->unique()->sort()->values();
+            $uniqueStatuses = collect($pendingExceptions)->pluck('status')->unique()->sort()->values();
+            $uniqueBranches = collect($pendingExceptions)->pluck('groupName')->unique()->sort()->values();
+            $uniqueDepartments = collect($pendingExceptions)->pluck('department')->unique()->sort()->values();
+        @endphp
+
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="bx bx-filter-alt"></i> Filters
+                        </h5>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label for="auditorFilter" class="form-label">Filter by Auditor</label>
+                                <select id="auditorFilter" class="form-select">
+                                    <option value="">All Auditors</option>
+                                    @foreach($uniqueAuditors as $auditor)
+                                        <option value="{{ $auditor }}">{{ $auditor }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="statusFilter" class="form-label">Filter by Status</label>
+                                <select id="statusFilter" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    @foreach($uniqueStatuses as $status)
+                                        <option value="{{ $status }}">
+                                            {{ $status === 'APPROVED' ? 'PENDING AUDITOR APPROVAL' : $status }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="branchFilter" class="form-label">Filter by Branch</label>
+                                <select id="branchFilter" class="form-select">
+                                    <option value="">All Branches</option>
+                                    @foreach($uniqueBranches as $branch)
+                                        <option value="{{ $branch }}">{{ $branch }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="departmentFilter" class="form-label">Filter by Department</label>
+                                <select id="departmentFilter" class="form-select">
+                                    <option value="">All Departments</option>
+                                    @foreach($uniqueDepartments as $department)
+                                        <option value="{{ $department }}">{{ $department }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12 d-flex gap-2">
+                                <button type="button" id="clearFilters" class="btn btn-secondary btn-sm">
+                                    <i class="bx bx-reset"></i> Clear Filters
+                                </button>
+                                <span class="text-muted align-self-center ms-2">
+                                    <small>Showing <strong id="visibleCount">{{ $totalBatches }}</strong> of {{ $totalBatches }} batches</small>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="table-responsive">
-            <table class="table table-bordered table-hover mb-0">
+            <table class="table table-bordered table-hover mb-0" id="exceptionsTable">
                 <thead class="table-light">
                     <tr>
                         <th>Auditor</th>
@@ -37,7 +189,12 @@
                 <tbody>
 
                     @forelse ($pendingExceptions as $exception)
-                        <tr>
+                        <tr data-auditor="{{ $exception['submittedBy'] }}"
+                            data-status="{{ $exception['status'] }}"
+                            data-branch="{{ $exception['groupName'] }}"
+                            data-department="{{ $exception['department'] }}"
+                            data-exception-count="{{ $exception['exceptionCount'] }}"
+                            data-responded-count="{{ $exception['countForRespondedExceptionsByAuditee'] }}">
                             <th scope="row"><a href="#">{{ $exception['submittedBy'] }}</a></th>
 
                             <td>
@@ -58,37 +215,28 @@
                                         exception(s) of <b>{{ $exception['exceptionCount'] }}</b> total exception(s)
                                     </p>
                                     <br>
-                                    {{--  @if ($exception['countForNotResolvedExceptionsByAuditee'] > 0)
-                                            {
-                                            <p class="badge badge-soft-danger">
-                                                <b>{{ $exception['countForNotResolvedExceptionsByAuditee'] }}</b> not
-                                                resolved
-                                                exception(s) of <b>{{ $exception['exceptionCount'] }}</b> total
-                                                exception(s)
-                                            </p>
-                                            }
-                                        @endif  --}}
                                 </div>
                             </td>
-                            <td> {{ Carbon\Carbon::parse($exception['submittedAt'])->format('jS F, Y ') }} </td>
-                            <td> <span class="dropdown badge rounded-pill bg-success ">
+                            <td>{{ Carbon\Carbon::parse($exception['submittedAt'])->format('jS F, Y ') }}</td>
+                            <td>
+                                <span class="dropdown badge rounded-pill bg-success">
                                     {{ $exception['status'] === 'APPROVED' ? 'PENDING AUDITOR APPROVAL' : $exception['status'] }}
                                 </span>
                             </td>
 
                             <td>
                                 <div class="d-flex gap-3">
-                                    <a
-                                        href="{{ url("/exception/supervisor/show-exception-list-for-approval/{$exception['id']}/{$exception['status']}") }}">
-                                        <span class="badge round bg-primary font-size-13"><i
-                                                class="bx bxs-pencil"></i>open</span>
+                                    <a href="{{ url("/exception/supervisor/show-exception-list-for-approval/{$exception['id']}/{$exception['status']}") }}">
+                                        <span class="badge round bg-primary font-size-13">
+                                            <i class="bx bxs-pencil"></i>open
+                                        </span>
                                     </a>
                                 </div>
                             </td>
                         </tr>
 
                     @empty
-                        <tr>
+                        <tr id="emptyState">
                             <td colspan="6" class="text-center text-muted py-4">
                                 <i class="bx bx-file fs-1 text-muted"></i>
                                 <p class="mb-0">No pending exceptions for <b>RESPONSE</b> from <b>AUDITOR</b></p>
@@ -102,116 +250,104 @@
         </div>
     </div>
 
-    <!-- Add SweetAlert2 JS and custom script -->
     @push('scripts')
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.32/sweetalert2.all.min.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Add event listeners to all exception forms
-                document.querySelectorAll('.exception-form').forEach(function(form) {
-                    form.addEventListener('submit', function(e) {
-                        e.preventDefault();
+            document.addEventListener('DOMContentLoaded', function () {
+                const auditorFilter = document.getElementById('auditorFilter');
+                const statusFilter = document.getElementById('statusFilter');
+                const branchFilter = document.getElementById('branchFilter');
+                const departmentFilter = document.getElementById('departmentFilter');
+                const clearFiltersBtn = document.getElementById('clearFilters');
+                const tableRows = document.querySelectorAll('#exceptionsTable tbody tr:not(#emptyState)');
+                const totalBatchesOriginal = {{ $totalBatches }};
 
-                        const formElement = this;
-                        const formData = new FormData(formElement);
-                        const exceptionId = formElement.dataset.exceptionId;
-                        const department = formElement.dataset.department;
-                        const branch = formElement.dataset.branch;
+                function filterTable() {
+                    const selectedAuditor = auditorFilter.value.toLowerCase();
+                    const selectedStatus = statusFilter.value.toLowerCase();
+                    const selectedBranch = branchFilter.value.toLowerCase();
+                    const selectedDepartment = departmentFilter.value.toLowerCase();
 
-                        // Show confirmation modal
-                        Swal.fire({
-                            title: 'Confirm Action',
-                            html: `
-                                <div class="text-start">
-                                    <p><strong>Are you sure you want to push this exception for resolution?</strong></p>
-                                    <hr>
-                                    <p><strong>Exception ID:</strong> ${exceptionId}</p>
-                                    <p><strong>Branch:</strong> ${branch}</p>
-                                    <p><strong>Department:</strong> ${department}</p>
-                                </div>
-                            `,
-                            icon: 'question',
-                            showCancelButton: true,
-                            confirmButtonColor: '#3085d6',
-                            cancelButtonColor: '#d33',
-                            confirmButtonText: '<i class="bx bx-check"></i> Yes, Push for Resolution',
-                            cancelButtonText: '<i class="bx bx-x"></i> Cancel',
-                            reverseButtons: true,
-                            customClass: {
-                                confirmButton: 'btn btn-primary me-2',
-                                cancelButton: 'btn btn-secondary'
-                            },
-                            buttonsStyling: false
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                // Show loading state
-                                Swal.fire({
-                                    title: 'Processing Request...',
-                                    html: '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Please wait while we process your request.</p></div>',
-                                    allowOutsideClick: false,
-                                    allowEscapeKey: false,
-                                    showConfirmButton: false,
-                                    didOpen: () => {
-                                        Swal.showLoading();
-                                    }
-                                });
+                    let visibleCount = 0;
 
-                                // Make AJAX request
-                                fetch(formElement.action, {
-                                        method: 'POST',
-                                        body: formData,
-                                        headers: {
-                                            'X-Requested-With': 'XMLHttpRequest',
-                                            'Accept': 'application/json'
-                                        }
-                                    })
-                                    .then(response => {
-                                        if (!response.ok) {
-                                            throw new Error(
-                                                `HTTP error! status: ${response.status}`
-                                            );
-                                        }
-                                        return response.json();
-                                    })
-                                    .then(data => {
-                                        if (data.success) {
-                                            Swal.fire({
-                                                title: 'Success!',
-                                                text: data.message ||
-                                                    'Exception has been successfully pushed for resolution.',
-                                                icon: 'success',
-                                                confirmButtonText: 'OK',
-                                                customClass: {
-                                                    confirmButton: 'btn btn-success'
-                                                },
-                                                buttonsStyling: false
-                                            }).then(() => {
-                                                // Reload the page to reflect changes
-                                                window.location.reload();
-                                            });
-                                        } else {
-                                            throw new Error(data.message ||
-                                                'An unexpected error occurred');
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error:', error);
-                                        Swal.fire({
-                                            title: 'Error!',
-                                            text: error.message ||
-                                                'Something went wrong. Please try again.',
-                                            icon: 'error',
-                                            confirmButtonText: 'Try Again',
-                                            customClass: {
-                                                confirmButton: 'btn btn-danger'
-                                            },
-                                            buttonsStyling: false
-                                        });
-                                    });
-                            }
-                        });
+                    tableRows.forEach(row => {
+                        const auditor = row.getAttribute('data-auditor').toLowerCase();
+                        const status = row.getAttribute('data-status').toLowerCase();
+                        const branch = row.getAttribute('data-branch').toLowerCase();
+                        const department = row.getAttribute('data-department').toLowerCase();
+
+                        const auditorMatch = !selectedAuditor || auditor === selectedAuditor;
+                        const statusMatch = !selectedStatus || status === selectedStatus;
+                        const branchMatch = !selectedBranch || branch === selectedBranch;
+                        const departmentMatch = !selectedDepartment || department === selectedDepartment;
+
+                        if (auditorMatch && statusMatch && branchMatch && departmentMatch) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
                     });
-                });
+
+                    // Update visible count display
+                    document.getElementById('visibleCount').textContent = visibleCount;
+
+                    // Show/hide empty state
+                    const emptyState = document.getElementById('emptyState');
+                    if (emptyState) {
+                        emptyState.style.display = visibleCount === 0 ? '' : 'none';
+                    }
+
+                    // Update summary cards based on visible rows
+                    updateSummaryCards();
+                }
+
+                function updateSummaryCards() {
+                    let totalExceptions = 0;
+                    let totalResponded = 0;
+                    let pendingApproval = 0;
+
+                    tableRows.forEach(row => {
+                        if (row.style.display !== 'none') {
+                            const exceptionCount = parseInt(row.getAttribute('data-exception-count')) || 0;
+                            const respondedCount = parseInt(row.getAttribute('data-responded-count')) || 0;
+                            const status = row.getAttribute('data-status');
+
+                            totalExceptions += exceptionCount;
+                            totalResponded += respondedCount;
+
+                            // Count pending approval (APPROVED status means pending auditor approval)
+                            if (status === 'APPROVED') {
+                                pendingApproval += exceptionCount;
+                            }
+                        }
+                    });
+
+                    // Calculate response rate
+                    const responseRate = totalExceptions > 0
+                        ? ((totalResponded / totalExceptions) * 100).toFixed(1)
+                        : 0;
+
+                    // Update the summary card values
+                    document.getElementById('totalExceptions').textContent = totalExceptions;
+                    document.getElementById('totalResponded').textContent = totalResponded;
+                    document.getElementById('pendingApproval').textContent = pendingApproval;
+                    document.getElementById('responseRate').textContent = responseRate + '%';
+                }
+
+                function clearFilters() {
+                    auditorFilter.value = '';
+                    statusFilter.value = '';
+                    branchFilter.value = '';
+                    departmentFilter.value = '';
+                    filterTable();
+                }
+
+                // Event listeners
+                auditorFilter.addEventListener('change', filterTable);
+                statusFilter.addEventListener('change', filterTable);
+                branchFilter.addEventListener('change', filterTable);
+                departmentFilter.addEventListener('change', filterTable);
+                clearFiltersBtn.addEventListener('click', clearFilters);
             });
         </script>
     @endpush

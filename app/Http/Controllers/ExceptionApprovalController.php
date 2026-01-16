@@ -432,7 +432,9 @@ class ExceptionApprovalController extends Controller
                 $batches = BatchController::getBatches();
                 $groups = GroupController::getActivityGroups();
                 $groupMembers = GroupMembersController::getGroupMembers();
-                $employeeId = ExceptionManipulationController::getLoggedInUserInformation()->id;
+                $loggedInUser = ExceptionManipulationController::getLoggedInUserInformation();
+                $employeeId = $loggedInUser->id;
+                $employeeName = $loggedInUser->firstName . " " . $loggedInUser->surname;
 
 
                 // Filter active batches with status 'OPEN' and map them by ID
@@ -464,7 +466,7 @@ class ExceptionApprovalController extends Controller
 
                 $pendingExceptions = collect($exceptions)
                     // Filter top-level exceptions by status
-                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                    ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId, $employeeName) {
                     // Get the actual group ID from the exception
                     $groupId = $exception->activityGroupId;
 
@@ -474,13 +476,15 @@ class ExceptionApprovalController extends Controller
                     // Check if group is valid (active)
                     $hasValidGroup = $validGroups->has($groupId);
 
-                    // Check if status 
+                    // Check if status
                     $hasValidStatus = in_array($exception->status, ['DECLINED', 'AMENDMENT', 'APPROVED']);
+
+                    $createdBy = $exception->submittedBy === $employeeName;
 
                     // Check access: employee belongs to group OR is a top manager
                     $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
 
-                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+                    return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess && $createdBy;
 
                     })
                     // Transform and count nested exceptions
@@ -609,6 +613,7 @@ class ExceptionApprovalController extends Controller
             $loggedInUser = ExceptionManipulationController::getLoggedInUserInformation();
             $employeeId = $loggedInUser->id;
             $employeeRoleId = $loggedInUser->empRoleId;
+            $employeeName = $loggedInUser->firstName . " " . $loggedInUser->surname;
             $topManagers = [1, 2, 4]; // MD, Head of IA, Head of IC&C
 
             // 7. Get valid batches and groups
@@ -627,7 +632,7 @@ class ExceptionApprovalController extends Controller
 
             // 8. Process and filter exceptions
             $pendingExceptions = collect($exceptions)
-                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId) {
+                ->filter(function ($exception) use ($validBatches, $validGroups, $employeeGroups, $topManagers, $employeeRoleId, $employeeName) {
                 // Get the actual group ID from the exception
                 $groupId = $exception->activityGroupId;
 
@@ -637,6 +642,8 @@ class ExceptionApprovalController extends Controller
                 // Check if group is valid (active)
                 $hasValidGroup = $validGroups->has($groupId);
 
+                $createdBy = $exception->submittedBy === $employeeName;
+
 
                 // Check if status is one of the tracked statuses
                 $hasValidStatus = in_array($exception->status, ['ANALYSIS']);
@@ -644,7 +651,7 @@ class ExceptionApprovalController extends Controller
                 // Check access: employee belongs to group OR is a top manager
                 $hasAccess = $employeeGroups->contains($groupId) || in_array($employeeRoleId, $topManagers);
 
-                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess;
+                return $hasValidBatch && $hasValidGroup && $hasValidStatus && $hasAccess && $createdBy;
 
                 })
                 ->map(function ($exception) {
