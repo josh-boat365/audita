@@ -1,7 +1,7 @@
 <x-base-layout>
 
     <div class="container-fluid px-5">
-        {{--  {{ dd($batch_data) }}  --}}
+        {{-- {{ dd($batch_data) }} --}}
         <!-- start page title -->
         <div class="row">
             <div class="col-12">
@@ -31,19 +31,19 @@
                             </div>
                         </div>
 
-                        <div class="row mb-3">
+                        {{--  <div class="row mb-3">
                             <label for="example-text-input" class="">Batch Group</label>
                             <div class="col-md-12">
                                 <select name="activityGroupId" id="yearSelect1" class="form-select">
                                     <option>Select Year</option>
                                     @foreach ($activityGroups as $group)
-                                        <option value="{{ $group->id }}" @selected($batch_data->activityGroupId === $group->id)>
+                                        <option value="{{ $group->id }}" @selected(isset($batch_data->activityGroupId) && $batch_data->activityGroupId === $group->id)>
                                             {{ $group->name }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
+                        </div>  --}}
 
                         <div class="row mb-3">
                             <label for="example-text-input" class="">Batch Unit</label>

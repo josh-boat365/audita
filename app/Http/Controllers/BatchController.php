@@ -37,7 +37,7 @@ class BatchController extends Controller
 
         $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
         $employeeDepartment = $employeeData->department->name;
-        
+
         $sortedBatches = collect($batches)->filter(function ($batch) use ($employeeDepartment) {
             return isset($batch->createdAt) && ($employeeDepartment ===  $batch->auditorUnitName);
         })
@@ -122,7 +122,7 @@ class BatchController extends Controller
     public function edit($id)
     {
         $auditUnits = UnitController::getAuditUnitData();
-        // $activityGroups = GroupController::getActivityGroups();
+        $activityGroups = GroupController::getActivityGroups();
 
         try {
             // Make the GET request to the external API
@@ -134,7 +134,7 @@ class BatchController extends Controller
 
                 // dd($batch_data);
 
-                return view('batch-setup.edit', compact('batch_data', 'auditUnits'));
+                return view('batch-setup.edit', compact('batch_data', 'auditUnits', 'activityGroups'));
             } else {
 
                 return redirect()->back()->with('toast_error', 'Batch does not exist');
