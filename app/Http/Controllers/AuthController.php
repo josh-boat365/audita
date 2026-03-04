@@ -50,7 +50,7 @@ class AuthController extends Controller
 
             // Send the POST request to the API
             $response = Http::withoutVerifying()->post('http://192.168.1.200:5126/Auditor/Login', $data);
-                // dd($response->json());
+            // dd($response->json());
             // Check for a successful response and the presence of access token
             if ($response->successful() && isset($response['access_token'])) {
                 $data = $response->object();
@@ -176,7 +176,6 @@ class AuthController extends Controller
             }
 
             return redirect()->route('my.group.dashboard', $employeeId)->with('toast_success', 'Logged in successfully');
-
         } catch (ValidationException $e) {
             // Catch and return validation errors in a structured format
             Log::error('Validation error', [
