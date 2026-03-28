@@ -729,7 +729,7 @@ class ExceptionApprovalController extends Controller
                 'exceptionItemId' => 'required|integer',
                 'status' => 'required|string',
                 // 'push_bak_status' => 'required|string',
-                'statusComment' => 'required|string|max:255',
+                'statusComment' => 'required|string',
             ]);
 
             // dd($validatedData);
