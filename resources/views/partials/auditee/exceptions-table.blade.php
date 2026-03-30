@@ -121,8 +121,13 @@ $sortedExceptions = collect($exceptions ?? [])
     </table>
 
     @php
-// Check if all recommendedStatus values are 'RESOLVED'
-$allResolved = collect($sortedExceptions)->every(function ($exception) {
+// Check if all rows are green based on current batch status
+// For ANALYSIS status: all must have status === 'RESOLVED'
+// For other statuses: all must have recommendedStatus === 'RESOLVED'
+$allResolved = collect($sortedExceptions)->every(function ($exception) use ($status) {
+    if ($status === 'ANALYSIS') {
+        return $exception->status === 'RESOLVED';
+    }
     return $exception->recommendedStatus === 'RESOLVED';
 });
     @endphp
@@ -141,9 +146,9 @@ $allResolved = collect($sortedExceptions)->every(function ($exception) {
                 </button>
             </form>
         </div>
-    @elseif($allResolved && in_array($employeeDepartmentId, $auditorDepartments))
+    @elseif($allResolved && $pendingException->status === 'ANALYSIS' && in_array($employeeDepartmentId, $auditorDepartments))
         <div class="mt-3 mb-4 float-end">
-            {{-- Action Button for Pushing to Resolved --}}
+            {{-- Action Button for Setting to Resolved - Only shown when in ANALYSIS status with all rows green --}}
             <form action="{{ route('exception.supervisor.action') }}" method="POST">
                 @csrf
                 <input type="hidden" name="batchExceptionId" value="{{ $pendingException->id ?? '' }}">
