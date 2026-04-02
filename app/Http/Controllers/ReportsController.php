@@ -24,6 +24,8 @@ class ReportsController extends Controller
         }
 
         $reports = collect($this->getAllReports())->filter(function ($report) {
+            // Include all statuses except DECLINED for the regular reports view
+            // DECLINED exceptions are viewable in auditor-report view where there's more filtering
             return !in_array($report->status, ['DECLINED']);
         })->values()->all();
         $batches = BatchController::getBatches();
@@ -49,8 +51,14 @@ class ReportsController extends Controller
         $batchData = BatchController::getBatches();
         $employeeData = ExceptionManipulationController::getLoggedInUserInformation();
 
-        $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
-        $employeeDepartment = $employeeData->department->name;
+        // Handle case where API is unreachable (returns empty array)
+        if (is_array($employeeData) && empty($employeeData)) {
+            $employeeFullName = 'Unknown User';
+            $employeeDepartment = 'Unknown Department';
+        } else {
+            $employeeFullName = $employeeData->firstName . ' ' . $employeeData->surname;
+            $employeeDepartment = $employeeData->department->name;
+        }
 
 
         $batches = collect($batchData)->filter(function ($batch) use ($employeeDepartment) {
@@ -62,7 +70,7 @@ class ReportsController extends Controller
         // $groups = GroupController::getActivityGroups();
 
 
-        $statuses = ['APPROVED', 'ANALYSIS', 'RESOLVED'];
+        $statuses = ['APPROVED', 'ANALYSIS', 'RESOLVED', 'DECLINED', 'NOT-RESOLVED'];
         $retrieveExceptions = FilterExceptionController::handleException($reportsData,  $statuses);
         $reports = $retrieveExceptions;
 
@@ -104,20 +112,21 @@ class ReportsController extends Controller
         return $Reports;
     }
 
-    function getGroupsForAuditorUnit($reports, $batches) {
-    $batchIds = $batches->pluck('id')->toArray();
+    function getGroupsForAuditorUnit($reports, $batches)
+    {
+        $batchIds = $batches->pluck('id')->toArray();
 
-    // Get unique group IDs from reports that belong to these batches
-    $relevantGroupIds = $reports
-        ->filter(fn($report) => in_array($report->exceptionBatchId, $batchIds))
-        ->pluck('activityGroupId')
-        ->unique()
-        ->toArray();
+        // Get unique group IDs from reports that belong to these batches
+        $relevantGroupIds = $reports
+            ->filter(fn($report) => in_array($report->exceptionBatchId, $batchIds))
+            ->pluck('activityGroupId')
+            ->unique()
+            ->toArray();
 
-    // Filter and return only relevant groups
-    return collect(GroupController::getActivityGroups())
-        ->filter(fn($group) => in_array($group->id, $relevantGroupIds));
-}
+        // Filter and return only relevant groups as collection
+        return collect(GroupController::getActivityGroups())
+            ->filter(fn($group) => in_array($group->id, $relevantGroupIds));
+    }
 
 
 
